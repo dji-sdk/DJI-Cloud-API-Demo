@@ -1,0 +1,86 @@
+server:
+  port: 6789
+spring:
+  application:
+    name: cloud-api-sample
+  datasource:
+    druid:
+      type: com.alibaba.druid.pool.DruidDataSource
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/cloud_sample?useSSL=false
+      username: root
+      password: root
+      initial-size: 10
+      min-idle: 10
+      max-active: 20
+      max-wait: 60000
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: NON_NULL
+    deserialization:
+      FAIL_ON_UNKNOWN_PROPERTIES: false
+
+jwt:
+  issuer: DJI
+  subject: CloudApiSample
+  secret: CloudApiSample
+  age: 86400
+
+mqtt:
+  protocol: tcp
+  host: Please enter your IP.
+  port: 1883
+  username: JavaServer
+  password: 123456
+  client-id: 123456
+  # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
+  inbound-topic: sys/product/+/status
+
+url:
+  manage:
+    prefix: /manage
+    version: /api/v1
+  map:
+    prefix: /map
+    version: /api/v1
+  media:
+    prefix: /media
+    version: /api/v1
+  wayline:
+    prefix: /wayline
+    version: /api/v1
+  storage:
+    prefix: /storage
+    version: /api/v1
+
+aliyun:
+  oss:
+    enable: true
+    endpoint: Please enter your endpoint. #Example: https://oss-cn-shenzhen.aliyuncs.com
+    access-key: Please enter your access key.
+    secret-key: Please enter your secret key.
+    expire: 3600
+    region: Please enter oss region.
+    role-session-name: Please enter session name.
+    role-arn: Please enter role arn.
+    bucket: Please enter bucket name.
+    object-dir-prefix: Please enter object prefix.
+
+# MinIO is temporarily unavailable.
+minio:
+  enable: false
+  endpoint: Please enter your endpoint. #http://192.168.1.1:9000/
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: Please enter bucket name.
+  expire: 3600
+  region: Please enter minio region.
+  object-dir-prefix: Please enter object prefix.
+
+logging:
+  level:
+    com.dji.sample: debug
+  file:
+    name: logs/cloud-api-sample.log

@@ -1,0 +1,36 @@
+package com.dji.sample.media.service;
+
+import com.dji.sample.media.model.FileUploadDTO;
+
+import java.util.List;
+
+/**
+ * @author sean
+ * @version 0.2
+ * @date 2021/12/9
+ */
+public interface IMediaService {
+
+    /**
+     * Check if the file has been uploaded by the fingerprint.
+     * @param workspaceId
+     * @param fingerprint
+     * @return
+     */
+    Boolean fastUpload(String workspaceId, String fingerprint);
+
+    /**
+     * Save the basic information of the file to the database.
+     * @param workspaceId
+     * @param file
+     * @return
+     */
+    Integer saveMediaFile(String workspaceId, FileUploadDTO file);
+
+    /**
+     * Query tiny fingerprints about all files in this workspace based on the workspace id.
+     * @param workspaceId
+     * @return
+     */
+    List<String> getAllTinyFingerprintsByWorkspaceId(String workspaceId);
+}
