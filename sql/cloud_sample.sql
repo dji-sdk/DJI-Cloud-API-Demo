@@ -91,22 +91,24 @@ LOCK TABLES `manage_device_dictionary` WRITE;
 INSERT INTO `manage_device_dictionary` (`id`, `domain`, `device_type`, `sub_type`, `device_name`, `device_desc`)
 VALUES
 	(1,0,60,0,'Matrice 300 RTK',NULL),
+	(2,0,67,0,'Matrice 30',NULL),
+	(3,0,67,1,'Matrice 30T',NULL),
+	(4,1,20,0,'Z30',NULL),
+	(5,1,26,0,'XT2',NULL),
+	(6,1,39,0,'FPV',NULL),
+	(7,1,41,0,'XTS',NULL),
+	(8,1,42,0,'H20',NULL),
+	(9,1,43,0,'H20T',NULL),
+	(10,1,50,65535,'P1','include 24 and 35 and 50mm'),
+	(11,1,52,0,'M30 Camera',NULL),
+	(12,1,53,0,'M30T Camera',NULL),
+	(13,1,61,0,'H20N',NULL),
+	(14,1,165,0,'DJI Dock Camera',NULL),
+	(15,1,90742,0,'L1',NULL),
 	(16,2,56,0,'DJI Smart Controller','Remote control for M300'),
-	(17,1,20,0,'Z30',NULL),
-	(18,1,26,0,'XT2',NULL),
-	(19,1,39,0,'FPV',NULL),
-	(20,1,41,0,'XTS',NULL),
-	(21,1,42,0,'H20',NULL),
-	(22,1,43,0,'H20T',NULL),
-	(24,1,90742,0,'L1',NULL),
-	(27,1,50,0,'P1 24mm lens',NULL),
-	(28,1,50,1,'P1 35mm lens',NULL),
-	(29,1,50,2,'P1 50mm lens',NULL),
-	(30,0,67,0,'Matrice 30',NULL),
-    (31,0,67,1,'Matrice 30T',NULL),
-    (32,2,119,0,'DJI RC Plus','Remote control for M30'),
-    (33,1,52,0,'M30',NULL),
-    (34,1,53,0,'M30T',NULL);
+	(17,2,119,0,'Matrice 30 Smart Controller','Remote control for M30'),
+	(18,3,1,0,'DJI Dock','DJI Airport');
+
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
