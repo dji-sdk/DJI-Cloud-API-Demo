@@ -30,7 +30,7 @@ jwt:
 
 mqtt:
   protocol: tcp
-  host: Please enter your IP.
+  host: Please enter your IP. # Example: 192.168.1.1
   port: 1883
   username: JavaServer
   password: 123456
@@ -55,17 +55,18 @@ url:
     prefix: /storage
     version: /api/v1
 
+# Tutorial: https://help.aliyun.com/document_detail/100624.htm?spm=a2c4g.11186623.0.0.74075e34eIhK7T#concept-xzh-nzk-2gb
 aliyun:
   oss:
     enable: true
-    endpoint: Please enter your endpoint. #Example: https://oss-cn-shenzhen.aliyuncs.com
+    endpoint: Please enter your endpoint. # Example: https://oss-cn-shenzhen.aliyuncs.com
     access-key: Please enter your access key.
     secret-key: Please enter your secret key.
     expire: 3600
-    region: Please enter oss region.
-    role-session-name: Please enter session name.
-    role-arn: Please enter role arn.
-    bucket: Please enter bucket name.
+    region: Please enter oss region.    # Example: cn-shenzhen
+    role-session-name: Please enter session name.   # A custom role session name to distinguish the different tokens, for example it could be filled in as SessionTest.
+    role-arn: Please enter role ARN.    # Example: acs:ram::123456789:role/oss
+    bucket: Please enter bucket name.   
     object-dir-prefix: Please enter object prefix.
 
 # MinIO is temporarily unavailable.
