@@ -106,7 +106,7 @@ VALUES
     (31,0,67,1,'Matrice 30T',NULL),
     (32,2,119,0,'DJI RC Plus','Remote control for M30'),
     (33,1,52,0,'M30',NULL),
-    (34,1,53,1,'M30T',NULL);
+    (34,1,53,0,'M30T',NULL);
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
