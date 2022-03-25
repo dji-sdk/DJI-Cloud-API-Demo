@@ -7,7 +7,7 @@ spring:
     druid:
       type: com.alibaba.druid.pool.DruidDataSource
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://localhost:3306/cloud_sample?useSSL=false
+      url: jdbc:mysql://localhost:3306/cloud_sample?useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: root
       initial-size: 10
@@ -30,7 +30,7 @@ jwt:
 
 mqtt:
   protocol: tcp
-  host: Please enter your IP. # Example: 192.168.1.1
+  host: Please enter the address of the emqx server. # Example: 192.168.1.1
   port: 1883
   username: JavaServer
   password: 123456
