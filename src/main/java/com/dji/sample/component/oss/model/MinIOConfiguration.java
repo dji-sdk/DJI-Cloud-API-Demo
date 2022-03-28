@@ -82,6 +82,9 @@ public class MinIOConfiguration {
     @Bean
     @Lazy
     public MinioClient minioClient() {
+        if (!enable) {
+            return null;
+        }
         MinioClient.Builder builder = MinioClient.builder()
                 .endpoint(endpoint)
                 .credentials(accessKey, secretKey);

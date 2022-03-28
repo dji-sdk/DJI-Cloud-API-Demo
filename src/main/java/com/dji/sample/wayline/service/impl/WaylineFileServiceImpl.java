@@ -15,6 +15,7 @@ import com.dji.sample.wayline.model.WaylineFileDTO;
 import com.dji.sample.wayline.model.WaylineFileEntity;
 import com.dji.sample.wayline.model.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional
+@Slf4j
 public class WaylineFileServiceImpl implements IWaylineFileService {
 
     @Autowired
@@ -41,7 +43,8 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
     private IOssService ossService;
 
     @Autowired
-    private void setOssService(@Autowired AliyunOssServiceImpl aliyunOssService, @Autowired MinIOServiceImpl minIOService) {
+    private void setOssService(@Autowired(required = false) AliyunOssServiceImpl aliyunOssService,
+                               @Autowired(required = false) MinIOServiceImpl minIOService) {
         if (AliyunOSSConfiguration.enable) {
             this.ossService = aliyunOssService;
             return;
@@ -50,7 +53,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
             this.ossService = minIOService;
             return;
         }
-        throw new NullPointerException("ossService is null.");
+        log.error("ossService is null.");
     }
 
     @Override

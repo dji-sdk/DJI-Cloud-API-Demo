@@ -58,7 +58,7 @@ url:
 # Tutorial: https://help.aliyun.com/document_detail/100624.htm?spm=a2c4g.11186623.0.0.74075e34eIhK7T#concept-xzh-nzk-2gb
 aliyun:
   oss:
-    enable: true
+    enable: false
     endpoint: Please enter your endpoint. # Example: https://oss-cn-shenzhen.aliyuncs.com
     access-key: Please enter your access key.
     secret-key: Please enter your secret key.

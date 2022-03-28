@@ -75,7 +75,7 @@ public class WaylineFileController {
 
         try {
             response.sendRedirect(url.toString());
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

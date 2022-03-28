@@ -26,7 +26,7 @@ import java.security.NoSuchAlgorithmException;
 @Slf4j
 public class MinIOServiceImpl implements IOssService {
 
-    @Autowired
+    @Autowired(required = false)
     private MinioClient client;
 
     @Override

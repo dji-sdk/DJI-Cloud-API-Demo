@@ -27,7 +27,7 @@ import java.util.Date;
 @Slf4j
 public class AliyunOssServiceImpl implements IOssService {
 
-    @Autowired
+    @Autowired(required = false)
     private OSS ossClient;
 
     @Override
@@ -58,11 +58,16 @@ public class AliyunOssServiceImpl implements IOssService {
         if (!StringUtils.hasText(bucket) || !StringUtils.hasText(objectKey)) {
             return null;
         }
-        // First check if the object can be fetched.
-        ossClient.getObject(bucket, objectKey);
+        try {
+            // First check if the object can be fetched.
+            ossClient.getObject(bucket, objectKey);
 
-        return ossClient.generatePresignedUrl(bucket, objectKey,
-                new Date(System.currentTimeMillis() + AliyunOSSConfiguration.expire * 1000));
+            return ossClient.generatePresignedUrl(bucket, objectKey,
+                    new Date(System.currentTimeMillis() + AliyunOSSConfiguration.expire * 1000));
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

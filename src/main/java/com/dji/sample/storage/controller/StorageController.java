@@ -7,6 +7,7 @@ import com.dji.sample.media.model.StsCredentialsDTO;
 import com.dji.sample.storage.service.IStorageService;
 import com.dji.sample.storage.service.impl.AliyunStorageServiceImpl;
 import com.dji.sample.storage.service.impl.MinIOStorageServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,13 +21,14 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("${url.storage.prefix}${url.storage.version}/workspaces/")
+@Slf4j
 public class StorageController {
 
     private IStorageService storageService;
 
     @Autowired
-    private void setOssService(@Autowired AliyunStorageServiceImpl aliyunStorageService,
-                              @Autowired MinIOStorageServiceImpl minIOStorageService) {
+    private void setOssService(@Autowired(required = false) AliyunStorageServiceImpl aliyunStorageService,
+                              @Autowired(required = false) MinIOStorageServiceImpl minIOStorageService) {
         if (AliyunOSSConfiguration.enable) {
             this.storageService = aliyunStorageService;
             return;
@@ -35,7 +37,7 @@ public class StorageController {
             this.storageService = minIOStorageService;
             return;
         }
-        throw new NullPointerException("storageService is null.");
+        log.error("storageService is null.");
     }
     /**
      * Get temporary credentials for uploading the media and wayline in DJI Pilot.

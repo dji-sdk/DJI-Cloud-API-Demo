@@ -99,6 +99,9 @@ public class AliyunOSSConfiguration {
     @Bean
     @Lazy
     public OSS ossClient() {
+        if (!enable) {
+            return null;
+        }
         return new OSSClientBuilder().build(endpoint, accessKey, secretKey);
     }
 }
