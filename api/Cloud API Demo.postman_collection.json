@@ -1,0 +1,924 @@
+{
+	"info": {
+		"_postman_id": "17774906-1c99-4cd1-9ebd-c28a3c98d440",
+		"name": "Cloud API Demo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Manage",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"adminPC\",\r\n    \"password\": \"adminPC\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/manage/api/v1/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"manage",
+								"api",
+								"v1",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/token/refresh",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"token",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Workspaces Infomation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/current",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users Infomation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/users/current",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"users",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Device Topo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/devices",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"devices"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Livestream Capacity",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/live/capacity",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"live",
+								"capacity"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Livestream",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"url_type\": 0,\r\n    \"url\": \"\",\r\n    \"video_id\": \"\",\r\n    \"video_quality\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/live/streams/start",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"live",
+								"streams",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Livestream",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"video_id\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/live/streams/stop",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"live",
+								"streams",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Set Quality",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"video_id\": \"\",\r\n    \"video_quality\": 4\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/live/streams/update",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"live",
+								"streams",
+								"update"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					},
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NDg1MjI5ODAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NDg2MDkzODAsImlhdCI6MTY0ODUyMjk4MCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QEDpB_60G4YLLXR_6rLZHWZNVbA1j162Xs1fZx8wEOM",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Layer",
+			"item": [
+				{
+					"name": "Get Elements Groups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/element-groups?is_distributed=true",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"element-groups"
+							],
+							"query": [
+								{
+									"key": "is_distributed",
+									"value": "true"
+								},
+								{
+									"key": "group_id",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Elements",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"id\": \"94c51c50-f111-45e8-ac8c-4f96c93ced44\",\r\n\t\"name\": \"line1\",\r\n\t\"resource\": {\r\n\t\t\"type\": 1,\r\n\t\t\"user_name\": \"admin\",\r\n\t\t\"content\": {\r\n\t\t\t\"type\": \"Feature\",\r\n\t\t\t\"properties\": {\r\n\t\t\t\t\"color\": \"#0091FF\",\r\n\t\t\t\t\"clampToGround\": false\r\n\t\t\t},\r\n\t\t\t\"geometry\": {\r\n\t\t\t\t\"type\": \"LineString\",\r\n\t\t\t\t\"coordinates\": [\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t113.93604571028328,\r\n\t\t\t\t\t\t22.525017284431613\r\n\t\t\t\t\t],\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t113.93525938281492,\r\n\t\t\t\t\t\t22.524562752152626\r\n\t\t\t\t\t],\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t113.93566532369493,\r\n\t\t\t\t\t\t22.524039300311106\r\n\t\t\t\t\t],\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t113.93636862690045,\r\n\t\t\t\t\t\t22.52381139709072\r\n\t\t\t\t\t],\r\n\t\t\t\t\t[\r\n\t\t\t\t\t\t113.93646234539993,\r\n\t\t\t\t\t\t22.524630068659047\r\n\t\t\t\t\t]\r\n\t\t\t\t]\r\n\t\t\t}\r\n\t\t}\r\n\t}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/element-groups/{{element_group_id}}/elements",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"element-groups",
+								"{{element_group_id}}",
+								"elements"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Elements",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"name\": \"line2\",\r\n\t\"content\": {\r\n        \"type\": \"Feature\",\r\n        \"properties\": {\r\n            \"color\": \"#0091FF\",\r\n            \"clampToGround\": false\r\n        },\r\n        \"geometry\": {\r\n            \"type\": \"LineString\",\r\n            \"coordinates\": [\r\n                [\r\n                    113.93604571028328,\r\n                    22.525017284431613\r\n                ],\r\n                [\r\n                    113.93525938281492,\r\n                    22.524562752152626\r\n                ],\r\n                [\r\n                    113.93566532369493,\r\n                    22.524039300311106\r\n                ],\r\n                [\r\n                    113.93636862690045,\r\n                    22.52381139709072\r\n                ],\r\n                [\r\n                    113.93646234539993,\r\n                    22.524630068659047\r\n                ]\r\n            ]\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/elements/94c51c50-f111-45e8-ac8c-4f96c93ced44",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"elements",
+								"94c51c50-f111-45e8-ac8c-4f96c93ced44"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Elements",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/elements/94c51c50-f111-45e8-ac8c-4f96c93ced44",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"elements",
+								"94c51c50-f111-45e8-ac8c-4f96c93ced44"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Group Elements",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/element-groups/{{element_group_id}}/elements",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"element-groups",
+								"{{element_group_id}}",
+								"elements"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NDg1MjI5ODAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NDg2MDkzODAsImlhdCI6MTY0ODUyMjk4MCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QEDpB_60G4YLLXR_6rLZHWZNVbA1j162Xs1fZx8wEOM",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Media",
+			"item": [
+				{
+					"name": "Fast Upload",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"ext\": {\r\n\t\t\"drone_model_key\": \"0-60-0\",\r\n\t\t\"is_original\": true,\r\n\t\t\"payload_model_key\": \"1-42-0\",\r\n\t\t\"tinny_fingerprint\": \"045040860fb014916c81082407e9ff8b_2021_12_2_16_17_8\"\r\n\t},\r\n\t\"fingerprint\": \"91F613D796709163A519D8E5C872823D\",\r\n\t\"name\": \"DJI_20211202161708_0001_Z.jpg\",\r\n\t\"path\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{media_version}}/workspaces/{{workspace_id}}/fast-upload",
+							"host": [
+								"{{base_url}}{{media_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"fast-upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get STS",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{storage_version}}/workspaces/{{workspace_id}}/sts",
+							"host": [
+								"{{base_url}}{{storage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"sts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload File Callback",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"ext\": {\r\n\t\t\"drone_model_key\": \"0-60-0\",\r\n\t\t\"is_original\": true,\r\n\t\t\"payload_model_key\": \"1-42-0\",\r\n\t\t\"tinny_fingerprint\": \"045040860fb014916c81082407e9ff8b_2021_12_2_16_17_8\"\r\n\t},\r\n\t\"fingerprint\": \"91F613D796709163A519D8E5C872823D\",\r\n\t\"object_key\": \"5asjwu24-2a18-4b4b-86f9-3a678da0bf4d/org_fb3ab61eb1c9fd26_1638433028000.jpg\",\r\n\t\"metadata\": {\r\n\t\t\"absolute_altitude\": -36.889,\r\n\t\t\"created_time\": \"2021-12-02T16:17:07+08:00\",\r\n\t\t\"gimbal_yaw_degree\": -4.3,\r\n\t\t\"photoed_position\": {\r\n\t\t\t\"lat\": 0,\r\n\t\t\t\"lng\": 0\r\n\t\t},\r\n\t\t\"relative_altitude\": 0,\r\n\t\t\"shoot_position\": {\r\n\t\t\t\"lat\": 0,\r\n\t\t\t\"lng\": 0\r\n\t\t}\r\n\t},\r\n\t\"name\": \"DJI_20211202161708_0001_Z.jpg\",\r\n\t\"path\": \"\",\r\n\t\"sub_file_type\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{media_version}}/workspaces/{{workspace_id}}/upload-callback",
+							"host": [
+								"{{base_url}}{{media_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"upload-callback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Files",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{media_version}}/files/{{workspace_id}}/files",
+							"host": [
+								"{{base_url}}{{media_version}}"
+							],
+							"path": [
+								"files",
+								"{{workspace_id}}",
+								"files"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Tiny Fingerprints",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"tiny_fingerprints\":[\r\n        \r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{media_version}}/workspaces/{{workspace_id}}/files/tiny-fingerprints?tiny_fingerprint=045040860fb014916c81082407e9ff8b_2021_12_2_16_17_8,922aca3dee753f2f9ee1ad0565967334_2021_12_8_22_13_12",
+							"host": [
+								"{{base_url}}{{media_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"files",
+								"tiny-fingerprints"
+							],
+							"query": [
+								{
+									"key": "tiny_fingerprint",
+									"value": "045040860fb014916c81082407e9ff8b_2021_12_2_16_17_8,922aca3dee753f2f9ee1ad0565967334_2021_12_8_22_13_12"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NDg1MjI5ODAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NDg2MDkzODAsImlhdCI6MTY0ODUyMjk4MCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QEDpB_60G4YLLXR_6rLZHWZNVbA1j162Xs1fZx8wEOM",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "TSA",
+			"item": [
+				{
+					"name": "Get Topologies for Pilot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/topologies",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"topologies"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NDg1MjI5ODAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NDg2MDkzODAsImlhdCI6MTY0ODUyMjk4MCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QEDpB_60G4YLLXR_6rLZHWZNVbA1j162Xs1fZx8wEOM",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Wayline",
+			"item": [
+				{
+					"name": "Get Waylines",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/waylines?page=1&page_size=10&order_by=update_time desc&favorited=false",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"waylines"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "10"
+								},
+								{
+									"key": "order_by",
+									"value": "update_time desc"
+								},
+								{
+									"key": "template_type",
+									"value": "0,1",
+									"disabled": true
+								},
+								{
+									"key": "favorited",
+									"value": "false"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Object URL",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/waylines/4eca0e91-9844-41a1-8e41-3a16d82bcd21/url",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"waylines",
+								"4eca0e91-9844-41a1-8e41-3a16d82bcd21",
+								"url"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Wayline FIle Callback",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"object_key\":\"5a6f9d4b-2a38-4b4b-86f9-3a678da0bf4a/68337bf3-8d12-4acd-afbb-ced016812454/d57fa426-be54-418c-b3fe-d92082108dc2/wayline1.kmz\",\r\n    \"name\":\"wayline1\",\r\n    \"metadata\": {\r\n            \"drone_model_key\":\"0-67-0\",\r\n            \"payload_model_keys\":[\r\n                \"1-53-0\"\r\n            ],\r\n            \"template_types\":[\r\n                0\r\n            ]\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/upload-callback",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"upload-callback"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Favorite",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?ids=uuid,uuid1",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"favorites"
+							],
+							"query": [
+								{
+									"key": "ids",
+									"value": "uuid,uuid1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Favorite Wayline",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?ids=uuid,uuid1",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"favorites"
+							],
+							"query": [
+								{
+									"key": "ids",
+									"value": "uuid,uuid1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get STS",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{storage_version}}/workspaces/{{workspace_id}}/sts",
+							"host": [
+								"{{base_url}}{{storage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"sts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Duplicate Names",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/waylines/duplicate-names?name=wayline1",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"waylines",
+								"duplicate-names"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "wayline1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NDg1MjI5ODAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NDg2MDkzODAsImlhdCI6MTY0ODUyMjk4MCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QEDpB_60G4YLLXR_6rLZHWZNVbA1j162Xs1fZx8wEOM",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Mzg5MzY2OTEsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2MzkwMjMwOTEsImlhdCI6MTYzODkzNjY5MSwidXNlcm5hbWUiOiJhZG1pblBDIn0.W_v88rbhVKivl61MnJ0Cz_0Eq6Gw0RotiHCdLj0UPSQ",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "X-Auth-Token",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "workspace_id",
+			"value": "workspace_id"
+		}
+	]
+}
