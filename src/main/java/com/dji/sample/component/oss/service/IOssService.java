@@ -11,6 +11,8 @@ import java.net.URL;
  */
 public interface IOssService {
 
+    String getOssType();
+
     /**
      * Get temporary credentials.
      * @return
@@ -24,4 +26,20 @@ public interface IOssService {
      * @return download link
      */
     URL getObjectUrl(String bucket, String objectKey);
+
+    /**
+     * Deletes the object in the storage bucket.
+     * @param bucket
+     * @param objectKey
+     * @return
+     */
+    Boolean deleteObject(String bucket, String objectKey);
+
+    /**
+     * Get the contents of an object.
+     * @param bucket
+     * @param objectKey
+     * @return
+     */
+    byte[] getObject(String bucket, String objectKey);
 }

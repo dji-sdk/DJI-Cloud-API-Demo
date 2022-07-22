@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CapacityVideoDTO {
 
-    private Integer id;
+    private String id;
 
     private String index;
 

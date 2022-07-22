@@ -1,12 +1,11 @@
 package com.dji.sample.manage.model.dto;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -18,7 +17,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class DeviceDTO {
 
     private String deviceSn;
@@ -44,4 +42,22 @@ public class DeviceDTO {
     private List<DevicePayloadDTO> payloadsList;
 
     private IconUrlDTO iconUrl;
+
+    private Boolean status;
+
+    private Boolean boundStatus;
+
+    private LocalDateTime loginTime;
+
+    private LocalDateTime boundTime;
+
+    private String nickname;
+
+    private String userId;
+
+    private String firmwareVersion;
+
+    private String workspaceName;
+
+    private DeviceDTO children;
 }

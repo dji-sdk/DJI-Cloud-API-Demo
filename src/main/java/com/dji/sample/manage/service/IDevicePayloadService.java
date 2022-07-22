@@ -2,6 +2,7 @@ package com.dji.sample.manage.service;
 
 import com.dji.sample.manage.model.dto.DevicePayloadDTO;
 import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
+import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 
 import java.util.List;
 
@@ -45,4 +46,10 @@ public interface IDevicePayloadService {
      * @param deviceSns
      */
     void deletePayloadsByDeviceSn(List<String> deviceSns);
+
+    /**
+     * Update the firmware version information of the payload.
+     * @param receiver
+     */
+    void updateFirmwareVersion(FirmwareVersionReceiver receiver);
 }

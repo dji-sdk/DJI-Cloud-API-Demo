@@ -16,6 +16,8 @@ public class StatusSubDeviceReceiver {
 
     private String sn;
 
+    private Integer domain;
+
     private Integer type;
 
     @JsonProperty(value = "sub_type")

@@ -3,6 +3,8 @@ package com.dji.sample.manage.model.param;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * The object of the device query field.
  *
@@ -22,9 +24,11 @@ public class DeviceQueryParam {
 
     private Integer subType;
 
-    private Integer domain;
+    private List<Integer> domains;
 
     private String childSn;
+
+    private Boolean boundStatus;
 
     private boolean orderBy;
 

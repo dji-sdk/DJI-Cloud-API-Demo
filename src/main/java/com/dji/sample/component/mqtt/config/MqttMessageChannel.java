@@ -74,7 +74,7 @@ public class MqttMessageChannel {
 
     @Bean(name = ChannelName.INBOUND_OSD)
     public MessageChannel osdChannel() {
-        return new DirectChannel();
+        return new ExecutorChannel(threadPool);
     }
 
     @Bean(name = ChannelName.DEFAULT)
@@ -84,6 +84,56 @@ public class MqttMessageChannel {
 
     @Bean(name = ChannelName.OUTBOUND)
     public MessageChannel outboundChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
+    public MessageChannel stateFirmwareVersionChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_REQUESTS)
+    public MessageChannel requestsChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_REQUESTS_STORAGE_CONFIG_GET)
+    public MessageChannel requestsConfigGetChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS)
+    public MessageChannel eventsChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_FLIGHT_TASK_PROGRESS)
+    public MessageChannel eventsFlightTaskProgressChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK)
+    public MessageChannel eventsFileUploadCallbackChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS)
+    public MessageChannel requestsAirportBindStatusChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET)
+    public MessageChannel requestsAirportOrganizationGetChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND)
+    public MessageChannel requestsAirportOrganizationBindChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_HMS)
+    public MessageChannel eventsHms() {
         return new DirectChannel();
     }
 

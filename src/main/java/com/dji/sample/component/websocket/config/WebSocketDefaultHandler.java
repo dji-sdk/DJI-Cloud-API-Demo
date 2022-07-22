@@ -1,9 +1,7 @@
 package com.dji.sample.component.websocket.config;
 
-import com.dji.sample.component.websocket.model.WebSocketManager;
-import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketHandler;
@@ -22,20 +20,20 @@ import java.security.Principal;
 @Slf4j
 public class WebSocketDefaultHandler extends WebSocketHandlerDecorator {
 
-    @Autowired
-    private ISendMessageService sendMessageService;
+    private IWebSocketManageService webSocketManageService;
 
-    WebSocketDefaultHandler(WebSocketHandler delegate) {
+    WebSocketDefaultHandler(WebSocketHandler delegate, IWebSocketManageService webSocketManageService) {
         super(delegate);
+        this.webSocketManageService = webSocketManageService;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         Principal principal = session.getPrincipal();
         if (StringUtils.hasText(principal.getName())) {
-            WebSocketManager.put(principal.getName(), new ConcurrentWebSocketSession(session));
+            webSocketManageService.put(principal.getName(), new ConcurrentWebSocketSession(session));
             log.debug("{} is connected. ID: {}. WebSocketSession[current count: {}]",
-                    principal.getName(), session.getId(), WebSocketManager.getConnectedCount());
+                    principal.getName(), session.getId(), webSocketManageService.getConnectedCount());
             return;
         }
         session.close();
@@ -45,9 +43,9 @@ public class WebSocketDefaultHandler extends WebSocketHandlerDecorator {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         Principal principal = session.getPrincipal();
         if (StringUtils.hasText(principal.getName())) {
-            WebSocketManager.remove(principal.getName(), session.getId());
+            webSocketManageService.remove(principal.getName(), session.getId());
             log.debug("{} is disconnected. ID: {}. WebSocketSession[current count: {}]",
-                    principal.getName(), session.getId(), WebSocketManager.getConnectedCount());
+                    principal.getName(), session.getId(), webSocketManageService.getConnectedCount());
         }
 
     }

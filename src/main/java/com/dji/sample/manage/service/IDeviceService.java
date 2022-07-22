@@ -1,11 +1,15 @@
 package com.dji.sample.manage.service;
 
+import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
+import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
+import org.springframework.messaging.MessageHeaders;
 
 import java.util.Collection;
 import java.util.List;
@@ -90,7 +94,7 @@ public interface IDeviceService {
      * @param sessions  The collection of connection objects on the pilot side.
      * @param sn
      */
-    void pushDeviceOnlineTopo(Collection<ConcurrentWebSocketSession> sessions, String sn);
+    void pushDeviceOnlineTopo(Collection<ConcurrentWebSocketSession> sessions, String sn, String gatewaySn);
 
     /**
      * Query the information of the device according to the sn of the device.
@@ -111,9 +115,9 @@ public interface IDeviceService {
      * it also broadcasts a push of device online, offline and topology update to PILOT via websocket,
      * and PILOT will get the device topology list again after receiving the push.
      * @param workspaceId
-     * @param gatewaySn
+     * @param sn
      */
-    void pushDeviceOfflineTopo(String workspaceId, String gatewaySn);
+    void pushDeviceOfflineTopo(String workspaceId, String sn);
 
     /**
      * When the server receives the request of any device online, offline and topology update in the same workspace,
@@ -123,7 +127,7 @@ public interface IDeviceService {
      * @param deviceSn
      * @param gatewaySn
      */
-    void pushDeviceOnlineTopo(String workspaceId, String deviceSn, String gatewaySn);
+    void pushDeviceOnlineTopo(String workspaceId, String gatewaySn, String deviceSn);
 
     /**
      * Handle messages from the osd topic.
@@ -132,4 +136,63 @@ public interface IDeviceService {
      */
     void handleOSD(String topic, byte[] payload);
 
+    /**
+     * Update the device information.
+     * @param deviceDTO
+     * @return
+     */
+    Boolean updateDevice(DeviceDTO deviceDTO);
+
+    /**
+     * Bind devices to organizations and people.
+     * @param device
+     */
+    Boolean bindDevice(DeviceDTO device);
+
+    /**
+     * Handle dock binding status requests.
+     * Note: If your business does not need to bind the dock to the organization,
+     *       you can directly reply to the successful message without implementing business logic.
+     * @param receiver
+     * @param headers
+     */
+    void bindStatus(CommonTopicReceiver receiver, MessageHeaders headers);
+
+    /**
+     * Handle dock binding requests.
+     * Note: If your business does not need to bind the dock to the organization,
+     *       you can directly reply to the successful message without implementing business logic.
+     * @param receiver
+     * @param headers
+     */
+    void bindDevice(CommonTopicReceiver receiver, MessageHeaders headers);
+
+    /**
+     * Get the binding devices list in one workspace.
+     * @param workspaceId
+     * @param page
+     * @param pageSize
+     * @param domain
+     * @return
+     */
+    PaginationData<DeviceDTO> getBoundDevicesWithDomain(String workspaceId, Long page, Long pageSize, String domain);
+
+    /**
+     * Unbind device base on device's sn.
+     * @param deviceSn
+     */
+    void unbindDevice(String deviceSn);
+
+    /**
+     * Get device information based on device's sn.
+     * @param sn device's sn
+     * @return device
+     */
+    Optional<DeviceDTO> getDeviceBySn(String sn);
+
+    /**
+     * Update the firmware version information of the device or payload.
+     * @param receiver
+     */
+    void updateFirmwareVersion(FirmwareVersionReceiver receiver);
 }

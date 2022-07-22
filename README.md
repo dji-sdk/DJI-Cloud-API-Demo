@@ -6,15 +6,15 @@ The launch of the Cloud API mainly solves the problem of developers reinventing 
 
 ## Docker
 
-If you don't want to install the development environment, you can try deploying with docker. [Click the link to download.](https://terra-sz-hc1pro-cloudapi.oss-cn-shenzhen.aliyuncs.com/c0af9fe0d7eb4f35a8fe5b695e4d0b96/docker/cloud_api_sample_docker_1.0.0.zip)
+If you don't want to install the development environment, you can try deploying with docker. [Click the link to download.](https://terra-sz-hc1pro-cloudapi.oss-cn-shenzhen.aliyuncs.com/c0af9fe0d7eb4f35a8fe5b695e4d0b96/docker/cloud_api_sample_docker.zip)
 
 ## Usage
 
-For more documentation, please visit the [DJI Developer Documentation](https://developer.dji.com/cn/document/209883f1-f2ad-406e-b99c-be7498df7f10).
+For more documentation, please visit the [DJI Developer Documentation](https://developer.dji.com/doc/cloud-api-tutorial/cn/).
 
 ## Latest Release
 
-Cloud API 1.0.0 was released on 21 March 2022. For more information, please visit the [Release Note](https://developer.dji.com/cn/document/87026f9b-e906-4809-9aba-870f569061b5).
+Cloud API 1.1.0 was released on 22 July 2022. For more information, please visit the [Release Note](https://developer.dji.com/doc/cloud-api-tutorial/cn/).
 
 ## License
 

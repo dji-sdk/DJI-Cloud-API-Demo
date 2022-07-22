@@ -2,7 +2,9 @@ package com.dji.sample.media.model;
 
 import com.aliyuncs.sts.model.v20150401.AssumeRoleResponse;
 import io.minio.credentials.Credentials;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -11,6 +13,8 @@ import lombok.Data;
  * @date 2021/12/7
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CredentialsDTO {
 
     private String accessKeyId;
@@ -35,6 +39,10 @@ public class CredentialsDTO {
         this.expire = Math.toIntExact(expire);
     }
 
-    public CredentialsDTO() {
+    public CredentialsDTO(com.amazonaws.services.securitytoken.model.Credentials credentials) {
+        this.accessKeyId = credentials.getAccessKeyId();
+        this.accessKeySecret = credentials.getSecretAccessKey();
+        this.securityToken = credentials.getSessionToken();
+        this.expire = Math.toIntExact((credentials.getExpiration().getTime() - System.currentTimeMillis()) / 1000);
     }
 }

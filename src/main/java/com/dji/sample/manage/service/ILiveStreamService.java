@@ -3,7 +3,7 @@ package com.dji.sample.manage.service;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.manage.model.dto.CapacityDeviceDTO;
 import com.dji.sample.manage.model.dto.LiveTypeDTO;
-import com.dji.sample.manage.model.receiver.CapacityDeviceReceiver;
+import com.dji.sample.manage.model.receiver.LiveCapacityReceiver;
 
 import java.util.List;
 
@@ -22,11 +22,10 @@ public interface ILiveStreamService {
     List<CapacityDeviceDTO> getLiveCapacity(String workspaceId);
 
     /**
-     * Save live capability data from drone.
-     * @param capacityDeviceReceiver
-     * @return
+     * Save live capability data.
+     * @param liveCapacityReceiver
      */
-    Boolean saveLiveCapacity(CapacityDeviceReceiver capacityDeviceReceiver);
+    void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver);
 
     /**
      * Initiate a live streaming by publishing mqtt message.

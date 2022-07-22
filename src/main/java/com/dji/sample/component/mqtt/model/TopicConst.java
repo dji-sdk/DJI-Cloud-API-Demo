@@ -24,6 +24,10 @@ public class TopicConst {
 
     public static final String OSD_SUF = "/osd";
 
+    public static final String REQUESTS_SUF = "/requests";
+
+    public static final String EVENTS_SUF = "/events";
+
     public static final String REGEX_SN = "[A-Za-z0-9]+";
 
 }

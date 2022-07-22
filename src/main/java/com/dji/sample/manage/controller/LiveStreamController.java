@@ -2,13 +2,13 @@ package com.dji.sample.manage.controller;
 
 import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.ResponseResult;
+import com.dji.sample.component.mqtt.model.Chan;
 import com.dji.sample.component.mqtt.model.ChannelName;
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.manage.model.Chan;
+import com.dji.sample.component.mqtt.model.ServiceReply;
 import com.dji.sample.manage.model.dto.CapacityDeviceDTO;
 import com.dji.sample.manage.model.dto.LiveTypeDTO;
-import com.dji.sample.manage.model.receiver.CapacityDeviceReceiver;
-import com.dji.sample.manage.model.receiver.ServiceReplyReceiver;
+import com.dji.sample.manage.model.receiver.LiveCapacityReceiver;
 import com.dji.sample.manage.service.ILiveStreamService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,15 +38,17 @@ public class LiveStreamController {
     @Autowired
     private ILiveStreamService liveStreamService;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     /**
      * Analyze the live streaming capabilities of drones.
      * This data is necessary if drones are required for live streaming.
-     * @param device    the capacity of drone
+     * @param liveCapacity    the capacity of drone and dock
      */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_CAPACITY)
-    public void stateCapacity(CapacityDeviceReceiver device) {
-        boolean parseCapacity = liveStreamService.saveLiveCapacity(device);
-        log.debug("The result of parsing the live capacity is {}.", parseCapacity);
+    public void stateCapacity(LiveCapacityReceiver liveCapacity) {
+        liveStreamService.saveLiveCapacity(liveCapacity);
     }
 
     /**
@@ -102,9 +104,8 @@ public class LiveStreamController {
     @ServiceActivator(inputChannel = ChannelName.INBOUND_SERVICE_REPLY)
     public void serviceReply(Message<?> message) throws IOException {
         byte[] payload = (byte[])message.getPayload();
-        ObjectMapper mapper = new ObjectMapper();
-        CommonTopicReceiver<ServiceReplyReceiver> receiver = mapper.readValue(payload,
-                new TypeReference<CommonTopicReceiver<ServiceReplyReceiver>>() {
+        CommonTopicReceiver<ServiceReply> receiver = mapper.readValue(payload,
+                new TypeReference<CommonTopicReceiver<ServiceReply>>() {
         });
         Chan<CommonTopicReceiver> chan = Chan.getInstance();
         // Put the message to the chan object.

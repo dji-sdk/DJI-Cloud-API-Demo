@@ -1,6 +1,8 @@
 package com.dji.sample.storage.service;
 
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.media.model.StsCredentialsDTO;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * @author sean
@@ -14,4 +16,11 @@ public interface IStorageService {
      * @return temporary credentials object
      */
     StsCredentialsDTO getSTSCredentials();
+
+    /**
+     * Handles requests from the dock to obtain temporary credentials.
+     * @param receiver
+     * @param headers
+     */
+    void replyConfigGet(CommonTopicReceiver receiver, MessageHeaders headers);
 }

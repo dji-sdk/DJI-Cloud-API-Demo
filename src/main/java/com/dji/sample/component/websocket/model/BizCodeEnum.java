@@ -17,13 +17,19 @@ public enum BizCodeEnum {
 
     GATEWAY_OSD("gateway_osd"),
 
+    DOCK_OSD("dock_osd"),
+
     MAP_ELEMENT_CREATE("map_element_create"),
 
     MAP_ELEMENT_UPDATE("map_element_update"),
 
     MAP_ELEMENT_DELETE("map_element_delete"),
 
-    MAP_GROUP_REFRESH("map_group_refresh");
+    MAP_GROUP_REFRESH("map_group_refresh"),
+
+    FLIGHT_TASK_PROGRESS("flighttask_progress"),
+
+    DEVICE_HMS("device_hms");
 
     private String code;
 

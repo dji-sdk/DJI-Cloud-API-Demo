@@ -30,4 +30,6 @@ public class CommonTopicResponse<T> {
     private String method;
 
     private T data;
+
+    private Long timestamp;
 }

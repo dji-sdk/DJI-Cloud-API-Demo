@@ -1,19 +1,13 @@
 package com.dji.sample.manage.controller;
 
-import com.dji.sample.common.model.CustomClaim;
+import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.AuthInterceptor;
 import com.dji.sample.component.mqtt.model.ChannelName;
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
-import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
-import com.dji.sample.component.websocket.model.WebSocketManager;
 import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.dto.WorkspaceDTO;
-import com.dji.sample.manage.model.enums.UserTypeEnum;
-import com.dji.sample.manage.model.param.DeviceQueryParam;
+import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
 import com.dji.sample.manage.service.IDeviceService;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author sean.zhou
@@ -58,10 +50,6 @@ public class DeviceController {
                             .tid(receiver.getTid())
                             .bid(receiver.getBid())
                             .build());
-
-            // Publish the latest device topology information in the current workspace to the pilot.
-            deviceService.pushDeviceOnlineTopo(WorkspaceDTO.DEFAULT_WORKSPACE_ID,
-                    receiver.getData().getSn(), receiver.getData().getSubDevices().get(0).getSn());
         }
     }
 
@@ -81,22 +69,16 @@ public class DeviceController {
                             .bid(receiver.getBid())
                             .build());
 
-            // Publish the latest device topology information in the current workspace to the pilot.
-            deviceService.pushDeviceOfflineTopo(WorkspaceDTO.DEFAULT_WORKSPACE_ID, receiver.getData().getSn());
         }
     }
 
     /**
-     * Get the topology list of all devices in the current user workspace.
-     * @param request
+     * Get the topology list of all online devices in one workspace.
+     * @param workspaceId
      * @return
      */
-    @GetMapping("/devices")
-    public ResponseResult<List<DeviceDTO>> getDevices(HttpServletRequest request) {
-        // Get information about the current user.
-        CustomClaim claim = (CustomClaim)request.getAttribute(AuthInterceptor.TOKEN_CLAIM);
-        String workspaceId = claim.getWorkspaceId();
-        // Get information about the devices in the current user's workspace.
+    @GetMapping("/{workspace_id}/devices")
+    public ResponseResult<List<DeviceDTO>> getDevices(@PathVariable("workspace_id") String workspaceId) {
         List<DeviceDTO> devicesList = deviceService.getDevicesTopoForWeb(workspaceId);
 
         return ResponseResult.success(devicesList);
@@ -109,30 +91,54 @@ public class DeviceController {
         deviceService.handleOSD(topic, payload);
     }
 
-    /**
-     * Handles the payloads data of the drone.
-     * @param deviceSn  drone's sn
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_PAYLOAD_UPDATE)
-    public void pushWebSocketDevices(String deviceSn) {
-        List<DeviceDTO> devicesList = deviceService.getDevicesByParams(
-                DeviceQueryParam.builder()
-                        .deviceSn(deviceSn)
-                        .build());
-        // Get drone information based on the sn of the drone. The sn of the drone is unique.
-        DeviceDTO device = devicesList.get(0);
-        // Set the remote controller and payloads information of the drone.
-        deviceService.spliceDeviceTopo(device);
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
+    public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
+        deviceService.updateFirmwareVersion(receiver);
+    }
 
-        CustomWebSocketMessage wsMessage = CustomWebSocketMessage.builder()
-                .timestamp(System.currentTimeMillis())
-                .bizCode(BizCodeEnum.DEVICE_UPDATE_TOPO.getCode())
-                .data(device)
-                .build();
-        // Update the topology of the drone via WebSocket notifications to the web side.
-        sendMessageService.sendBatch(WebSocketManager
-                .getValueWithWorkspaceAndUserType(
-                        device.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
-                wsMessage);
+    @PostMapping("/{device_sn}/binding")
+    public ResponseResult bindDevice(@RequestBody DeviceDTO device, @PathVariable("device_sn") String deviceSn) {
+        device.setDeviceSn(deviceSn);
+        boolean isUpd = deviceService.bindDevice(device);
+        return isUpd ? ResponseResult.success() : ResponseResult.error();
+    }
+
+    @GetMapping("/{workspace_id}/devices/{device_sn}")
+    public ResponseResult getDevice(@PathVariable("workspace_id") String workspaceId,
+                                               @PathVariable("device_sn") String deviceSn) {
+        Optional<DeviceDTO> deviceOpt = deviceService.getDeviceBySn(deviceSn);
+        return deviceOpt.isEmpty() ? ResponseResult.error("device not found.") : ResponseResult.success(deviceOpt.get());
+    }
+
+    /**
+     * Get the binding devices list in one workspace.
+     * @param workspaceId
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    @GetMapping("/{workspace_id}/devices/bound")
+    public ResponseResult<PaginationData<DeviceDTO>> getBoundDevicesWithDomain(
+            @PathVariable("workspace_id") String workspaceId, String domain,
+            @RequestParam(defaultValue = "1") Long page,
+            @RequestParam(value = "page_size", defaultValue = "50") Long pageSize) {
+        PaginationData<DeviceDTO> devices = deviceService.getBoundDevicesWithDomain(workspaceId, page, pageSize, domain);
+
+        return ResponseResult.success(devices);
+    }
+
+    @DeleteMapping("/{device_sn}/unbinding")
+    public ResponseResult unbindingDevice(@PathVariable("device_sn") String deviceSn) {
+        deviceService.unbindDevice(deviceSn);
+        return ResponseResult.success();
+    }
+
+    @PutMapping("/{workspace_id}/devices/{device_sn}")
+    public ResponseResult updateDevice(@RequestBody DeviceDTO device,
+                                       @PathVariable("workspace_id") String workspaceId,
+                                       @PathVariable("device_sn") String deviceSn) {
+        device.setDeviceSn(deviceSn);
+        boolean isUpd = deviceService.updateDevice(device);
+        return isUpd ? ResponseResult.success() : ResponseResult.error();
     }
 }

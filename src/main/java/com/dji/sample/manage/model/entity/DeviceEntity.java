@@ -66,4 +66,23 @@ public class DeviceEntity implements Serializable {
 
     @TableField(value = "url_select")
     private String urlSelect;
+
+    @TableField(value = "user_id")
+    private String userId;
+
+    @TableField(value = "nickname")
+    private String nickname;
+
+    @TableField(value = "firmware_version")
+    private String firmwareVersion;
+
+    @TableField(value = "bound_status")
+    private Boolean boundStatus;
+
+    @TableField(value = "bound_time")
+    private Long boundTime;
+
+    @TableField(value = "login_time")
+    private Long loginTime;
+
 }

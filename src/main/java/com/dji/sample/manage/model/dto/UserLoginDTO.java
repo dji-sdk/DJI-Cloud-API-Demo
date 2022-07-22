@@ -11,4 +11,7 @@ public class UserLoginDTO {
 
     @NonNull
     private String password;
+
+    @NonNull
+    private Integer flag;
 }

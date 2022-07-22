@@ -1,8 +1,10 @@
 package com.dji.sample.media.service;
 
+import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.model.MediaFileDTO;
 
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -34,4 +36,21 @@ public interface IFileService {
      * @return
      */
     List<MediaFileDTO> getAllFilesByWorkspaceId(String workspaceId);
+
+    /**
+     * Paginate through all media files in this workspace.
+     * @param workspaceId
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    PaginationData<MediaFileDTO> getJobsPaginationByWorkspaceId(String workspaceId, long page, long pageSize);
+
+    /**
+     * Get the download address of the file.
+     * @param workspaceId
+     * @param fingerprint
+     * @return
+     */
+    URL getObjectUrl(String workspaceId, String fingerprint);
 }

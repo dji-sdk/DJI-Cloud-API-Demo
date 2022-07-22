@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * @author sean
  * @version 0.2
@@ -31,4 +33,8 @@ public class MediaFileDTO {
     private String payload;
 
     private String tinnyFingerprint;
+
+    private String fingerprint;
+
+    private LocalDateTime createTime;
 }

@@ -21,17 +21,11 @@ public class DeviceBasicReceiver {
 
     private String deviceSn;
 
-    private Integer flightMode;
-
-    private Integer flightStatus;
-
     private Double homeLatitude;
 
     private Double homeLongitude;
 
     private Integer lowBatteryWarningThreshold;
-
-    private Integer positionMode;
 
     private Integer seriousLowBatteryWarningThreshold;
 

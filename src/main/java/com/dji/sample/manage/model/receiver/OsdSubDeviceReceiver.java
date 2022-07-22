@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author sean.zhou
  * @version 0.1
@@ -49,7 +51,11 @@ public class OsdSubDeviceReceiver {
 
     private Double windDirection;
 
-    private Double windSpeed;
+    private Float windSpeed;
 
     private PositionStateReceiver positionState;
+
+    private List<OsdPayloadReceiver> payloads;
+
+    private StorageReceiver storage;
 }

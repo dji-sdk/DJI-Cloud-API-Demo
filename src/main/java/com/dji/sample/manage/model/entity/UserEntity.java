@@ -22,7 +22,7 @@ public class UserEntity implements Serializable {
     private String password;
 
     @TableField(value = "workspace_id")
-    private Integer workspaceId;
+    private String workspaceId;
 
     @TableField(value = "user_type")
     private Integer userType;

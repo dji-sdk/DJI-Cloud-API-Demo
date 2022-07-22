@@ -1,23 +1,20 @@
 package com.dji.sample.manage.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.dji.sample.manage.dao.ICapacityCameraMapper;
+import com.dji.sample.component.mqtt.model.StateDataEnum;
+import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.CapacityCameraDTO;
-import com.dji.sample.manage.model.dto.CapacityVideoDTO;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
-import com.dji.sample.manage.model.entity.CapacityCameraEntity;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.CapacityCameraReceiver;
 import com.dji.sample.manage.service.ICameraVideoService;
 import com.dji.sample.manage.service.ICapacityCameraService;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +23,8 @@ import java.util.stream.Collectors;
  * @version 0.1
  */
 @Service
-@Transactional
+//@Transactional
 public class CapacityCameraServiceImpl implements ICapacityCameraService {
-
-    @Autowired
-    private ICapacityCameraMapper mapper;
 
     @Autowired
     private ICameraVideoService cameraVideoService;
@@ -38,95 +32,29 @@ public class CapacityCameraServiceImpl implements ICapacityCameraService {
     @Autowired
     private IDeviceDictionaryService dictionaryService;
 
+    @Autowired
+    private RedisOpsUtils redisOps;
+
     @Override
     public List<CapacityCameraDTO> getCapacityCameraByDeviceSn(String deviceSn) {
-        List<CapacityCameraDTO> capacityCamerasList = mapper.selectList(
-                new LambdaQueryWrapper<CapacityCameraEntity>()
-                        .eq(CapacityCameraEntity::getDeviceSn, deviceSn))
-                .stream()
-                .map(this::entityConvertToDto)
-                .collect(Collectors.toList());
-        capacityCamerasList.forEach(capacityCamera -> {
-            // Set the lens data for this camera.
-            capacityCamera.setVideosList(
-                    cameraVideoService.getCameraVideosByCameraId(capacityCamera.getId()));
-        });
-
-        return capacityCamerasList;
-    }
-
-    @Override
-    public Boolean checkExist(String deviceSn, String cameraIndex) {
-        return mapper.selectOne(
-                new LambdaQueryWrapper<CapacityCameraEntity>()
-                        .eq(CapacityCameraEntity::getDeviceSn, deviceSn)
-                        .eq(CapacityCameraEntity::getCameraIndex, cameraIndex)
-                        .last(" limit 1")) != null;
+        return (List<CapacityCameraDTO>) redisOps.hashGet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn);
     }
 
     @Override
     public Boolean deleteCapacityCameraByDeviceSn(String deviceSn) {
-
-        List<CapacityCameraDTO> capacityCamerasList = this.getCapacityCameraByDeviceSn(deviceSn);
-        // Return directly if no data exists in the database.
-        if (capacityCamerasList.isEmpty()) {
-            return true;
-        }
-
-        List<Integer> cameraIds = capacityCamerasList
-                .stream()
-                .map(CapacityCameraDTO::getId)
-                .collect(Collectors.toList());
-
-        List<Integer> videoIds = capacityCamerasList
-                .stream()
-                .flatMap(camera -> camera.getVideosList().stream())
-                .map(CapacityVideoDTO::getId)
-                .collect(Collectors.toList());
-
-        return mapper.deleteBatchIds(cameraIds) > 0 && cameraVideoService.deleteCameraVideosById(videoIds);
+        return redisOps.hashDel(StateDataEnum.LIVE_CAPACITY.getDesc(), new String[]{deviceSn});
     }
 
     @Override
-    public Boolean saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn) {
-        for (CapacityCameraReceiver cameraDTO : capacityCameraReceivers) {
-            CapacityCameraEntity cameraEntity = receiverConvertToEntity(cameraDTO);
-            cameraEntity.setDeviceSn(deviceSn);
-            int cameraId = this.saveOneCapacityCameraEntity(cameraEntity);
-            if (cameraId <= 0) {
-                continue;
-            }
-            boolean saveVideo = cameraVideoService.saveCameraVideoDTOList(
-                    cameraDTO.getVideosList(), cameraId);
-
-            if (!saveVideo) {
-                return false;
-            }
-        }
-        return true;
+    public void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn) {
+        List<CapacityCameraDTO> capacity = capacityCameraReceivers.stream()
+                .map(this::receiver2Dto).collect(Collectors.toList());
+        redisOps.hashSet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn, capacity);
     }
 
-    /**
-     * Save the camera live capability data of the device.
-     * @param cameraEntity
-     * @return
-     */
-    private Integer saveOneCapacityCameraEntity(CapacityCameraEntity cameraEntity) {
-        boolean exist = checkExist(
-                cameraEntity.getDeviceSn(), cameraEntity.getCameraIndex());
-        if (exist) {
-            return -1;
-        }
-        return mapper.insert(cameraEntity) > 0 ? cameraEntity.getId() : 0;
-    }
-
-    /**
-     *  Convert the received camera capability object into a database entity object.
-     * @param receiver
-     * @return
-     */
-    private CapacityCameraEntity receiverConvertToEntity(CapacityCameraReceiver receiver) {
-        CapacityCameraEntity.CapacityCameraEntityBuilder builder = CapacityCameraEntity.builder();
+    @Override
+    public CapacityCameraDTO receiver2Dto(CapacityCameraReceiver receiver) {
+        CapacityCameraDTO.CapacityCameraDTOBuilder builder = CapacityCameraDTO.builder();
         if (receiver == null) {
             return builder.build();
         }
@@ -138,35 +66,17 @@ public class CapacityCameraServiceImpl implements ICapacityCameraService {
         // type-subType-index
         if (indexArr.length == 3) {
             Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                    .getOneDictionaryInfoByDomainTypeSubType(
-                            DeviceDomainEnum.PAYLOAD.getVal(), indexArr[0], indexArr[1]);
+                    .getOneDictionaryInfoByTypeSubType(indexArr[0], indexArr[1]);
             dictionaryOpt.ifPresent(dictionary ->
                     builder.name(dictionary.getDeviceName()));
         }
         return builder
-                .availableVideoNumber(receiver.getAvailableVideoNumber())
-                .coexistVideoNumberMax(receiver.getCoexistVideoNumberMax())
-                .cameraIndex(receiver.getCameraIndex())
+                .id(UUID.randomUUID().toString())
+                .videosList(receiver.getVideosList()
+                        .stream()
+                        .map(cameraVideoService::receiver2Dto)
+                        .collect(Collectors.toList()))
+                .index(receiver.getCameraIndex())
                 .build();
-    }
-
-    /**
-     * Convert database entity objects into camera data transfer object.
-     * @param entity
-     * @return
-     */
-    private CapacityCameraDTO entityConvertToDto(CapacityCameraEntity entity) {
-        CapacityCameraDTO.CapacityCameraDTOBuilder builder = CapacityCameraDTO.builder();
-
-        if (entity != null) {
-            builder
-                .id(entity.getId())
-                .name(entity.getName())
-                .description(entity.getDescription())
-                .deviceSn(entity.getDeviceSn())
-                .index(entity.getCameraIndex())
-                .build();
-        }
-        return builder.build();
     }
 }

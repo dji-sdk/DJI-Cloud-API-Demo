@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TelemetryDTO {
+public class TelemetryDTO<T> {
 
-    private TelemetryDeviceDTO host;
+    private T host;
 
     private String sn;
 }

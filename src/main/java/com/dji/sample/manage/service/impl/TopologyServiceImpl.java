@@ -31,7 +31,7 @@ public class TopologyServiceImpl implements ITopologyService {
         List<DeviceDTO> gatewayList = deviceService.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .workspaceId(workspaceId)
-                        .domain(DeviceDomainEnum.GATEWAY.getVal())
+                        .domains(List.of(DeviceDomainEnum.GATEWAY.getVal()))
                         .build());
 
         List<TopologyDTO> topologyList = new ArrayList<>();

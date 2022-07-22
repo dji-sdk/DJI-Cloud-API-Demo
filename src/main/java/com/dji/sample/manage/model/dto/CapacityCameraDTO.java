@@ -18,13 +18,11 @@ import java.util.List;
 @NoArgsConstructor
 public class CapacityCameraDTO {
 
-    private Integer id;
+    private String id;
 
     private String deviceSn;
 
     private String name;
-
-    private String description;
 
     private String index;
 

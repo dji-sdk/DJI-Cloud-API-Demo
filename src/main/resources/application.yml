@@ -7,7 +7,7 @@ spring:
     druid:
       type: com.alibaba.druid.pool.DruidDataSource
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://localhost:3306/cloud_sample?useSSL=false&allowPublicKeyRetrieval=true
+      url: jdbc:mysql://cloud_api_sample_mysql:3306/cloud_sample?useSSL=false&allowPublicKeyRetrieval=true
       username: root
       password: root
       initial-size: 10
@@ -15,12 +15,18 @@ spring:
       max-active: 20
       max-wait: 60000
 
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-    date-format: yyyy-MM-dd HH:mm:ss
-    default-property-inclusion: NON_NULL
-    deserialization:
-      FAIL_ON_UNKNOWN_PROPERTIES: false
+  redis:
+    host: cloud_api_sample_redis
+    port: 6379
+    database: 0
+    username: # if you enable
+    password:
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
 
 jwt:
   issuer: DJI
@@ -30,13 +36,13 @@ jwt:
 
 mqtt:
   protocol: tcp
-  host: Please enter the address of the emqx server. # Example: 192.168.1.1
+  host: Please enter your ip. # 192.168.1.1
   port: 1883
   username: JavaServer
   password: 123456
   client-id: 123456
   # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
-  inbound-topic: sys/product/+/status
+  inbound-topic: sys/product/+/status,thing/product/+/requests
 
 url:
   manage:
@@ -56,29 +62,43 @@ url:
     version: /api/v1
 
 # Tutorial: https://help.aliyun.com/document_detail/100624.htm?spm=a2c4g.11186623.0.0.74075e34eIhK7T#concept-xzh-nzk-2gb
-aliyun:
-  oss:
-    enable: false
-    endpoint: Please enter your endpoint. # Example: https://oss-cn-shenzhen.aliyuncs.com
-    access-key: Please enter your access key.
-    secret-key: Please enter your secret key.
-    expire: 3600
-    region: Please enter oss region.    # Example: cn-shenzhen
-    role-session-name: Please enter session name.   # A custom role session name to distinguish the different tokens, for example it could be filled in as SessionTest.
-    role-arn: Please enter role ARN.    # Example: acs:ram::123456789:role/oss
-    bucket: Please enter bucket name.   
-    object-dir-prefix: Please enter object prefix.
+oss:
+  enable: true
+  provider: ali # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
+  endpoint: https://oss-cn-hangzhou.aliyuncs.com
+  access-key: Please enter your access key.
+  secret-key: Please enter your secret key.
+  expire: 3600
+  region: Please enter your oss region. # cn-hangzhou
+  role-session-name: cloudApi
+  role-arn: Please enter your role arn. # acs:ram::123456789:role/stsrole
+  bucket: Please enter your bucket name.
+  object-dir-prefix: Please enter a folder name.
+
+#oss:
+#  enable: true
+#  provider: aws
+#  endpoint: https://s3.us-east-1.amazonaws.com
+#  access-key: 
+#  secret-key: 
+#  expire: 3600
+#  region: us-east-1
+#  role-session-name: cloudApi
+#  role-arn: 
+#  bucket: cloudapi-bucket
+#  object-dir-prefix: wayline
 
 # MinIO is temporarily unavailable.
-minio:
-  enable: false
-  endpoint: Please enter your endpoint. #http://192.168.1.1:9000/
-  access-key: minioadmin
-  secret-key: minioadmin
-  bucket: Please enter bucket name.
-  expire: 3600
-  region: Please enter minio region.
-  object-dir-prefix: Please enter object prefix.
+#oss:
+#  enable: false
+#  provider: minio
+#  endpoint: 
+#  access-key: 
+#  secret-key: 
+#  bucket: 
+#  expire: 
+#  region: 
+#  object-dir-prefix: 
 
 logging:
   level:

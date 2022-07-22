@@ -3,10 +3,9 @@ package com.dji.sample.wayline.controller;
 import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.oss.model.AliyunOSSConfiguration;
-import com.dji.sample.wayline.model.WaylineFileDTO;
-import com.dji.sample.wayline.model.WaylineFileUploadDTO;
-import com.dji.sample.wayline.model.WaylineQueryParam;
+import com.dji.sample.wayline.model.dto.WaylineFileDTO;
+import com.dji.sample.wayline.model.dto.WaylineFileUploadDTO;
+import com.dji.sample.wayline.model.param.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.List;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
@@ -70,12 +70,10 @@ public class WaylineFileController {
     public void getFileUrl(@PathVariable(name = "workspace_id") String workspaceId,
                                 @PathVariable(name = "wayline_id") String waylineId, HttpServletResponse response) {
 
-        WaylineFileDTO wayline = waylineFileService.getWaylineByWaylineId(workspaceId, waylineId);
-        URL url = waylineFileService.getObjectUrl(AliyunOSSConfiguration.bucket, wayline.getObjectKey());
-
         try {
+            URL url = waylineFileService.getObjectUrl(workspaceId, waylineId);
             response.sendRedirect(url.toString());
-        } catch (Exception e) {
+        } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
     }
@@ -146,5 +144,18 @@ public class WaylineFileController {
         List<String> existNamesList = waylineFileService.getDuplicateNames(workspaceId, names);
 
         return ResponseResult.success(existNamesList);
+    }
+
+    /**
+     * Delete the wayline file in the workspace according to the wayline id.
+     * @param workspaceId
+     * @param waylineId
+     * @return
+     */
+    @DeleteMapping("/{workspace_id}/waylines/{wayline_id}")
+    public ResponseResult deleteWayline(@PathVariable(name = "workspace_id") String workspaceId,
+                                        @PathVariable(name = "wayline_id") String waylineId) {
+        boolean isDel = waylineFileService.deleteByWaylineId(workspaceId, waylineId);
+        return isDel ? ResponseResult.success() : ResponseResult.error("Failed to delete wayline.");
     }
 }

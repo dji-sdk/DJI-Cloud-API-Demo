@@ -4,8 +4,8 @@ import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
-import com.dji.sample.component.websocket.model.WebSocketManager;
 import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.map.model.dto.*;
 import com.dji.sample.map.service.IWorkspaceElementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +33,9 @@ public class WorkspaceElementController {
 
     @Autowired
     private ISendMessageService sendMessageService;
+
+    @Autowired
+    private IWebSocketManageService webSocketManageService;
 
     /**
      * In the first connection, pilot will send out this http request to obtain the group element list.
@@ -78,7 +81,7 @@ public class WorkspaceElementController {
         elementService.getElementByElementId(elementCreate.getId())
                 .ifPresent(groupElement ->
                         sendMessageService.sendBatch(
-                                WebSocketManager.getValueWithWorkspace(workspaceId),
+                                webSocketManageService.getValueWithWorkspace(workspaceId),
                                 CustomWebSocketMessage.<GroupElementDTO>builder()
                                         .timestamp(System.currentTimeMillis())
                                         .bizCode(BizCodeEnum.MAP_ELEMENT_CREATE.getCode())
@@ -114,7 +117,7 @@ public class WorkspaceElementController {
         elementService.getElementByElementId(elementId)
                 .ifPresent(groupElement ->
                         sendMessageService.sendBatch(
-                                WebSocketManager.getValueWithWorkspace(workspaceId),
+                                webSocketManageService.getValueWithWorkspace(workspaceId),
                                 CustomWebSocketMessage.<GroupElementDTO>builder()
                                         .timestamp(System.currentTimeMillis())
                                         .bizCode(BizCodeEnum.MAP_ELEMENT_UPDATE.getCode())
@@ -142,7 +145,7 @@ public class WorkspaceElementController {
         if (ResponseResult.CODE_SUCCESS == response.getCode()) {
             elementOpt.ifPresent(element ->
                     sendMessageService.sendBatch(
-                    WebSocketManager.getValueWithWorkspace(workspaceId),
+                    webSocketManageService.getValueWithWorkspace(workspaceId),
                             CustomWebSocketMessage.<WebSocketElementDelDTO>builder()
                                     .timestamp(System.currentTimeMillis())
                                     .bizCode(BizCodeEnum.MAP_ELEMENT_DELETE.getCode())
@@ -171,7 +174,7 @@ public class WorkspaceElementController {
         if (ResponseResult.CODE_SUCCESS == response.getCode()) {
 
             sendMessageService.sendBatch(
-                    WebSocketManager.getValueWithWorkspace(workspaceId),
+                    webSocketManageService.getValueWithWorkspace(workspaceId),
                     CustomWebSocketMessage.builder()
                             .timestamp(System.currentTimeMillis())
                             .bizCode(BizCodeEnum.MAP_GROUP_REFRESH.getCode())

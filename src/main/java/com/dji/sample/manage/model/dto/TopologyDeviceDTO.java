@@ -22,8 +22,7 @@ public class TopologyDeviceDTO {
 
     private DeviceModelDTO deviceModel;
 
-    @Builder.Default
-    private Boolean onlineStatus = true;
+    private Boolean onlineStatus;
 
     private String deviceCallsign;
 
@@ -32,4 +31,12 @@ public class TopologyDeviceDTO {
     private String userCallsign;
 
     private IconUrlDTO iconUrls;
+
+    private String model;
+
+    private Boolean boundStatus;
+
+    private String gatewaySn;
+
+    private String domain;
 }

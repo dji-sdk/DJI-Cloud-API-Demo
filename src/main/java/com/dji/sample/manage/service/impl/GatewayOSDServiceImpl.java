@@ -1,23 +1,18 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.component.mqtt.model.TopicStateReceiver;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
-import com.dji.sample.manage.model.DeviceStatusManager;
+import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.TelemetryDTO;
 import com.dji.sample.manage.model.dto.TelemetryDeviceDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.OsdGatewayReceiver;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 
 /**
@@ -49,26 +44,21 @@ public class GatewayOSDServiceImpl extends AbstractTSAService {
     }
 
     @Override
-    protected void handleOSD(TopicStateReceiver receiver, String sn, String workspaceId, JsonNode hostNode,
-                             Collection<ConcurrentWebSocketSession> webSessions, CustomWebSocketMessage wsMessage) throws JsonProcessingException {
-        if (sn.equals(receiver.getGateway())) {
-            // Real-time update of device status in memory
-            DeviceStatusManager.STATUS_MANAGER.put(DeviceDomainEnum.GATEWAY.getVal() + "/" + sn,
-                    LocalDateTime.now());
-
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    public void handleOSD(CommonTopicReceiver receiver, DeviceDTO device,
+                          Collection<ConcurrentWebSocketSession> webSessions,
+                          CustomWebSocketMessage<TelemetryDTO> wsMessage) {
+        if (DeviceDomainEnum.GATEWAY.getDesc().equals(device.getDomain())) {
 
             wsMessage.setBizCode(BizCodeEnum.GATEWAY_OSD.getCode());
-            OsdGatewayReceiver data = mapper.treeToValue(hostNode, OsdGatewayReceiver.class);
-            wsMessage.setData(data);
+            OsdGatewayReceiver data = mapper.convertValue(receiver.getData(), OsdGatewayReceiver.class);
+            wsMessage.getData().setHost(data);
 
             this.sendMessageService.sendBatch(webSessions, wsMessage);
 
-            this.pushTelemetryData(workspaceId, data, sn);
+            this.pushTelemetryData(device.getWorkspaceId(), data, device.getDeviceSn());
             return;
         }
 
-        tsaService.handleOSD(receiver, sn, workspaceId, hostNode, webSessions, wsMessage);
+        tsaService.handleOSD(receiver, device, webSessions, wsMessage);
     }
 }

@@ -30,4 +30,6 @@ public class WorkspaceEntity implements Serializable {
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private Long updateTime;
 
+    @TableField(value = "bind_code")
+    private String bindCode;
 }

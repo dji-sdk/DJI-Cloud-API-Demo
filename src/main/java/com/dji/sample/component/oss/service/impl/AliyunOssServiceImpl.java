@@ -1,13 +1,16 @@
 package com.dji.sample.component.oss.service.impl;
 
 import com.aliyun.oss.OSS;
+import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.exceptions.ClientException;
 import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.sts.model.v20150401.AssumeRoleRequest;
 import com.aliyuncs.sts.model.v20150401.AssumeRoleResponse;
-import com.dji.sample.component.oss.model.AliyunOSSConfiguration;
+import com.dji.sample.component.oss.model.OssConfiguration;
+import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
 
@@ -27,24 +32,29 @@ import java.util.Date;
 @Slf4j
 public class AliyunOssServiceImpl implements IOssService {
 
-    @Autowired(required = false)
-    private OSS ossClient;
+    @Autowired
+    public OssConfiguration configuration;
+
+    @Override
+    public String getOssType() {
+        return OssTypeEnum.ALIYUN.getType();
+    }
 
     @Override
     public CredentialsDTO getCredentials() {
 
         try {
             DefaultProfile profile = DefaultProfile.getProfile(
-                    AliyunOSSConfiguration.region, AliyunOSSConfiguration.accessKey, AliyunOSSConfiguration.secretKey);
+                    configuration.getRegion(), configuration.getAccessKey(), configuration.getSecretKey());
             IAcsClient client = new DefaultAcsClient(profile);
 
             AssumeRoleRequest request = new AssumeRoleRequest();
-            request.setDurationSeconds(AliyunOSSConfiguration.expire);
-            request.setRoleArn(AliyunOSSConfiguration.roleArn);
-            request.setRoleSessionName(AliyunOSSConfiguration.roleSessionName);
+            request.setDurationSeconds(configuration.getExpire());
+            request.setRoleArn(configuration.getRoleArn());
+            request.setRoleSessionName(configuration.getRoleSessionName());
 
             AssumeRoleResponse response = client.getAcsResponse(request);
-            return new CredentialsDTO(response.getCredentials(), AliyunOSSConfiguration.expire);
+            return new CredentialsDTO(response.getCredentials(), configuration.getExpire());
 
         } catch (ClientException e) {
             log.debug("Failed to obtain sts.");
@@ -58,16 +68,45 @@ public class AliyunOssServiceImpl implements IOssService {
         if (!StringUtils.hasText(bucket) || !StringUtils.hasText(objectKey)) {
             return null;
         }
-        try {
-            // First check if the object can be fetched.
-            ossClient.getObject(bucket, objectKey);
+        OSS ossClient = this.createClient();
+        // First check if the object can be fetched.
+        ossClient.getObject(bucket, objectKey);
 
-            return ossClient.generatePresignedUrl(bucket, objectKey,
-                    new Date(System.currentTimeMillis() + AliyunOSSConfiguration.expire * 1000));
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return ossClient.generatePresignedUrl(bucket, objectKey,
+                new Date(System.currentTimeMillis() + configuration.getExpire() * 1000));
     }
 
+    @Override
+    public Boolean deleteObject(String bucket, String objectKey) {
+        OSS ossClient = this.createClient();
+        ossClient.deleteObject(bucket, objectKey);
+        ossClient.shutdown();
+        return true;
+    }
+
+    @Override
+    public byte[] getObject(String bucket, String objectKey) {
+        OSS ossClient = this.createClient();
+        OSSObject object = ossClient.getObject(bucket, objectKey);
+        InputStream stream = object.getObjectContent();
+
+        try {
+            return stream.readAllBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                stream.close();
+                ossClient.shutdown();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return new byte[0];
+    }
+
+    private OSS createClient() {
+        return new OSSClientBuilder()
+                .build(configuration.getEndpoint(), configuration.getAccessKey(), configuration.getSecretKey());
+    }
 }

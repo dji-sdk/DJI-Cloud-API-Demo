@@ -35,8 +35,8 @@ public class DevicePayloadEntity implements Serializable {
     @TableField(value = "sub_type")
     private Integer subType;
 
-    @TableField(value = "version")
-    private Integer version;
+    @TableField(value = "firmware_version")
+    private String firmwareVersion;
 
     @TableField(value = "payload_index")
     private Integer payloadIndex;

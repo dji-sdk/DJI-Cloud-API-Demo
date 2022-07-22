@@ -27,9 +27,10 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseResult login(@RequestBody UserLoginDTO loginDTO) {
+
         String username = loginDTO.getUsername();
         String password = loginDTO.getPassword();
-        return userService.userLogin(username, password);
+        return userService.userLogin(username, password, loginDTO.getFlag());
     }
 
     @PostMapping("/token/refresh")
@@ -42,6 +43,6 @@ public class LoginController {
             return ResponseResult.error(CommonErrorEnum.NO_TOKEN.getErrorMsg());
         }
 
-        return ResponseResult.success(user);
+        return ResponseResult.success(user.get());
     }
 }

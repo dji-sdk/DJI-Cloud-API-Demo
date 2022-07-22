@@ -10,40 +10,8 @@ SET NAMES utf8mb4;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
-# manage_camera_video
-# ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `manage_camera_video`;
-
-CREATE TABLE `manage_camera_video` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `camera_id` int NOT NULL,
-  `video_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `video_type` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
-
-
-# manage_capacity_camera
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `manage_capacity_camera`;
-
-CREATE TABLE `manage_capacity_camera` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `name` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `description` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `camera_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `coexist_video_number_max` int NOT NULL,
-  `available_video_number` int NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-
-
-
-# manage_device
+#  manage_device
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device`;
@@ -52,25 +20,31 @@ CREATE TABLE `manage_device` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `device_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `device_type` smallint NOT NULL,
-  `sub_type` smallint NOT NULL,
-  `domain` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `version` smallint NOT NULL,
-  `device_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `child_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `nickname` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `device_type` smallint NOT NULL DEFAULT '-1',
+  `sub_type` smallint NOT NULL DEFAULT '-1',
+  `domain` smallint NOT NULL DEFAULT '-1',
+  `firmware_version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `device_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `child_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
-  `device_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `url_normal` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `url_select` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `bound_time` bigint DEFAULT NULL,
+  `bound_status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0:bund; 1:not bound',
+  `login_time` bigint DEFAULT NULL,
+  `device_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `url_normal` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `url_select` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `product_sn_UNIQUE` (`device_sn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 
 
-# manage_device_dictionary
+#  manage_device_dictionary
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device_dictionary`;
@@ -106,15 +80,37 @@ VALUES
 	(14,1,165,0,'DJI Dock Camera',NULL),
 	(15,1,90742,0,'L1',NULL),
 	(16,2,56,0,'DJI Smart Controller','Remote control for M300'),
-	(17,2,119,0,'Matrice 30 Smart Controller','Remote control for M30'),
-	(18,3,1,0,'DJI Dock','DJI Airport');
-
+	(17,2,119,0,'DJI RC Plus','Remote control for M30'),
+	(18,3,1,0,'DJI Dock','');
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
-# manage_device_payload
+# manage_device_hms
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `manage_device_hms`;
+
+CREATE TABLE `manage_device_hms` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `hms_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `tid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `level` smallint NOT NULL,
+  `module` tinyint NOT NULL,
+  `hms_key` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `message_zh` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `message_en` varchar(300) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNIQUE_hms_id` (`hms_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+
+#  manage_device_payload
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device_payload`;
@@ -125,7 +121,7 @@ CREATE TABLE `manage_device_payload` (
   `payload_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
   `payload_type` smallint NOT NULL,
   `sub_type` smallint NOT NULL,
-  `version` smallint DEFAULT NULL,
+  `firmware_version` varchar(32) DEFAULT NULL,
   `payload_index` smallint NOT NULL,
   `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `payload_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
@@ -137,7 +133,7 @@ CREATE TABLE `manage_device_payload` (
 
 
 
-# manage_user
+#  manage_user
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_user`;
@@ -147,7 +143,7 @@ CREATE TABLE `manage_user` (
   `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_id` int NOT NULL,
+  `workspace_id` varchar(64) NOT NULL DEFAULT '',
   `user_type` smallint NOT NULL,
   `mqtt_username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `mqtt_password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
@@ -162,14 +158,14 @@ LOCK TABLES `manage_user` WRITE;
 
 INSERT INTO `manage_user` (`id`, `user_id`, `username`, `password`, `workspace_id`, `user_type`, `mqtt_username`, `mqtt_password`, `create_time`, `update_time`)
 VALUES
-	(1,'a1559e7c-8dd8-4780-b952-100cc4797da2','adminPC','adminPC',1,1,'admin','admin',1634898410751,1634898410751),
-	(2,'be7c6c3d-afe9-4be4-b9eb-c55066c0914e','pilot','pilot123',1,2,'pilot','pilot123',1634898410751,1634898410751);
+	(1,'a1559e7c-8dd8-4780-b952-100cc4797da2','adminPC','adminPC','e3dea0f5-37f2-4d79-ae58-490af3228069',1,'admin','admin',1634898410751,1650880112310),
+	(2,'be7c6c3d-afe9-4be4-b9eb-c55066c0914e','pilot','pilot123','e3dea0f5-37f2-4d79-ae58-490af3228069',2,'pilot','pilot123',1634898410751,1634898410751);
 
 /*!40000 ALTER TABLE `manage_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
-# manage_workspace
+#  manage_workspace
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_workspace`;
@@ -182,22 +178,24 @@ CREATE TABLE `manage_workspace` (
   `platform_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
+  `bind_code` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `workspace_id_UNIQUE` (`workspace_id`)
+  UNIQUE KEY `workspace_id_UNIQUE` (`workspace_id`),
+  UNIQUE KEY `bind_code_UNIQUE` (`bind_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 LOCK TABLES `manage_workspace` WRITE;
 /*!40000 ALTER TABLE `manage_workspace` DISABLE KEYS */;
 
-INSERT INTO `manage_workspace` (`id`, `workspace_id`, `workspace_name`, `workspace_desc`, `platform_name`, `create_time`, `update_time`)
+INSERT INTO `manage_workspace` (`id`, `workspace_id`, `workspace_name`, `workspace_desc`, `platform_name`, `create_time`, `update_time`, `bind_code`)
 VALUES
-	(1,'e3dea0f5-37f2-4d79-ae58-490af3228069','Test Group One','Cloud Sample Test Platform','Cloud Api Platform',1634898410751,1634898410751);
+	(1,'e3dea0f5-37f2-4d79-ae58-490af3228069','Test Group One','Cloud Sample Test Platform','Cloud Api Platform',1634898410751,1634898410751,'qwe');
 
 /*!40000 ALTER TABLE `manage_workspace` ENABLE KEYS */;
 UNLOCK TABLES;
 
 
-# map_element_coordinate
+#  map_element_coordinate
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_element_coordinate`;
@@ -213,7 +211,7 @@ CREATE TABLE `map_element_coordinate` (
 
 
 
-# map_group
+#  map_group
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_group`;
@@ -244,7 +242,7 @@ VALUES
 UNLOCK TABLES;
 
 
-# map_group_element
+#  map_group_element
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_group_element`;
@@ -267,7 +265,7 @@ CREATE TABLE `map_group_element` (
 
 
 
-# media_file
+#  media_file
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `media_file`;
@@ -277,22 +275,22 @@ CREATE TABLE `media_file` (
   `file_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `file_path` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `fingerprint` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `fingerprint` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
   `tinny_fingerprint` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `object_key` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `sub_file_type` int NOT NULL,
+  `object_key` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `sub_file_type` int DEFAULT NULL,
   `is_original` tinyint(1) NOT NULL,
   `drone` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
   `payload` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
+  `job_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `fingerprint_UNIQUE` (`fingerprint`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 
 
-# wayline_file
+#  wayline_file
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `wayline_file`;
@@ -304,16 +302,39 @@ CREATE TABLE `wayline_file` (
   `drone_model_key` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `payload_model_keys` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `sign` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'MD5',
   `favorited` tinyint(1) NOT NULL DEFAULT '0',
   `template_types` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `object_key` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
   `user_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `create_time` bigint NOT NULL,
-  `update_time` bigint NOT NULL COMMENT 'required, can not modify.',
+  `update_time` bigint NOT NULL COMMENT 'required, can''t modify.',
   PRIMARY KEY (`id`),
   UNIQUE KEY `wayline_id_UNIQUE` (`wayline_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
+
+
+#  wayline_job
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `wayline_job`;
+
+CREATE TABLE `wayline_job` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `job_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `file_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `dock_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `workspace_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `type` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `job_id_UNIQUE` (`job_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 
 

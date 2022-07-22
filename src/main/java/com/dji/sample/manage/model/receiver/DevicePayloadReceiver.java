@@ -23,7 +23,4 @@ public class DevicePayloadReceiver {
 
     private String sn;
 
-    private Integer version;
-
-    private Integer workMode;
 }

@@ -13,6 +13,8 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class PositionStateReceiver {
 
+    private Integer isCalibration;
+
     private Integer gpsNumber;
 
     private Integer isFixed;

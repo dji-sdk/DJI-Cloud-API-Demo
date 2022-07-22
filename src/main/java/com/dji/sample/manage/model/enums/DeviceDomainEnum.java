@@ -14,6 +14,8 @@ public enum DeviceDomainEnum {
 
     PAYLOAD(1, "payload"),
 
+    DOCK (3, "dock"),
+
     UNKNOWN(-1, "unknown");
 
     private int val;
@@ -29,6 +31,10 @@ public enum DeviceDomainEnum {
         return val;
     }
 
+    public String getDesc() {
+        return desc;
+    }
+
     public static String getDesc(int val) {
         if (SUB_DEVICE.val == val) {
             return SUB_DEVICE.desc;
@@ -40,6 +46,10 @@ public enum DeviceDomainEnum {
 
         if (PAYLOAD.val == val) {
             return PAYLOAD.desc;
+        }
+
+        if (DOCK.val == val) {
+            return DOCK.desc;
         }
         return UNKNOWN.desc;
     }
@@ -55,6 +65,10 @@ public enum DeviceDomainEnum {
 
         if (PAYLOAD.desc.equals(desc)) {
             return PAYLOAD.val;
+        }
+
+        if (DOCK.desc.equals(desc)) {
+            return DOCK.val;
         }
         return UNKNOWN.val;
     }

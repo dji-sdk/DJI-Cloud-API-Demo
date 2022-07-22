@@ -1,14 +1,11 @@
 package com.dji.sample.component;
 
-import com.dji.sample.manage.model.DeviceStatusManager;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-import com.dji.sample.manage.model.param.DeviceQueryParam;
+import com.dji.sample.component.redis.RedisConst;
+import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.service.IDeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 /**
  * @author sean.zhou
@@ -21,20 +18,21 @@ public class ApplicationBootInitial implements CommandLineRunner {
     @Autowired
     private IDeviceService deviceService;
 
+    @Autowired
+    private RedisOpsUtils redisOps;
+
     /**
-     * Subscribe to the devices that exist in the database when the program starts,
+     * Subscribe to the devices that exist in the redis when the program starts,
      * to prevent the data from being different from the pilot side due to program interruptions.
      * @param args
      * @throws Exception
      */
     @Override
     public void run(String... args) throws Exception {
-        deviceService.getDevicesByParams(DeviceQueryParam.builder().build())
-                .forEach(device -> {
-                    deviceService.subscribeTopicOnline(device.getDeviceSn());
-                    DeviceStatusManager.STATUS_MANAGER.put(
-                            DeviceDomainEnum.getVal(device.getDomain()) + "/"
-                                    + device.getDeviceSn(), LocalDateTime.now());
-                });
+        int start = RedisConst.DEVICE_ONLINE_PREFIX.length();
+
+        redisOps.getAllKeys(RedisConst.DEVICE_ONLINE_PREFIX + "*")
+                .forEach(key -> deviceService.subscribeTopicOnline(key.substring(start)));
+
     }
 }

@@ -43,4 +43,23 @@ public class ChannelName {
 
     public static final String OUTBOUND = "outbound";
 
+    public static final String INBOUND_STATE_FIRMWARE_VERSION = "inboundStateFirmwareVersion";
+
+    public static final String INBOUND_REQUESTS = "inboundRequests";
+
+    public static final String INBOUND_REQUESTS_STORAGE_CONFIG_GET = "inboundRequestsConfigGet";
+
+    public static final String INBOUND_EVENTS = "inboundEvents";
+
+    public static final String INBOUND_EVENTS_FLIGHT_TASK_PROGRESS = "inboundEventsFlightTaskProgress";
+
+    public static final String INBOUND_EVENTS_FILE_UPLOAD_CALLBACK = "inboundEventsFileUploadCallback";
+
+    public static final String INBOUND_REQUESTS_AIRPORT_BIND_STATUS = "inboundRequestsAirportBindStatus";
+
+    public static final String INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET = "inboundRequestsAirportOrganizationGet";
+
+    public static final String INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND = "inboundRequestsAirportOrganizationBind";
+
+    public static final String INBOUND_EVENTS_HMS = "inboundEventsHms";
 }

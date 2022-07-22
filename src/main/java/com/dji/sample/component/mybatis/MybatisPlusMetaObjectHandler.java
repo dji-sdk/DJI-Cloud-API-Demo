@@ -5,7 +5,7 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 /**
  * Automatic filling for set values
@@ -20,9 +20,9 @@ public class MybatisPlusMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
         this.strictInsertFill(metaObject, "createTime", Long.class,
-                LocalDateTime.now().toInstant(ZoneOffset.ofHours(8)).toEpochMilli());
+                LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         this.strictInsertFill(metaObject, "updateTime", Long.class,
-                LocalDateTime.now().toInstant(ZoneOffset.ofHours(8)).toEpochMilli());
+                LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
 
     /**
@@ -32,6 +32,6 @@ public class MybatisPlusMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
         this.strictUpdateFill(metaObject, "updateTime", Long.class,
-                LocalDateTime.now().toInstant(ZoneOffset.ofHours(8)).toEpochMilli());
+                LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
 }

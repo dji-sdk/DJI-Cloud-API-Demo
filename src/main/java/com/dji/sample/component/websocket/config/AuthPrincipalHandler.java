@@ -35,7 +35,7 @@ public class AuthPrincipalHandler extends DefaultHandshakeHandler {
             if (!StringUtils.hasText(token)) {
                 return false;
             }
-
+            log.debug("token:" + token);
             Optional<CustomClaim> customClaim = JwtUtil.parseToken(token);
             if (customClaim.isEmpty()) {
                 return false;

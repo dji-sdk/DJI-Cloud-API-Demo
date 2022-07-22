@@ -54,6 +54,10 @@ public class JwtUtil {
         JwtUtil.algorithm = Algorithm.HMAC256(secret);
     }
 
+    private JwtUtil() {
+
+    }
+
     /**
      * Create a token based on custom information.
      * @param claims custom information

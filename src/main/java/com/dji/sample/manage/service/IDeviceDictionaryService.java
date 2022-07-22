@@ -13,12 +13,10 @@ public interface IDeviceDictionaryService {
 
     /**
      * Query the type data of the device based on domain, device type and sub type.
-     * @param domain
      * @param deviceType
      * @param subType
      * @return
      */
-    Optional<DeviceDictionaryDTO> getOneDictionaryInfoByDomainTypeSubType(
-            Integer domain, Integer deviceType, Integer subType);
+    Optional<DeviceDictionaryDTO> getOneDictionaryInfoByTypeSubType(Integer deviceType, Integer subType);
 
 }

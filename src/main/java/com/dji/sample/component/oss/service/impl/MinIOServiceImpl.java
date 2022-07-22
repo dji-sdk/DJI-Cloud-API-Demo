@@ -1,6 +1,7 @@
 package com.dji.sample.component.oss.service.impl;
 
-import com.dji.sample.component.oss.model.MinIOConfiguration;
+import com.dji.sample.component.oss.model.OssConfiguration;
+import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
 import io.minio.GetPresignedObjectUrlArgs;
@@ -26,16 +27,21 @@ import java.security.NoSuchAlgorithmException;
 @Slf4j
 public class MinIOServiceImpl implements IOssService {
 
-    @Autowired(required = false)
-    private MinioClient client;
+    @Autowired
+    private OssConfiguration configuration;
+
+    @Override
+    public String getOssType() {
+        return OssTypeEnum.MINIO.getType();
+    }
 
     @Override
     public CredentialsDTO getCredentials() {
         try {
-            AssumeRoleProvider provider = new AssumeRoleProvider(MinIOConfiguration.endpoint, MinIOConfiguration.accessKey,
-                    MinIOConfiguration.secretKey, MinIOConfiguration.expire,
-                    null, null, null, null, null, null);
-            return new CredentialsDTO(provider.fetch(), MinIOConfiguration.expire);
+            AssumeRoleProvider provider = new AssumeRoleProvider(configuration.getEndpoint(), configuration.getAccessKey(),
+                    configuration.getSecretKey(), Math.toIntExact(configuration.getExpire()),
+                    null, configuration.getRegion(), null, null, null, null);
+            return new CredentialsDTO(provider.fetch(), Math.toIntExact(configuration.getExpire()));
         } catch (NoSuchAlgorithmException e) {
             log.debug("Failed to obtain sts.");
             e.printStackTrace();
@@ -47,20 +53,38 @@ public class MinIOServiceImpl implements IOssService {
     public URL getObjectUrl(String bucket, String objectKey) {
         try {
             return new URL(
-                    client.getPresignedObjectUrl(
-                            GetPresignedObjectUrlArgs.builder()
-                                    .method(Method.GET)
-                                    .bucket(bucket)
-                                    .object(objectKey)
-                                    .expiry(MinIOConfiguration.expire)
-                                    .build()));
+                    this.createClient()
+                            .getPresignedObjectUrl(
+                                    GetPresignedObjectUrlArgs.builder()
+                                            .method(Method.GET)
+                                            .bucket(bucket)
+                                            .object(objectKey)
+                                            .expiry(Math.toIntExact(configuration.getExpire()))
+                                            .build()));
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException |
                 NoSuchAlgorithmException | XmlParserException | ServerException e) {
-            log.error("The file does not exist on the oss.");
+            log.error("The file does not exist on the OssConfiguration.");
             e.printStackTrace();
         }
         return null;
     }
 
+    @Override
+    public Boolean deleteObject(String bucket, String objectKey) {
+        return null;
+    }
+
+    @Override
+    public byte[] getObject(String bucket, String objectKey) {
+        return new byte[0];
+    }
+
+    private MinioClient createClient() {
+        return MinioClient.builder()
+                .endpoint(configuration.getEndpoint())
+                .credentials(configuration.getAccessKey(), configuration.getSecretKey())
+                .region(configuration.getRegion())
+                .build();
+    }
 }

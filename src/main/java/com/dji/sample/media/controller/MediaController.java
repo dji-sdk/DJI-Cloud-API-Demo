@@ -1,8 +1,10 @@
 package com.dji.sample.media.controller;
 
 import com.dji.sample.common.model.ResponseResult;
+import com.dji.sample.component.mqtt.model.MapKeyConst;
 import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.service.IMediaService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @author sean
@@ -36,7 +37,7 @@ public class MediaController {
 
         boolean isExist = mediaService.fastUpload(workspaceId, file.getFingerprint());
 
-        return isExist ? ResponseResult.success() : ResponseResult.error(file.getFingerprint() + "already exists.");
+        return isExist ? ResponseResult.success() : ResponseResult.error(file.getFingerprint() + "don't exist.");
     }
 
     /**
@@ -56,18 +57,17 @@ public class MediaController {
     /**
      * Query the files that already exist in this workspace based on the workspace id and the collection of tiny fingerprints.
      * @param workspaceId
-     * @param tinyFingerprints
+     * @param tinyFingerprints  There is only one tiny_fingerprint parameter in the body.
+     *                          But it is not recommended to use Map to receive the parameter.
      * @return
      */
-    @GetMapping("/{workspace_id}/files/tiny-fingerprints")
-    public ResponseResult<Map<String, List<String>>> uploadCallback(@PathVariable(name = "workspace_id") String workspaceId,
-                               @RequestParam(value = "tiny_fingerprint") List<String> tinyFingerprints) {
-        List<String> tinyFingerprintList = mediaService.getAllTinyFingerprintsByWorkspaceId(workspaceId);
-        List<String> existingList = tinyFingerprints
-                .stream()
-                .filter(tinyFingerprintList::contains)
-                .collect(Collectors.toList());
-        return ResponseResult.success(new ConcurrentHashMap<>(Map.of("tiny_fingerprints", existingList)));
+    @PostMapping("/{workspace_id}/files/tiny-fingerprints")
+    public ResponseResult<Map<String, List<String>>> uploadCallback(
+                                @PathVariable(name = "workspace_id") String workspaceId,
+                               @RequestBody Map<String, List<String>> tinyFingerprints) throws JsonProcessingException {
+
+        List<String> existingList = mediaService.getExistTinyFingerprints(workspaceId, tinyFingerprints.get(MapKeyConst.TINY_FINGERPRINTS));
+        return ResponseResult.success(new ConcurrentHashMap<>(Map.of(MapKeyConst.TINY_FINGERPRINTS, existingList)));
     }
 
 }

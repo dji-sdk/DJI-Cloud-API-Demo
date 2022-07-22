@@ -11,6 +11,7 @@ import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.integration.mqtt.core.MqttPahoClientFactory;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
 import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
+import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
@@ -62,7 +63,9 @@ public class MqttInboundConfiguration {
     @ServiceActivator(inputChannel = ChannelName.DEFAULT)
     public MessageHandler defaultInboundHandler() {
         return message -> {
-            log.info("The default channel does not handle messages.");
+            log.info("The default channel does not handle messages." +
+                    "\nTopic: " + message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC) +
+                    "\nPayload: " + message.getPayload());
         };
     }
 

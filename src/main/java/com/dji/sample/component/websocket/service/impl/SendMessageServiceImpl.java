@@ -5,6 +5,7 @@ import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 
@@ -20,6 +21,9 @@ import java.util.Collection;
 @Slf4j
 public class SendMessageServiceImpl implements ISendMessageService {
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @Override
     public void sendMessage(ConcurrentWebSocketSession session, CustomWebSocketMessage message) {
         if (session == null) {
@@ -33,7 +37,6 @@ public class SendMessageServiceImpl implements ISendMessageService {
                 return;
             }
 
-            ObjectMapper mapper = new ObjectMapper();
 
             session.sendMessage(new TextMessage(mapper.writeValueAsBytes(message)));
         } catch (IOException e) {
@@ -50,7 +53,6 @@ public class SendMessageServiceImpl implements ISendMessageService {
 
         try {
 
-            ObjectMapper mapper = new ObjectMapper();
             TextMessage data = new TextMessage(mapper.writeValueAsBytes(message));
 
             for (ConcurrentWebSocketSession session : sessions) {
@@ -60,7 +62,6 @@ public class SendMessageServiceImpl implements ISendMessageService {
                     return;
                 }
                 session.sendMessage(data);
-
             }
 
         } catch (IOException e) {

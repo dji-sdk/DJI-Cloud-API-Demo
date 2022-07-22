@@ -1,22 +1,25 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.component.mqtt.model.TopicStateReceiver;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
-import com.dji.sample.manage.model.DeviceStatusManager;
+import com.dji.sample.manage.model.dto.DeviceDTO;
+import com.dji.sample.manage.model.dto.DevicePayloadDTO;
 import com.dji.sample.manage.model.dto.TelemetryDTO;
 import com.dji.sample.manage.model.dto.TelemetryDeviceDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
+import com.dji.sample.manage.model.receiver.OsdPayloadReceiver;
 import com.dji.sample.manage.model.receiver.OsdSubDeviceReceiver;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author sean
@@ -24,10 +27,11 @@ import java.util.Collection;
  * @date 2022/2/21
  */
 @Service
+@Slf4j
 public class DeviceOSDServiceImpl extends AbstractTSAService {
 
-    protected DeviceOSDServiceImpl() {
-        super(null);
+    protected DeviceOSDServiceImpl(@Autowired @Qualifier("dockOSDServiceImpl") AbstractTSAService tsaService) {
+        super(tsaService);
     }
 
     @Override
@@ -50,20 +54,32 @@ public class DeviceOSDServiceImpl extends AbstractTSAService {
         }
     }
     @Override
-    protected void handleOSD(TopicStateReceiver receiver, String sn, String workspaceId, JsonNode hostNode,
-                             Collection<ConcurrentWebSocketSession> webSessions, CustomWebSocketMessage wsMessage) throws JsonProcessingException {
-        // Real-time update of device status in memory
-        DeviceStatusManager.STATUS_MANAGER.put(
-                DeviceDomainEnum.SUB_DEVICE.getVal() + "/" + sn, LocalDateTime.now());
-        wsMessage.setBizCode(BizCodeEnum.DEVICE_OSD.getCode());
+    public void handleOSD(CommonTopicReceiver receiver, DeviceDTO device,
+                          Collection<ConcurrentWebSocketSession> webSessions,
+                          CustomWebSocketMessage<TelemetryDTO> wsMessage) {
+        if (DeviceDomainEnum.SUB_DEVICE.getDesc().equals(device.getDomain())) {
+            wsMessage.setBizCode(BizCodeEnum.DEVICE_OSD.getCode());
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        OsdSubDeviceReceiver data = mapper.treeToValue(hostNode, OsdSubDeviceReceiver.class);
+            OsdSubDeviceReceiver data = mapper.convertValue(receiver.getData(), OsdSubDeviceReceiver.class);
+            List<DevicePayloadDTO> payloadsList = device.getPayloadsList();
+            try {
+                Map<String, Object> receiverData = (Map<String, Object>) receiver.getData();
+                data.setPayloads(payloadsList.stream()
+                        .map(payload -> mapper.convertValue(
+                                receiverData.getOrDefault(payload.getPayloadName(), Map.of()),
+                                OsdPayloadReceiver.class))
+                        .collect(Collectors.toList()));
 
-        wsMessage.setData(data);
+            } catch (NullPointerException e) {
+                log.warn("Please remount the payload, or restart the drone. Otherwise the data of the payload will not be received.");
+            }
 
-        sendMessageService.sendBatch(webSessions, wsMessage);
-        this.pushTelemetryData(workspaceId, data, sn);
+
+            wsMessage.getData().setHost(data);
+
+            sendMessageService.sendBatch(webSessions, wsMessage);
+            this.pushTelemetryData(device.getWorkspaceId(), data, device.getDeviceSn());
+        }
+        tsaService.handleOSD(receiver, device, webSessions, wsMessage);
     }
 }

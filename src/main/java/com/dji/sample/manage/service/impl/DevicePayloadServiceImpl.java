@@ -1,12 +1,16 @@
 package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.dji.sample.component.redis.RedisConst;
+import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.dao.IDevicePayloadMapper;
+import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
 import com.dji.sample.manage.model.dto.DevicePayloadDTO;
 import com.dji.sample.manage.model.entity.DevicePayloadEntity;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
+import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.service.ICapacityCameraService;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.manage.service.IDevicePayloadService;
@@ -14,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +42,9 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     @Autowired
     private ICapacityCameraService capacityCameraService;
 
+    @Autowired
+    private RedisOpsUtils redisOps;
+
     @Override
     public Integer checkPayloadExist(String payloadSn) {
         DevicePayloadEntity devicePayload = mapper.selectOne(
@@ -57,12 +65,28 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
     @Override
     public Boolean savePayloadDTOs(List<DevicePayloadReceiver> payloadReceiverList) {
+        if (payloadReceiverList.isEmpty()) {
+            return true;
+        }
+
+        String deviceSn = payloadReceiverList.get(0).getDeviceSn();
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
+        DeviceDTO device = (DeviceDTO) redisOps.get(key);
+        List<DevicePayloadDTO> payloads = new ArrayList<>();
+
         for (DevicePayloadReceiver payloadReceiver : payloadReceiverList) {
             int payloadId = this.saveOnePayloadDTO(payloadReceiver);
             if (payloadId <= 0) {
                 return false;
             }
+            payloads.add(this.receiver2Dto(payloadReceiver));
         }
+
+        if (payloads.isEmpty()) {
+            payloads = this.getDevicePayloadEntitiesByDeviceSn(deviceSn);
+        }
+        device.setPayloadsList(payloads);
+        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn(), device, RedisConst.DEVICE_ALIVE_SECOND);
         return true;
     }
 
@@ -89,6 +113,15 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
                             .eq(DevicePayloadEntity::getDeviceSn, deviceSn));
             capacityCameraService.deleteCapacityCameraByDeviceSn(deviceSn);
         });
+    }
+
+    @Override
+    public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
+        mapper.update(DevicePayloadEntity.builder()
+                        .firmwareVersion(receiver.getFirmwareVersion())
+                        .build()
+                , new LambdaUpdateWrapper<DevicePayloadEntity>()
+                        .eq(DevicePayloadEntity::getDeviceSn, receiver.getSn()));
     }
 
     /**
@@ -129,8 +162,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
             if (arr.length == 3) {
                 Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                        .getOneDictionaryInfoByDomainTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(),
-                                arr[0], arr[1]);
+                        .getOneDictionaryInfoByTypeSubType(arr[0], arr[1]);
                 dictionaryOpt.ifPresent(dictionary ->
                         builder.payloadName(dictionary.getDeviceName())
                                 .payloadDesc(dictionary.getDeviceDesc()));
@@ -147,10 +179,17 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
         return builder
                 .payloadSn(dto.getSn())
-                .version(dto.getVersion())
-                .deviceSn(dto.getSn()
-                        .substring(0,
-                                dto.getSn().indexOf("-")))
+                .deviceSn(dto.getDeviceSn())
+                .build();
+    }
+
+    private DevicePayloadDTO receiver2Dto(DevicePayloadReceiver receiver) {
+        DevicePayloadDTO.DevicePayloadDTOBuilder builder = DevicePayloadDTO.builder();
+        if (receiver == null) {
+            return builder.build();
+        }
+        return builder.payloadSn(receiver.getSn())
+                .payloadName(receiver.getPayloadIndex())
                 .build();
     }
 

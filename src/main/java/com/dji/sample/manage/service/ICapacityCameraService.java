@@ -20,14 +20,6 @@ public interface ICapacityCameraService {
     List<CapacityCameraDTO> getCapacityCameraByDeviceSn(String deviceSn);
 
     /**
-     * Query whether this camera data has been saved based on the device sn and camera location.
-     * @param deviceSn
-     * @param cameraIndex
-     * @return
-     */
-    Boolean checkExist(String deviceSn, String cameraIndex);
-
-    /**
      * Delete all live capability data for this device based on the device sn.
      * @param deviceSn
      * @return
@@ -38,8 +30,13 @@ public interface ICapacityCameraService {
      * Save the live capability data of the device.
      * @param capacityCameraReceivers
      * @param deviceSn
+     */
+    void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn);
+
+    /**
+     *  Convert the received camera capability object into camera data transfer object.
+     * @param receiver
      * @return
      */
-    Boolean saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn);
-
+    CapacityCameraDTO receiver2Dto(CapacityCameraReceiver receiver);
 }

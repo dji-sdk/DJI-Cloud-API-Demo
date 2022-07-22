@@ -15,7 +15,7 @@ public class WirelessLinkStateReceiver {
 
     private Integer downloadQuality;
 
-    private Integer frequencyBand;
+    private Double frequencyBand;
 
     private Integer upwardQuality;
 

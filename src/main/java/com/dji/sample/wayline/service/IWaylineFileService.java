@@ -1,11 +1,13 @@
 package com.dji.sample.wayline.service;
 
 import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.wayline.model.WaylineFileDTO;
-import com.dji.sample.wayline.model.WaylineQueryParam;
+import com.dji.sample.wayline.model.dto.WaylineFileDTO;
+import com.dji.sample.wayline.model.param.WaylineQueryParam;
 
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author sean
@@ -28,15 +30,15 @@ public interface IWaylineFileService {
      * @param waylineId
      * @return
      */
-    WaylineFileDTO getWaylineByWaylineId(String workspaceId, String waylineId);
+    Optional<WaylineFileDTO> getWaylineByWaylineId(String workspaceId, String waylineId);
 
     /**
      * Get the download address of the file object.
-     * @param bucket    bucket name
-     * @param objectKey object name
+     * @param workspaceId
+     * @param waylineId
      * @return
      */
-    URL getObjectUrl(String bucket, String objectKey);
+    URL getObjectUrl(String workspaceId, String waylineId) throws SQLException;
 
     /**
      * Save the basic information of the wayline file.
@@ -62,4 +64,11 @@ public interface IWaylineFileService {
      * @return
      */
     List<String> getDuplicateNames(String workspaceId, List<String> names);
+
+    /**
+     * Delete the wayline file based on the wayline id.
+     * @param workspaceId
+     * @param waylineId
+     */
+    Boolean deleteByWaylineId(String workspaceId, String waylineId);
 }

@@ -1,5 +1,6 @@
 package com.dji.sample.media.service;
 
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.media.model.FileUploadDTO;
 
 import java.util.List;
@@ -33,4 +34,19 @@ public interface IMediaService {
      * @return
      */
     List<String> getAllTinyFingerprintsByWorkspaceId(String workspaceId);
+
+    /**
+     * Query the fingerprints that already exist in it based on the incoming tiny fingerprints data.
+     * @param workspaceId
+     * @param tinyFingerprints
+     * @return
+     */
+    List<String> getExistTinyFingerprints(String workspaceId, List<String> tinyFingerprints);
+
+    /**
+     * Handle media files messages reported by dock.
+     * @param receiver
+     * @return
+     */
+    void handleFileUploadCallBack(CommonTopicReceiver receiver);
 }

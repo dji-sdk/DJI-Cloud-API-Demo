@@ -23,4 +23,6 @@ public class FileExtensionDTO {
 
     private String sn;
 
+    private String flightId;
+
 }

@@ -1,7 +1,7 @@
 package com.dji.sample.wayline.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.dji.sample.wayline.model.WaylineFileEntity;
+import com.dji.sample.wayline.model.entity.WaylineFileEntity;
 
 /**
  * @author sean

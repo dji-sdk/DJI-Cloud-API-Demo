@@ -1,6 +1,11 @@
 package com.dji.sample.media.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.dji.sample.common.model.Pagination;
+import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.component.oss.model.OssConfiguration;
+import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.media.dao.IFileMapper;
@@ -12,6 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URL;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,19 +35,28 @@ import java.util.stream.Collectors;
 @Transactional
 public class FileServiceImpl implements IFileService {
 
-
     @Autowired
     private IFileMapper mapper;
 
     @Autowired
     private IDeviceDictionaryService deviceDictionaryService;
 
-    @Override
-    public Boolean checkExist(String workspaceId, String fingerprint) {
+    @Autowired
+    private OssServiceContext ossService;
+
+    @Autowired
+    private OssConfiguration configuration;
+
+    private Optional<MediaFileEntity> getMediaByFingerprint(String workspaceId, String fingerprint) {
         MediaFileEntity fileEntity = mapper.selectOne(new LambdaQueryWrapper<MediaFileEntity>()
                 .eq(MediaFileEntity::getWorkspaceId, workspaceId)
                 .eq(MediaFileEntity::getFingerprint, fingerprint));
-        return fileEntity != null;
+        return Optional.ofNullable(fileEntity);
+    }
+
+    @Override
+    public Boolean checkExist(String workspaceId, String fingerprint) {
+        return this.getMediaByFingerprint(workspaceId, fingerprint).isPresent();
     }
 
     @Override
@@ -57,6 +75,30 @@ public class FileServiceImpl implements IFileService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public PaginationData<MediaFileDTO> getJobsPaginationByWorkspaceId(String workspaceId, long page, long pageSize) {
+        Page<MediaFileEntity> pageData = mapper.selectPage(
+                new Page<MediaFileEntity>(page, pageSize),
+                new LambdaQueryWrapper<MediaFileEntity>()
+                        .eq(MediaFileEntity::getWorkspaceId, workspaceId));
+        List<MediaFileDTO> records = pageData.getRecords()
+                .stream()
+                .map(this::entityConvertToDto)
+                .collect(Collectors.toList());
+
+        return new PaginationData<MediaFileDTO>(records, new Pagination(pageData));
+    }
+
+    @Override
+    public URL getObjectUrl(String workspaceId, String fingerprint) {
+        Optional<MediaFileEntity> mediaFileOpt = getMediaByFingerprint(workspaceId, fingerprint);
+        if (mediaFileOpt.isEmpty()) {
+            throw new IllegalArgumentException("{} doesn't exist.");
+        }
+
+        return ossService.getObjectUrl(configuration.getBucket(), mediaFileOpt.get().getObjectKey());
+    }
+
     /**
      * Convert the received file object into a database entity object.
      * @param file
@@ -72,6 +114,7 @@ public class FileServiceImpl implements IFileService {
                     .objectKey(file.getObjectKey())
                     .subFileType(file.getSubFileType())
                     .isOriginal(file.getExt().getIsOriginal())
+                    .jobId(file.getExt().getFlightId())
                     .drone(file.getExt().getSn())
                     .tinnyFingerprint(file.getExt().getTinnyFingerprint());
 
@@ -81,7 +124,7 @@ public class FileServiceImpl implements IFileService {
                     .mapToInt(Integer::intValue)
                     .toArray();
             Optional<DeviceDictionaryDTO> payloadDict = deviceDictionaryService
-                    .getOneDictionaryInfoByDomainTypeSubType(payloadModel[0], payloadModel[1], payloadModel[2]);
+                    .getOneDictionaryInfoByTypeSubType(payloadModel[1], payloadModel[2]);
             payloadDict.ifPresent(payload -> builder.payload(payload.getDeviceName()));
         }
         return builder.build();
@@ -99,9 +142,12 @@ public class FileServiceImpl implements IFileService {
             builder.fileName(entity.getFileName())
                     .filePath(entity.getFilePath())
                     .isOriginal(entity.getIsOriginal())
+                    .fingerprint(entity.getFingerprint())
                     .objectKey(entity.getObjectKey())
                     .tinnyFingerprint(entity.getTinnyFingerprint())
                     .payload(entity.getPayload())
+                    .createTime(LocalDateTime.ofInstant(
+                            Instant.ofEpochMilli(entity.getCreateTime()), ZoneId.systemDefault()))
                     .drone(entity.getDrone());
 
         }

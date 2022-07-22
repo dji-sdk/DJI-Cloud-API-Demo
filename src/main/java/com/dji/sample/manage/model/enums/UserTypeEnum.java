@@ -7,18 +7,36 @@ package com.dji.sample.manage.model.enums;
  */
 public enum UserTypeEnum {
 
-    WEB(1),
+    WEB(1, "Web"),
 
-    PILOT(2);
+    PILOT(2, "Pilot"),
+
+    UNKNOWN(-1, "Unknown");
 
     private int val;
 
+    private String desc;
 
-    UserTypeEnum(int val) {
+    UserTypeEnum(int val, String desc) {
         this.val = val;
+        this.desc = desc;
     }
 
     public int getVal() {
-        return val;
+        return this.val;
+    }
+
+    public String getDesc() {
+        return this.desc;
+    }
+
+    public static UserTypeEnum find(int val) {
+        if (val == WEB.val) {
+            return WEB;
+        }
+        if (val == PILOT.val) {
+            return PILOT;
+        }
+        return UNKNOWN;
     }
 }

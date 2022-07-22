@@ -26,4 +26,10 @@ public class CommonTopicReceiver<T> {
     private Long timestamp;
 
     private T data;
+
+    private String gateway;
+
+    private Integer needReply;
+
+    private String from;
 }

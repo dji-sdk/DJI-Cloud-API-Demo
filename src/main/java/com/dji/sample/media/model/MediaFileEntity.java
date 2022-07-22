@@ -53,6 +53,9 @@ public class MediaFileEntity implements Serializable {
     @TableField("payload")
     private String payload;
 
+    @TableField("job_id")
+    private String jobId;
+
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Long createTime;
 

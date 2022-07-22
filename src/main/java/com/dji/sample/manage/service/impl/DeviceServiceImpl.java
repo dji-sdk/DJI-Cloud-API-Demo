@@ -1,15 +1,21 @@
 package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.dji.sample.component.mqtt.model.CommonTopicResponse;
-import com.dji.sample.component.mqtt.model.TopicStateReceiver;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.dji.sample.common.error.CommonErrorEnum;
+import com.dji.sample.common.model.Pagination;
+import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.component.mqtt.model.*;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.mqtt.service.IMqttTopicService;
+import com.dji.sample.component.redis.RedisConst;
+import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
-import com.dji.sample.component.websocket.model.WebSocketManager;
 import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.dao.IDeviceMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceEntity;
@@ -17,28 +23,26 @@ import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.enums.IconUrlEnum;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
-import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
-import com.dji.sample.manage.model.receiver.StatusSubDeviceReceiver;
-import com.dji.sample.manage.service.IDeviceDictionaryService;
-import com.dji.sample.manage.service.IDevicePayloadService;
-import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.manage.service.IWorkspaceService;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.dji.sample.manage.model.receiver.*;
+import com.dji.sample.manage.service.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -77,23 +81,61 @@ public class DeviceServiceImpl implements IDeviceService {
     private ISendMessageService sendMessageService;
 
     @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private RedisOpsUtils redisOps;
+
+    @Autowired
+    private IWebSocketManageService webSocketManageService;
+
+    @Autowired
     @Qualifier("gatewayOSDServiceImpl")
-    private AbstractTSAService tsaService;
+    private ITSAService tsaService;
 
     @Override
     public Boolean deviceOffline(String gatewaySn) {
-        List<DeviceDTO> gatewaysList = this.getDevicesByParams(
-                DeviceQueryParam.builder()
-                        .deviceSn(gatewaySn)
-                        .build());
+        this.subscribeTopicOnline(gatewaySn);
 
-        // If no information about this gateway device exists in the database, the drone is considered to be offline.
-        if (gatewaysList.isEmpty()) {
-            log.debug("The drone is already offline.");
+        // Only the remote controller is logged in and the aircraft is not connected.
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + gatewaySn;
+
+        boolean exist = redisOps.checkExist(key);
+        if (!exist) {
+            Optional<DeviceDTO> gatewayOpt = this.getDeviceBySn(gatewaySn);
+            if (gatewayOpt.isPresent()) {
+                DeviceDTO value = gatewayOpt.get();
+                value.setChildDeviceSn(value.getDeviceSn());
+                value.setBoundTime(null);
+                value.setLoginTime(null);
+                redisOps.setWithExpire(key, value, RedisConst.DEVICE_ALIVE_SECOND);
+                this.pushDeviceOnlineTopo(value.getWorkspaceId(), gatewaySn, gatewaySn);
+                return true;
+            }
+            DeviceDTO gateway = DeviceDTO.builder()
+                    .deviceSn(gatewaySn)
+                    .childDeviceSn(gatewaySn)
+                    .domain(DeviceDomainEnum.GATEWAY.getDesc())
+                    .build();
+            gatewayOpt.map(DeviceDTO::getWorkspaceId).ifPresent(gateway::setWorkspaceId);
+            redisOps.setWithExpire(key, gateway, RedisConst.DEVICE_ALIVE_SECOND);
+            this.pushDeviceOnlineTopo(gateway.getWorkspaceId(), gatewaySn, gatewaySn);
             return true;
         }
-        // Handle the drone connected to the gateway device offline.
-        return this.subDeviceOffline(gatewaysList.get(0).getChildDeviceSn());
+
+        long expire = redisOps.getExpire(key);
+        // If the key about the device in redis has expired, the remote control is considered to be offline.
+        if (expire <= 0) {
+            log.debug("The remote control is already offline.");
+            return true;
+        }
+
+        String deviceSn = ((DeviceDTO)(redisOps.get(key))).getChildDeviceSn();
+        if (deviceSn.equals(gatewaySn)) {
+            return true;
+        }
+
+        return subDeviceOffline(deviceSn);
     }
 
     @Override
@@ -101,82 +143,117 @@ public class DeviceServiceImpl implements IDeviceService {
         // Cancel drone-related subscriptions.
         this.unsubscribeTopicOffline(deviceSn);
 
-        List<DeviceDTO> devicesList = this.getDevicesByParams(
-                DeviceQueryParam.builder()
-                        .deviceSn(deviceSn)
-                        .build());
-
-        // If no information about this drone exists in the database, the drone is considered to be offline.
-        if (devicesList.isEmpty()) {
-            log.debug("{} is already offline.", deviceSn);
+        payloadService.deletePayloadsByDeviceSn(new ArrayList<>(List.of(deviceSn)));
+        // If no information about this gateway device exists in the database, the drone is considered to be offline.
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
+        if (!redisOps.checkExist(key) || redisOps.getExpire(key) <= 0) {
+            log.debug("The drone is already offline.");
             return true;
         }
+        DeviceDTO device = (DeviceDTO) redisOps.get(key);
+        // Publish the latest device topology information in the current workspace.
+        this.pushDeviceOfflineTopo(device.getWorkspaceId(), deviceSn);
 
-        List<String> ids = devicesList.stream()
-                .map(DeviceDTO::getDeviceSn)
-                .collect(Collectors.toList());
-
-        // Delete all data related to the drone.
-        boolean isDel = this.delDeviceByDeviceSns(ids);
-        payloadService.deletePayloadsByDeviceSn(ids);
-
-        log.debug("{} offline status: {}.", deviceSn, isDel);
-        return isDel;
+        redisOps.del(key);
+        log.debug("{} offline.", deviceSn);
+        return true;
     }
 
     @Override
     public Boolean deviceOnline(StatusGatewayReceiver deviceGateway) {
         String deviceSn = deviceGateway.getSubDevices().get(0).getSn();
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
+        // change log:  Use redis instead of
+        long time = redisOps.getExpire(key);
+        long now = System.currentTimeMillis();
 
-        List<DeviceDTO> devicesList = this.getDevicesByParams(
-                DeviceQueryParam.builder()
-                        .deviceSn(deviceSn)
-                        .build());
-        // If the information about this drone exists in the database, the drone is considered to be online.
-        if (!devicesList.isEmpty()) {
+        if (time > 0) {
+            redisOps.expireKey(RedisConst.DEVICE_ONLINE_PREFIX + deviceGateway.getSn(), RedisConst.DEVICE_ALIVE_SECOND);
+            redisOps.expireKey(key, RedisConst.DEVICE_ALIVE_SECOND);
+            DeviceDTO device = DeviceDTO.builder().loginTime(LocalDateTime.now()).deviceSn(deviceSn).build();
+            DeviceDTO gateway = DeviceDTO.builder()
+                    .loginTime(LocalDateTime.now())
+                    .deviceSn(deviceGateway.getSn())
+                    .childDeviceSn(deviceSn).build();
+            this.updateDevice(gateway);
+            this.updateDevice(device);
+            String workspaceId = ((DeviceDTO)(redisOps.get(key))).getWorkspaceId();
+            if (StringUtils.hasText(workspaceId)) {
+                this.subscribeTopicOnline(deviceSn);
+                this.subscribeTopicOnline(deviceGateway.getSn());
+            }
             log.warn("{} is already online.", deviceSn);
-            // Subscribe to topic related to drone and gateway devices.
-            this.subscribeTopicOnline(deviceGateway.getSn());
-            this.subscribeTopicOnline(deviceSn);
             return true;
         }
 
-        // Delete the gateway device information that was previously bound to the drone.
-        this.delDeviceByDeviceSns(
-                this.getDevicesByParams(
-                        DeviceQueryParam.builder()
-                                .childSn(deviceSn)
-                                .build())
-                        .stream()
-                        .map(DeviceDTO::getDeviceSn)
-                        .collect(Collectors.toList()));
+        List<DeviceDTO> gatewaysList = this.getDevicesByParams(
+                DeviceQueryParam.builder()
+                        .childSn(deviceSn)
+                        .build());
+        gatewaysList.stream().filter(
+                gateway -> !gateway.getDeviceSn().equals(deviceGateway.getSn()))
+                .findAny()
+                .ifPresent(gateway -> {
+                    gateway.setChildDeviceSn("");
+                    this.updateDevice(gateway);
+                });
+
 
         DeviceEntity gateway = deviceGatewayConvertToDeviceEntity(deviceGateway);
-        gateway.setWorkspaceId(WorkspaceDTO.DEFAULT_WORKSPACE_ID);
+        gateway.setChildSn(deviceSn);
         // Set the icon of the gateway device displayed in the pilot's map, required in the TSA module.
         gateway.setUrlNormal(IconUrlEnum.NORMAL_PERSON.getUrl());
         // Set the icon of the gateway device displayed in the pilot's map when it is selected, required in the TSA module.
         gateway.setUrlSelect(IconUrlEnum.SELECT_PERSON.getUrl());
+        gateway.setLoginTime(now);
 
         DeviceEntity subDevice = subDeviceConvertToDeviceEntity(deviceGateway.getSubDevices().get(0));
-        subDevice.setWorkspaceId(WorkspaceDTO.DEFAULT_WORKSPACE_ID);
-        // Set the icon of the drone device displayed in the pilot's map, required in the TSA module.
-        subDevice.setUrlSelect(IconUrlEnum.SELECT_EQUIPMENT.getUrl());
         // Set the icon of the drone device displayed in the pilot's map when it is selected, required in the TSA module.
         subDevice.setUrlNormal(IconUrlEnum.NORMAL_EQUIPMENT.getUrl());
+        // Set the icon of the drone device displayed in the pilot's map, required in the TSA module.
+        subDevice.setUrlSelect(IconUrlEnum.SELECT_EQUIPMENT.getUrl());
+        subDevice.setLoginTime(now);
 
-        gateway.setChildSn(subDevice.getDeviceSn());
-
-        boolean isSave = this.saveDevice(gateway) > 0 && this.saveDevice(subDevice) > 0;
-
-        log.debug(subDevice.getDeviceSn() + " online status: {}", isSave);
-        if (isSave) {
-            // Subscribe to topic related to drone and gateway devices.
-            this.subscribeTopicOnline(subDevice.getDeviceSn());
-            this.subscribeTopicOnline(gateway.getDeviceSn());
-
+        // dock go online
+        if (deviceGateway.getDomain() != null && DeviceDomainEnum.DOCK.getVal() == deviceGateway.getDomain()) {
+            Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(deviceGateway.getSn());
+            if (deviceOpt.isEmpty()) {
+                log.info("The dock is not bound and cannot go online.");
+                return false;
+            }
+            gateway.setNickname(null);
+            subDevice.setNickname(null);
         }
-        return isSave;
+
+        Optional<DeviceEntity> gatewayOpt = this.saveDevice(gateway);
+        String workspaceId = this.saveDevice(subDevice).orElse(subDevice).getWorkspaceId();
+
+        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + deviceSn,
+                DeviceDTO.builder()
+                        .deviceSn(deviceSn)
+                        .domain(DeviceDomainEnum.SUB_DEVICE.getDesc())
+                        .workspaceId(workspaceId)
+                        .build(),
+                RedisConst.DEVICE_ALIVE_SECOND);
+        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + gateway.getDeviceSn(),
+                DeviceDTO.builder()
+                        .deviceSn(gateway.getDeviceSn())
+                        .workspaceId(gatewayOpt.orElse(gateway).getWorkspaceId())
+                        .childDeviceSn(deviceSn)
+                        .domain(deviceGateway.getDomain() != null ?
+                                DeviceDomainEnum.getDesc(deviceGateway.getDomain()) :
+                                DeviceDomainEnum.GATEWAY.getDesc())
+                        .build(),
+                RedisConst.DEVICE_ALIVE_SECOND);
+        log.debug("{} online.", subDevice.getDeviceSn());
+
+        if (StringUtils.hasText(workspaceId)) {
+            this.pushDeviceOnlineTopo(workspaceId, deviceGateway.getSn(), deviceSn);
+        }
+        // Subscribe to topic related to drone devices.
+        this.subscribeTopicOnline(deviceSn);
+        this.subscribeTopicOnline(deviceGateway.getSn());
+        return true;
     }
 
     @Override
@@ -191,6 +268,8 @@ public class DeviceServiceImpl implements IDeviceService {
         topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + OSD_SUF);
         topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + STATE_SUF);
         topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + SERVICES_SUF + _REPLY_SUF);
+        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + REQUESTS_SUF);
+        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + EVENTS_SUF);
     }
 
     @Override
@@ -198,6 +277,8 @@ public class DeviceServiceImpl implements IDeviceService {
         topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + OSD_SUF);
         topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + STATE_SUF);
         topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + SERVICES_SUF + _REPLY_SUF);
+        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + REQUESTS_SUF);
+        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + EVENTS_SUF);
     }
 
     @Override
@@ -232,17 +313,21 @@ public class DeviceServiceImpl implements IDeviceService {
         return mapper.selectList(
                 new LambdaQueryWrapper<DeviceEntity>()
                         .eq(StringUtils.hasText(param.getDeviceSn()),
-                                    DeviceEntity::getDeviceSn, param.getDeviceSn())
+                                DeviceEntity::getDeviceSn, param.getDeviceSn())
                         .eq(param.getDeviceType() != null,
                                 DeviceEntity::getDeviceType, param.getDeviceType())
                         .eq(param.getSubType() != null,
                                 DeviceEntity::getSubType, param.getSubType())
                         .eq(StringUtils.hasText(param.getChildSn()),
                                 DeviceEntity::getChildSn, param.getChildSn())
-                        .eq(param.getDomain() != null,
-                                DeviceEntity::getDomain, param.getDomain())
+                        .and(!CollectionUtils.isEmpty(param.getDomains()), wrapper -> {
+                            for (Integer domain : param.getDomains()) {
+                                wrapper.eq(DeviceEntity::getDomain, domain).or();
+                            }
+                        })
                         .eq(StringUtils.hasText(param.getWorkspaceId()),
                                 DeviceEntity::getWorkspaceId, param.getWorkspaceId())
+                        .eq(param.getBoundStatus() != null, DeviceEntity::getBoundStatus, param.getBoundStatus())
                         .orderBy(param.isOrderBy(),
                                 param.isAsc(), DeviceEntity::getId))
                 .stream()
@@ -255,13 +340,13 @@ public class DeviceServiceImpl implements IDeviceService {
         List<DeviceDTO> devicesList = this.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .workspaceId(workspaceId)
-                        .domain(DeviceDomainEnum.SUB_DEVICE.getVal())
+                        .domains(List.of(DeviceDomainEnum.SUB_DEVICE.getVal()))
                         .build());
 
         devicesList.forEach(device -> {
             this.spliceDeviceTopo(device);
             device.setWorkspaceId(workspaceId);
-
+            device.setStatus(redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()));
         });
         return devicesList;
     }
@@ -301,7 +386,7 @@ public class DeviceServiceImpl implements IDeviceService {
     }
 
     @Override
-    public void pushDeviceOnlineTopo(Collection<ConcurrentWebSocketSession> sessions, String sn) {
+    public void pushDeviceOnlineTopo(Collection<ConcurrentWebSocketSession> sessions, String sn, String gatewaySn) {
 
         CustomWebSocketMessage<TopologyDeviceDTO> pilotMessage =
                 CustomWebSocketMessage.<TopologyDeviceDTO>builder()
@@ -312,6 +397,9 @@ public class DeviceServiceImpl implements IDeviceService {
 
         this.getDeviceTopoForPilot(sn)
                 .ifPresent(pilotMessage::setData);
+        boolean exist = redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + sn);
+        pilotMessage.getData().setOnlineStatus(exist);
+        pilotMessage.getData().setGatewaySn(gatewaySn.equals(sn) ? "" : gatewaySn);
 
         sendMessageService.sendBatch(sessions, pilotMessage);
     }
@@ -321,91 +409,82 @@ public class DeviceServiceImpl implements IDeviceService {
         TopologyDeviceDTO.TopologyDeviceDTOBuilder builder = TopologyDeviceDTO.builder();
 
         if (device != null) {
-            String domain = String.valueOf(DeviceDomainEnum.getVal(device.getDomain()));
+            int domain = DeviceDomainEnum.getVal(device.getDomain());
             String subType = String.valueOf(device.getSubType());
             String type = String.valueOf(device.getType());
 
             builder.sn(device.getDeviceSn())
-                    .deviceCallsign(device.getDeviceName())
+                    .deviceCallsign(device.getNickname())
                     .deviceModel(DeviceModelDTO.builder()
-                            .domain(domain)
+                            .domain(String.valueOf(domain))
                             .subType(subType)
                             .type(type)
                             .key(domain + "-" + type + "-" + subType)
                             .build())
                     .iconUrls(device.getIconUrl())
+                    .onlineStatus(redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
+                    .boundStatus(device.getBoundStatus())
+                    .model(device.getDeviceName())
+                    .userId(device.getUserId())
+                    .domain(DeviceDomainEnum.getDesc(domain))
                     .build();
         }
         return builder.build();
     }
 
     @Override
-    public void pushDeviceOnlineTopo(String workspaceId, String deviceSn, String gatewaySn) {
+    public void pushDeviceOnlineTopo(String workspaceId, String gatewaySn, String deviceSn) {
 
-        // All connected accounts on the pilot side of this workspace.
-        Collection<ConcurrentWebSocketSession> pilotSessions = WebSocketManager
-                .getValueWithWorkspaceAndUserType(
-                        workspaceId, UserTypeEnum.PILOT.getVal());
+        // All connected accounts in this workspace.
+        Collection<ConcurrentWebSocketSession> allSessions = webSocketManageService.getValueWithWorkspace(workspaceId);
 
-        this.pushDeviceOnlineTopo(pilotSessions, deviceSn);
-        this.pushDeviceOnlineTopo(pilotSessions, gatewaySn);
-        this.pushDeviceUpdateTopo(pilotSessions, deviceSn);
-        this.pushDeviceUpdateTopo(pilotSessions, gatewaySn);
+        if (!gatewaySn.equals(deviceSn)) {
+            this.pushDeviceOnlineTopo(allSessions, deviceSn, gatewaySn);
+            this.pushDeviceUpdateTopo(allSessions, deviceSn);
+        }
+        this.pushDeviceOnlineTopo(allSessions, gatewaySn, gatewaySn);
+        this.pushDeviceUpdateTopo(allSessions, gatewaySn);
     }
 
     @Override
-    public void pushDeviceOfflineTopo(String workspaceId, String gatewaySn) {
-        // All connected accounts on the pilot side of this workspace.
-        Collection<ConcurrentWebSocketSession> pilotSessions = WebSocketManager
-                .getValueWithWorkspaceAndUserType(
-                        workspaceId, UserTypeEnum.PILOT.getVal());
+    public void pushDeviceOfflineTopo(String workspaceId, String sn) {
+        // All connected accounts of this workspace.
+        Collection<ConcurrentWebSocketSession> allSessions = webSocketManageService
+                .getValueWithWorkspace(workspaceId);
 
-
-        List<DeviceDTO> gatewaysList = this.getDevicesByParams(
-                DeviceQueryParam.builder()
-                        .deviceSn(gatewaySn)
-                        .build());
-
-        if (!gatewaysList.isEmpty()) {
-            String deviceSn = gatewaysList.get(0).getChildDeviceSn();
-            this.pushDeviceOfflineTopo(pilotSessions, deviceSn);
-            this.pushDeviceUpdateTopo(pilotSessions, deviceSn);
-        }
-
-        this.pushDeviceOfflineTopo(pilotSessions, gatewaySn);
-        this.pushDeviceUpdateTopo(pilotSessions, gatewaySn);
+        this.pushDeviceOfflineTopo(allSessions, sn);
+        this.pushDeviceUpdateTopo(allSessions, sn);
     }
 
     @Override
     public void handleOSD(String topic, byte[] payload) {
-        TopicStateReceiver receiver;
+        CommonTopicReceiver receiver;
         try {
             String from = topic.substring((THING_MODEL_PRE + PRODUCT).length(),
                     topic.indexOf(OSD_SUF));
 
-            List<DeviceDTO> deviceList = this.getDevicesByParams(
-                    DeviceQueryParam.builder().deviceSn(from).build());
-            if (deviceList.isEmpty()) {
+            // Real-time update of device status in memory
+            redisOps.expireKey(RedisConst.DEVICE_ONLINE_PREFIX + from, RedisConst.DEVICE_ALIVE_SECOND);
+
+            DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + from);
+
+            if (device == null || !StringUtils.hasText(device.getWorkspaceId())) {
                 return;
             }
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            receiver = objectMapper.readValue(payload, CommonTopicReceiver.class);
 
-            receiver = mapper.readValue(payload, TopicStateReceiver.class);
+            CustomWebSocketMessage<TelemetryDTO> wsMessage = CustomWebSocketMessage.<TelemetryDTO>builder()
+                    .timestamp(System.currentTimeMillis())
+                    .data(TelemetryDTO.builder().sn(from).build())
+                    .build();
 
-            CustomWebSocketMessage wsMessage = CustomWebSocketMessage.builder()
-                    .timestamp(System.currentTimeMillis()).build();
-
-            JsonNode hostNode = mapper.readTree(payload).findPath("data");
-
-            String workspaceId = deviceList.get(0).getWorkspaceId();
-            Collection<ConcurrentWebSocketSession> webSessions = WebSocketManager
+            Collection<ConcurrentWebSocketSession> webSessions = webSocketManageService
                     .getValueWithWorkspaceAndUserType(
-                            workspaceId, UserTypeEnum.WEB.getVal());
+                            device.getWorkspaceId(), UserTypeEnum.WEB.getVal());
 
 
-            tsaService.handleOSD(receiver, from, workspaceId, hostNode, webSessions, wsMessage);
+            tsaService.handleOSD(receiver, device, webSessions, wsMessage);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -451,7 +530,7 @@ public class DeviceServiceImpl implements IDeviceService {
      * @param entity
      * @return
      */
-    private Integer saveDevice(DeviceEntity entity) {
+    private Optional<DeviceEntity> saveDevice(DeviceEntity entity) {
         DeviceEntity deviceEntity = mapper.selectOne(
                 new LambdaQueryWrapper<DeviceEntity>()
                         .eq(DeviceEntity::getDeviceSn, entity.getDeviceSn()));
@@ -459,9 +538,9 @@ public class DeviceServiceImpl implements IDeviceService {
         if (deviceEntity != null) {
             entity.setId(deviceEntity.getId());
             mapper.updateById(entity);
-            return deviceEntity.getId();
+            return Optional.of(deviceEntity);
         }
-        return mapper.insert(entity) > 0 ? entity.getId() : 0;
+        return mapper.insert(entity) > 0 ? Optional.of(entity) : Optional.empty();
     }
 
     /**
@@ -477,19 +556,20 @@ public class DeviceServiceImpl implements IDeviceService {
 
         // Query the model information of this gateway device.
         Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                .getOneDictionaryInfoByDomainTypeSubType(gateway.getDomain(),
-                        gateway.getType(), gateway.getSubType());
+                .getOneDictionaryInfoByTypeSubType(gateway.getType(), gateway.getSubType());
 
         dictionaryOpt.ifPresent(entity ->
                 builder.deviceName(entity.getDeviceName())
+                        .nickname(entity.getDeviceName())
                         .deviceDesc(entity.getDeviceDesc()));
 
         return builder
                 .deviceSn(gateway.getSn())
-                .domain(gateway.getDomain())
                 .subType(gateway.getSubType())
                 .deviceType(gateway.getType())
                 .version(gateway.getVersion())
+                .domain(gateway.getDomain() != null ?
+                        gateway.getDomain() : DeviceDomainEnum.GATEWAY.getVal())
                 .build();
     }
 
@@ -506,48 +586,330 @@ public class DeviceServiceImpl implements IDeviceService {
 
         // Query the model information of this drone device.
         Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                .getOneDictionaryInfoByDomainTypeSubType(DeviceDomainEnum.SUB_DEVICE.getVal(),
-                        device.getType(), device.getSubType());
+                .getOneDictionaryInfoByTypeSubType(device.getType(), device.getSubType());
 
         dictionaryOpt.ifPresent(dictionary ->
                 builder.deviceName(dictionary.getDeviceName())
+                        .nickname(dictionary.getDeviceName())
                         .deviceDesc(dictionary.getDeviceDesc()));
 
         return builder
                 .deviceSn(device.getSn())
                 .deviceType(device.getType())
                 .subType(device.getSubType())
-                .domain(DeviceDomainEnum.SUB_DEVICE.getVal())
                 .version(device.getVersion())
                 .deviceIndex(device.getIndex())
+                .domain(device.getDomain() != null ?
+                        device.getDomain() : DeviceDomainEnum.SUB_DEVICE.getVal())
                 .build();
     }
 
     /**
-     * Convert database entity objects into device data transfer object.
+     * Convert database entity object into device data transfer object.
      * @param entity
      * @return
      */
     private DeviceDTO deviceEntityConvertToDTO(DeviceEntity entity) {
-        DeviceDTO.DeviceDTOBuilder builder = DeviceDTO.builder();
-
-        if (entity != null) {
-            builder.deviceSn(entity.getDeviceSn())
-                    .childDeviceSn(entity.getChildSn())
-                    .deviceName(entity.getDeviceName())
-                    .deviceDesc(entity.getDeviceDesc())
-                    .deviceIndex(entity.getDeviceIndex())
-                    .workspaceId(entity.getWorkspaceId())
-                    .type(entity.getDeviceType())
-                    .subType(entity.getSubType())
-                    .domain(DeviceDomainEnum.getDesc(entity.getDomain()))
-                    .iconUrl(IconUrlDTO.builder()
-                            .normalUrl(entity.getUrlNormal())
-                            .selectUrl(entity.getUrlSelect())
-                            .build())
-                    .build();
+        if (entity == null) {
+            return null;
         }
-        return builder.build();
+        return DeviceDTO.builder()
+                .deviceSn(entity.getDeviceSn())
+                .childDeviceSn(entity.getChildSn())
+                .deviceName(entity.getDeviceName())
+                .deviceDesc(entity.getDeviceDesc())
+                .deviceIndex(entity.getDeviceIndex())
+                .workspaceId(entity.getWorkspaceId())
+                .type(entity.getDeviceType())
+                .subType(entity.getSubType())
+                .domain(DeviceDomainEnum.getDesc(entity.getDomain()))
+                .iconUrl(IconUrlDTO.builder()
+                        .normalUrl(entity.getUrlNormal())
+                        .selectUrl(entity.getUrlSelect())
+                        .build())
+                .boundStatus(entity.getBoundStatus())
+                .loginTime(entity.getLoginTime() != null ?
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(entity.getLoginTime()), ZoneId.systemDefault())
+                        : null)
+                .boundTime(entity.getBoundTime() != null ?
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(entity.getBoundTime()), ZoneId.systemDefault())
+                        : null)
+                .nickname(entity.getNickname())
+                .firmwareVersion(entity.getFirmwareVersion())
+                .workspaceName(entity.getWorkspaceId() != null ?
+                        workspaceService.getWorkspaceByWorkspaceId(entity.getWorkspaceId())
+                        .map(WorkspaceDTO::getWorkspaceName).orElse("") : "")
+                .build();
     }
 
+    @Override
+    public Boolean updateDevice(DeviceDTO deviceDTO) {
+        int update = mapper.update(this.deviceDTO2Entity(deviceDTO),
+                new LambdaUpdateWrapper<DeviceEntity>().eq(DeviceEntity::getDeviceSn, deviceDTO.getDeviceSn()));
+        return update > 0;
+    }
+
+    @Override
+    public Boolean bindDevice(DeviceDTO device) {
+        device.setBoundStatus(true);
+        device.setBoundTime(LocalDateTime.now());
+
+        boolean isUpd = this.saveDevice(this.deviceDTO2Entity(device)).isPresent();
+        if (DeviceDomainEnum.DOCK.getDesc().equals(device.getDomain())) {
+            return isUpd;
+        }
+        if (!isUpd) {
+            return false;
+        }
+
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn();
+        DeviceDTO redisDevice = (DeviceDTO)redisOps.get(key);
+        redisDevice.setWorkspaceId(device.getWorkspaceId());
+        redisOps.setWithExpire(key, redisDevice, RedisConst.DEVICE_ALIVE_SECOND);
+
+        if (DeviceDomainEnum.GATEWAY.getDesc().equals(redisDevice.getDomain())) {
+            this.pushDeviceOnlineTopo(webSocketManageService.getValueWithWorkspace(device.getWorkspaceId()),
+                    device.getDeviceSn(), device.getDeviceSn());
+        }
+        if (DeviceDomainEnum.SUB_DEVICE.getDesc().equals(redisDevice.getDomain())) {
+            DeviceDTO subDevice = this.getDevicesByParams(DeviceQueryParam.builder()
+                    .childSn(device.getChildDeviceSn())
+                    .build()).get(0);
+            this.pushDeviceOnlineTopo(webSocketManageService.getValueWithWorkspace(device.getWorkspaceId()),
+                    device.getDeviceSn(), subDevice.getDeviceSn());
+        }
+        this.subscribeTopicOnline(device.getDeviceSn());
+
+        return true;
+    }
+
+    @Override
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS, outputChannel = ChannelName.OUTBOUND)
+    public void bindStatus(CommonTopicReceiver receiver, MessageHeaders headers) {
+        List<Map<String, String>> data = ((Map<String, List<Map<String, String>>>) receiver.getData()).get(MapKeyConst.DEVICES);
+        String dockSn = data.get(0).get(MapKeyConst.SN);
+        String droneSn = data.size() > 1 ? data.get(1).get(MapKeyConst.SN) : "null";
+
+        Optional<DeviceDTO> dockOpt = this.getDeviceBySn(dockSn);
+        Optional<DeviceDTO> droneOpt = this.getDeviceBySn(droneSn);
+
+        List<BindStatusReceiver> bindStatusResult = new ArrayList<>();
+        bindStatusResult.add(dockOpt.isPresent() ? this.dto2BindStatus(dockOpt.get()) :
+                BindStatusReceiver.builder().sn(dockSn).isDeviceBindOrganization(false).build());
+        if (data.size() > 1) {
+            bindStatusResult.add(droneOpt.isPresent() ? this.dto2BindStatus(droneOpt.get()) :
+                    BindStatusReceiver.builder().sn(droneSn).isDeviceBindOrganization(false).build());
+        }
+
+        messageSender.publish(headers.get(MqttHeaders.RECEIVED_TOPIC) + _REPLY_SUF,
+                CommonTopicResponse.builder()
+                        .tid(receiver.getTid())
+                        .bid(receiver.getBid())
+                        .timestamp(System.currentTimeMillis())
+                        .method(RequestsMethodEnum.AIRPORT_BIND_STATUS.getMethod())
+                        .data(RequestsReply.success(Map.of(MapKeyConst.BIND_STATUS, bindStatusResult)))
+                        .build());
+
+    }
+
+    @Override
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND)
+    public void bindDevice(CommonTopicReceiver receiver, MessageHeaders headers) {
+        Map<String, List<BindDeviceReceiver>> data = objectMapper.convertValue(receiver.getData(),
+                new TypeReference<Map<String, List<BindDeviceReceiver>>>() {});
+        List<BindDeviceReceiver> devices = data.get(MapKeyConst.BIND_DEVICES);
+        BindDeviceReceiver dock = null;
+        BindDeviceReceiver drone = null;
+        for (BindDeviceReceiver device : devices) {
+            int val = Integer.parseInt(device.getDeviceModelKey().split("-")[0]);
+            if (val == DeviceDomainEnum.DOCK.getVal()) {
+                dock = device;
+            }
+            if (val == DeviceDomainEnum.SUB_DEVICE.getVal()) {
+                drone = device;
+            }
+        }
+
+        assert dock != null;
+
+        Optional<DeviceEntity> dockEntityOpt = this.bindDevice2Entity(dock);
+        Optional<DeviceEntity> droneEntityOpt = this.bindDevice2Entity(drone);
+
+        List<ErrorInfoReply> bindResult = new ArrayList<>();
+
+        droneEntityOpt.ifPresent(droneEntity -> {
+            dockEntityOpt.get().setChildSn(droneEntity.getDeviceSn());
+            Optional<DeviceEntity> deviceEntityOpt = this.saveDevice(droneEntity);
+            bindResult.add(
+                    deviceEntityOpt.isPresent() ?
+                        ErrorInfoReply.success(droneEntity.getDeviceSn()) :
+                        new ErrorInfoReply(droneEntity.getDeviceSn(),
+                                CommonErrorEnum.DEVICE_BINDING_FAILED.getErrorCode())
+            );
+        });
+        Optional<DeviceEntity> dockOpt = this.saveDevice(dockEntityOpt.get());
+
+        bindResult.add(dockOpt.isPresent() ?
+                ErrorInfoReply.success(dock.getSn()) :
+                    new ErrorInfoReply(dock.getSn(),
+                            CommonErrorEnum.DEVICE_BINDING_FAILED.getErrorCode()));
+
+        String topic = headers.get(MqttHeaders.RECEIVED_TOPIC) + _REPLY_SUF;
+        messageSender.publish(topic,
+                CommonTopicResponse.builder()
+                        .tid(receiver.getTid())
+                        .bid(receiver.getBid())
+                        .method(RequestsMethodEnum.AIRPORT_ORGANIZATION_BIND.getMethod())
+                        .timestamp(System.currentTimeMillis())
+                        .data(RequestsReply.success(Map.of(MapKeyConst.ERR_INFOS, bindResult)))
+                        .build());
+
+    }
+
+    @Override
+    public PaginationData<DeviceDTO> getBoundDevicesWithDomain(String workspaceId, Long page,
+                                                               Long pageSize, String domain) {
+
+        Page<DeviceEntity> pagination = mapper.selectPage(new Page<>(page, pageSize),
+                new LambdaQueryWrapper<DeviceEntity>()
+                        .eq(DeviceEntity::getDomain, DeviceDomainEnum.getVal(domain))
+                        .eq(DeviceEntity::getWorkspaceId, workspaceId)
+                        .eq(DeviceEntity::getBoundStatus, true));
+        List<DeviceDTO> devicesList = pagination.getRecords().stream().map(this::deviceEntityConvertToDTO)
+                .peek(device -> {
+                    device.setStatus(redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()));
+                    if (StringUtils.hasText(device.getChildDeviceSn())) {
+                        Optional<DeviceDTO> childOpt = this.getDeviceBySn(device.getChildDeviceSn());
+                        childOpt.ifPresent(child -> {
+                            child.setStatus(
+                                    redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + child.getDeviceSn()));
+                            child.setWorkspaceName(device.getWorkspaceName());
+                            device.setChildren(child);
+                        });
+                    }
+                })
+                .collect(Collectors.toList());
+        return new PaginationData<DeviceDTO>(devicesList, new Pagination(pagination));
+    }
+
+    @Override
+    public void unbindDevice(String deviceSn) {
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
+        DeviceDTO redisDevice = (DeviceDTO) redisOps.get(key);
+        redisDevice.setWorkspaceId("");
+        redisOps.setWithExpire(key, redisDevice, RedisConst.DEVICE_ALIVE_SECOND);
+
+        DeviceDTO device = DeviceDTO.builder()
+                .deviceSn(deviceSn)
+                .workspaceId("")
+                .userId("")
+                .boundStatus(false)
+                .build();
+        this.updateDevice(device);
+    }
+
+    @Override
+    public Optional<DeviceDTO> getDeviceBySn(String sn) {
+        List<DeviceDTO> devicesList = this.getDevicesByParams(DeviceQueryParam.builder().deviceSn(sn).build());
+        if (devicesList.isEmpty()) {
+            return Optional.empty();
+        }
+        DeviceDTO device = devicesList.get(0);
+        device.setStatus(redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + sn));
+        return Optional.of(device);
+    }
+
+    @Override
+    public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
+        if (receiver.getDomain() == DeviceDomainEnum.SUB_DEVICE) {
+            this.updateDevice(DeviceDTO.builder()
+                    .deviceSn(receiver.getSn())
+                    .firmwareVersion(receiver.getFirmwareVersion())
+                    .build());
+            return;
+        }
+        payloadService.updateFirmwareVersion(receiver);
+    }
+
+    /**
+     * Convert device data transfer object into database entity object.
+     * @param dto
+     * @return
+     */
+    private DeviceEntity deviceDTO2Entity(DeviceDTO dto) {
+        DeviceEntity.DeviceEntityBuilder builder = DeviceEntity.builder();
+        if (dto == null) {
+            return builder.build();
+        }
+
+        return builder.deviceSn(dto.getDeviceSn())
+                .userId(dto.getUserId())
+                .nickname(dto.getNickname())
+                .workspaceId(dto.getWorkspaceId())
+                .boundStatus(dto.getBoundStatus())
+                .loginTime(dto.getLoginTime() != null ?
+                        dto.getLoginTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null)
+                .boundTime(dto.getBoundTime() != null ?
+                        dto.getBoundTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null)
+                .childSn(dto.getChildDeviceSn())
+                .domain(StringUtils.hasText(dto.getDomain()) ? DeviceDomainEnum.getVal(dto.getDomain()) : null)
+                .firmwareVersion(dto.getFirmwareVersion())
+                .build();
+    }
+
+    /**
+     * Convert device binding data object into database entity object.
+     * @param receiver
+     * @return
+     */
+    private Optional<DeviceEntity> bindDevice2Entity(BindDeviceReceiver receiver) {
+        if (receiver == null) {
+            return Optional.empty();
+        }
+        int[] droneKey = Arrays.stream(receiver.getDeviceModelKey().split("-")).mapToInt(Integer::parseInt).toArray();
+        Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService.getOneDictionaryInfoByTypeSubType(droneKey[1], droneKey[2]);
+        DeviceEntity.DeviceEntityBuilder builder = DeviceEntity.builder();
+
+        dictionaryOpt.ifPresent(entity ->
+                builder.deviceName(entity.getDeviceName())
+                        .nickname(entity.getDeviceName())
+                        .deviceDesc(entity.getDeviceDesc()));
+
+        Optional<WorkspaceDTO> workspace = workspaceService.getWorkspaceNameByBindCode(receiver.getDeviceBindingCode());
+
+        DeviceEntity entity = builder
+                .workspaceId(workspace.isPresent() ? workspace.get().getWorkspaceId() : receiver.getOrganizationId())
+                .domain(droneKey[0])
+                .deviceType(droneKey[1])
+                .subType(droneKey[2])
+                .deviceSn(receiver.getSn())
+                .boundStatus(true)
+                .loginTime(System.currentTimeMillis())
+                .boundTime(System.currentTimeMillis())
+                .urlSelect(IconUrlEnum.SELECT_EQUIPMENT.getUrl())
+                .urlNormal(IconUrlEnum.NORMAL_EQUIPMENT.getUrl())
+                .build();
+        if (StringUtils.hasText(receiver.getDeviceCallsign())) {
+            entity.setNickname(receiver.getDeviceCallsign());
+        }
+        return Optional.of(entity);
+    }
+
+    /**
+     * Convert device data transfer object into device binding status data object.
+     * @param device
+     * @return
+     */
+    private BindStatusReceiver dto2BindStatus(DeviceDTO device) {
+        if (device == null) {
+            return null;
+        }
+        return BindStatusReceiver.builder()
+                .sn(device.getDeviceSn())
+                .deviceCallsign(device.getNickname())
+                .isDeviceBindOrganization(device.getBoundStatus())
+                .organizationId(device.getWorkspaceId())
+                .organizationName(device.getWorkspaceName())
+                .build();
+    }
 }
