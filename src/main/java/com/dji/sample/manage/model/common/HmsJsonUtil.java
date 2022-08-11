@@ -33,7 +33,7 @@ public class HmsJsonUtil {
 
     }
 
-    @PostConstruct
+//     @PostConstruct
     private void loadJsonFile() {
         try (InputStream inputStream = new ClassPathResource("hms.json").getInputStream()){
             nodes = mapper.readTree(inputStream);
