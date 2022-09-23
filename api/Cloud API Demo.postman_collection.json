@@ -149,7 +149,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"url\": \"rtmp://192.168.1.1/live/1651053434895\",\r\n    \"url_type\": 1,\r\n    \"video_id\": \"1581F4BN/52-0-0/zoom-0\",\r\n    \"video_quality\": 0\r\n}",
+							"raw": "{\r\n    \"url\": \"rtmp://192.168.1.1/live/1651053434895\",\r\n    \"url_type\": 1,\r\n    \"video_id\": \"1581F5B0159/53-0-0/normal-0\",\r\n    \"video_quality\": 0\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -383,6 +383,326 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Firmware Upgrad",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\r\n    {\r\n        \"sn\": \"1581F5B9\",\r\n        \"device_name\": \"Matrice 30\",\r\n        \"product_version\": \"04.01.0020\",\r\n        \"firmware_upgrade_type\": 3\r\n    }\r\n]\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/{{workspace_id}}/devices/ota",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"{{workspace_id}}",
+								"devices",
+								"ota"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Latest Release Note",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/firmware-release-notes/latest?device_name=DJI Dock",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"firmware-release-notes",
+								"latest"
+							],
+							"query": [
+								{
+									"key": "device_name",
+									"value": "DJI Dock"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get HMS Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/{{workspace_id}}/devices/hms?device_sn=&language=en&page=1&page_size=2",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"{{workspace_id}}",
+								"devices",
+								"hms"
+							],
+							"query": [
+								{
+									"key": "device_sn",
+									"value": "",
+									"description": "Type: List"
+								},
+								{
+									"key": "begin_time",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "end_time",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "language",
+									"value": "en",
+									"description": "zh or en"
+								},
+								{
+									"key": "message",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "2"
+								},
+								{
+									"key": "level",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "update_time",
+									"value": null,
+									"description": "Type: Long",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Unread HMS",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/{{workspace_id}}/devices/hms/{{device_sn}}",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"{{workspace_id}}",
+								"devices",
+								"hms",
+								"{{device_sn}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Hms",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/{{workspace_id}}/devices/hms/{{device_sn}}",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"{{workspace_id}}",
+								"devices",
+								"hms",
+								"{{device_sn}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Uploaded Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/{{device_sn}}/logs-uploaded?page=1&page_size=12&begin_time=123123&end_time=123123",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"logs-uploaded"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "12"
+								},
+								{
+									"key": "status",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "begin_time",
+									"value": "123123"
+								},
+								{
+									"key": "end_time",
+									"value": "123123"
+								},
+								{
+									"key": "logs_information",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Real Time Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/{{device_sn}}/logs?domain_list=0,3",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"logs"
+							],
+							"query": [
+								{
+									"key": "domain_list",
+									"value": "0,3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Logs",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"logs_information\":\"\",\r\n    \"happen_time\":1659326597,\r\n    \"files\":[\r\n        {\r\n            \"list\":[\r\n                {\r\n                    \"boot_index\":1053,\r\n                    \"end_time\":1662070409,\r\n                    \"size\":1083590875,\r\n                    \"start_time\":1662066809\r\n                }\r\n            ],\r\n            \"device_sn\":\"4TADK1D\",\r\n            \"module\":\"3\"\r\n        },\r\n        {\r\n            \"list\":[\r\n                {\r\n                    \"boot_index\":222,\r\n                    \"end_time\":1661833032,\r\n                    \"size\":1782411613,\r\n                    \"start_time\":1661830103\r\n                }\r\n            ],\r\n            \"device_sn\":\"1581259\",\r\n            \"module\":\"0\"\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/{{device_sn}}/logs",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"logs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel File Upload",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\":\"cancel\",\r\n    \"module_list\":[\r\n        \"0\",\r\n        \"3\"\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/{{device_sn}}/logs",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"logs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Upload History",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/devices/{{device_sn}}/logs/{{logs_id}}",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"logs",
+								"{{logs_id}}"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -390,7 +710,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTI2OTUxOTcsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTI3ODE1OTcsImlhdCI6MTY1MjY5NTE5NywidXNlcm5hbWUiOiJhZG1pblBDIn0.BHTwW8imw5ab0GUypRyJ2gkoz5av9q99NrxoFlL53dA",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NjM1NTkxMTAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NjM2NDU1MTAsImlhdCI6MTY2MzU1OTExMCwidXNlcm5hbWUiOiJhZG1pblBDIn0.LG1JXZkuTdMaqnXn5WMJvnysNkHHbc4HLe_qZPWz_nM",
 						"type": "string"
 					},
 					{
@@ -723,7 +1043,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTgzOTIyNzksImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTg0Nzg2NzksImlhdCI6MTY1ODM5MjI3OSwidXNlcm5hbWUiOiJhZG1pblBDIn0.ErClyQS1YzoQVBcLYxpFEiyFTb1L-eg2-vsudlL9WJU",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NjI2OTYwNjMsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NjI3ODI0NjMsImlhdCI6MTY2MjY5NjA2MywidXNlcm5hbWUiOiJhZG1pblBDIn0.9XEd-Zspb_a-2WhtcHxbQ4GdHbBj9wfmUbHBkZgSS0c",
 						"type": "string"
 					},
 					{
@@ -783,7 +1103,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTI2OTUxOTcsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTI3ODE1OTcsImlhdCI6MTY1MjY5NTE5NywidXNlcm5hbWUiOiJhZG1pblBDIn0.BHTwW8imw5ab0GUypRyJ2gkoz5av9q99NrxoFlL53dA",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTg3MTgxNTMsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTg4MDQ1NTMsImlhdCI6MTY1ODcxODE1MywidXNlcm5hbWUiOiJhZG1pblBDIn0._Xw3rnnDhs32JW9pD_FBtRWDuwLZgX_ys3GNmZxuHsk",
 						"type": "string"
 					},
 					{
@@ -1050,7 +1370,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"\",\r\n    \"fild_id\": \"\",\r\n    \"dock_sn\": \"\",\r\n    \"type\": \"\",\r\n    \"immediate\": false\r\n}",
+							"raw": "{\r\n    \"name\": \"\",\r\n    \"file_id\": \"\",\r\n    \"dock_sn\": \"\",\r\n    \"type\": \"\",\r\n    \"immediate\": false\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1156,6 +1476,66 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "control",
+			"item": [
+				{
+					"name": "Create Control Job",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/4TADK7E000000H/jobs/debug_mode_close",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"4TADK7E000000H",
+								"jobs",
+								"debug_mode_close"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "apikey",
+				"apikey": [
+					{
+						"key": "value",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NjE5NTQwMTQsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NjIwNDA0MTQsImlhdCI6MTY2MTk1NDAxNCwidXNlcm5hbWUiOiJhZG1pblBDIn0.GgCh575h2-HvYvdGZIKBW50r0F6CPACQn4ceAVzJfCU",
+						"type": "string"
+					},
+					{
+						"key": "key",
+						"value": "x-auth-token",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"auth": {
@@ -1163,7 +1543,7 @@
 		"apikey": [
 			{
 				"key": "value",
-				"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTA0MjY3MzAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTA1MTMxMzAsImlhdCI6MTY1MDQyNjczMCwidXNlcm5hbWUiOiJhZG1pblBDIn0.-FBpi0ktuZ68jV6-HQ7mwm8iC07YH-Hw2aRiREzJ8hs",
+				"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NjMyMjM1MTAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NjMzMDk5MTAsImlhdCI6MTY2MzIyMzUxMCwidXNlcm5hbWUiOiJhZG1pblBDIn0.6gzNuuX2f0YBoddoD61NFnwABQ_X4LFtQhEaLWSmTW8",
 				"type": "string"
 			},
 			{

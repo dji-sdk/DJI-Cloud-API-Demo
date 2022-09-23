@@ -23,6 +23,9 @@ public class MediaFileEntity implements Serializable {
     @TableId(type = IdType.AUTO)
     private Integer id;
 
+    @TableField("file_id")
+    private String fileId;
+
     @TableField("file_name")
     private String fileName;
 

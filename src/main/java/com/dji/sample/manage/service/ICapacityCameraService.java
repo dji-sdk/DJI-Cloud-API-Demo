@@ -30,8 +30,9 @@ public interface ICapacityCameraService {
      * Save the live capability data of the device.
      * @param capacityCameraReceivers
      * @param deviceSn
+     * @param timestamp
      */
-    void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn);
+    void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn, Long timestamp);
 
     /**
      *  Convert the received camera capability object into camera data transfer object.

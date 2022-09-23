@@ -74,6 +74,10 @@ public class AmazonS3ServiceImpl implements IOssService {
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
         AmazonS3 client = this.createClient();
+        if (!client.doesObjectExist(bucket, objectKey)) {
+            client.shutdown();
+            return true;
+        }
         client.deleteObject(bucket, objectKey);
         client.shutdown();
         return true;
@@ -82,18 +86,13 @@ public class AmazonS3ServiceImpl implements IOssService {
     public byte[] getObject(String bucket, String objectKey) {
         AmazonS3 client = this.createClient();
         S3Object object = client.getObject(bucket, objectKey);
-        InputStream stream = object.getObjectContent().getDelegateStream();
-        try {
+
+        try (InputStream stream = object.getObjectContent().getDelegateStream()) {
             return stream.readAllBytes();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                stream.close();
-                client.shutdown();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            client.shutdown();
         }
         return new byte[0];
     }

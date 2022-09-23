@@ -36,20 +36,27 @@ public class TopologyServiceImpl implements ITopologyService {
 
         List<TopologyDTO> topologyList = new ArrayList<>();
 
-        gatewayList.forEach(device -> {
-            List<TopologyDeviceDTO> parents = new ArrayList<>();
-            TopologyDeviceDTO gateway = deviceService.deviceConvertToTopologyDTO(device);
-            parents.add(gateway);
-
-            // Query the topology data of the drone based on the drone sn.
-            Optional<TopologyDeviceDTO> deviceTopo = deviceService.getDeviceTopoForPilot(device.getChildDeviceSn());
-            List<TopologyDeviceDTO> deviceTopoList = new ArrayList<>();
-            deviceTopo.ifPresent(deviceTopoList::add);
-
-            topologyList.add(TopologyDTO.builder().parents(parents).hosts(deviceTopoList).build());
-        });
+        gatewayList.forEach(device -> this.getDeviceTopologyByGatewaySn(device.getDeviceSn())
+                .ifPresent(topologyList::add));
 
         return topologyList;
     }
 
+    public Optional<TopologyDTO> getDeviceTopologyByGatewaySn(String gatewaySn) {
+        Optional<DeviceDTO> dtoOptional = deviceService.getDeviceBySn(gatewaySn);
+        if (dtoOptional.isEmpty()) {
+            return Optional.empty();
+        }
+        List<TopologyDeviceDTO> parents = new ArrayList<>();
+        DeviceDTO device = dtoOptional.get();
+        TopologyDeviceDTO gateway = deviceService.deviceConvertToTopologyDTO(device);
+        parents.add(gateway);
+
+        // Query the topology data of the drone based on the drone sn.
+        Optional<TopologyDeviceDTO> deviceTopo = deviceService.getDeviceTopoForPilot(device.getChildDeviceSn());
+        List<TopologyDeviceDTO> deviceTopoList = new ArrayList<>();
+        deviceTopo.ifPresent(deviceTopoList::add);
+
+        return Optional.ofNullable(TopologyDTO.builder().parents(parents).hosts(deviceTopoList).build());
+    }
 }

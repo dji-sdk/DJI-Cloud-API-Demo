@@ -23,6 +23,8 @@ import java.io.Serializable;
 @TableName(value = "manage_device_hms")
 public class DeviceHmsEntity implements Serializable, Cloneable {
 
+    private static final long serialVersionUID = -12L;
+
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 

@@ -1,9 +1,10 @@
-package com.dji.sample.configuration;
+package com.dji.sample.configuration.mvc;
 
 import com.dji.sample.component.AuthInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -24,6 +25,7 @@ public class GlobalMVCConfigurer implements WebMvcConfigurer {
     @Value("${url.manage.version}")
     private String manageVersion;
 
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // Exclude the login interface.
@@ -31,5 +33,10 @@ public class GlobalMVCConfigurer implements WebMvcConfigurer {
         excludePaths.add(managePrefix + manageVersion + "/token/refresh");
         // Intercept for all request interfaces.
         registry.addInterceptor(authInterceptor).addPathPatterns("/**").excludePathPatterns(excludePaths);
+    }
+
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(new GetSnakeArgumentProcessor(true));
     }
 }

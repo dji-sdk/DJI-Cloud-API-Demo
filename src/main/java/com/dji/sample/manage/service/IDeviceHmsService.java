@@ -13,9 +13,23 @@ import org.springframework.messaging.MessageHeaders;
  */
 public interface IDeviceHmsService {
 
+    /**
+     * Handle hms messages.
+     * @param receiver
+     * @param headers
+     */
     void handleHms(CommonTopicReceiver receiver, MessageHeaders headers);
 
+    /**
+     * Query hms data by paging according to query parameters.
+     * @param param
+     * @return
+     */
     PaginationData<DeviceHmsDTO> getDeviceHmsByParam(DeviceHmsQueryParam param);
 
+    /**
+     * Read message handling.
+     * @param deviceSn
+     */
     void updateUnreadHms(String deviceSn);
 }

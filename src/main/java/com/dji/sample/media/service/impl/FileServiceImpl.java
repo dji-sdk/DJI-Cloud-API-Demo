@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +55,13 @@ public class FileServiceImpl implements IFileService {
         return Optional.ofNullable(fileEntity);
     }
 
+    private Optional<MediaFileEntity> getMediaByFileId(String workspaceId, String fileId) {
+        MediaFileEntity fileEntity = mapper.selectOne(new LambdaQueryWrapper<MediaFileEntity>()
+                .eq(MediaFileEntity::getWorkspaceId, workspaceId)
+                .eq(MediaFileEntity::getFileId, fileId));
+        return Optional.ofNullable(fileEntity);
+    }
+
     @Override
     public Boolean checkExist(String workspaceId, String fingerprint) {
         return this.getMediaByFingerprint(workspaceId, fingerprint).isPresent();
@@ -63,6 +71,7 @@ public class FileServiceImpl implements IFileService {
     public Integer saveFile(String workspaceId, FileUploadDTO file) {
         MediaFileEntity fileEntity = this.fileUploadConvertToEntity(file);
         fileEntity.setWorkspaceId(workspaceId);
+        fileEntity.setFileId(UUID.randomUUID().toString());
         return mapper.insert(fileEntity);
     }
 
@@ -90,8 +99,8 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
-    public URL getObjectUrl(String workspaceId, String fingerprint) {
-        Optional<MediaFileEntity> mediaFileOpt = getMediaByFingerprint(workspaceId, fingerprint);
+    public URL getObjectUrl(String workspaceId, String fileId) {
+        Optional<MediaFileEntity> mediaFileOpt = getMediaByFileId(workspaceId, fileId);
         if (mediaFileOpt.isEmpty()) {
             throw new IllegalArgumentException("{} doesn't exist.");
         }
@@ -140,6 +149,7 @@ public class FileServiceImpl implements IFileService {
 
         if (entity != null) {
             builder.fileName(entity.getFileName())
+                    .fileId(entity.getFileId())
                     .filePath(entity.getFilePath())
                     .isOriginal(entity.getIsOriginal())
                     .fingerprint(entity.getFingerprint())

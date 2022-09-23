@@ -4,6 +4,7 @@ import com.dji.sample.manage.model.dto.DevicePayloadDTO;
 import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
 import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -52,4 +53,17 @@ public interface IDevicePayloadService {
      * @param receiver
      */
     void updateFirmwareVersion(FirmwareVersionReceiver receiver);
+
+    /**
+     * Handle the topic that contains the payloads field in the state, and save the payloads data.
+     * @param payloadReceiverList
+     * @param timestamp
+     */
+    void saveDeviceBasicPayload(List<DevicePayloadReceiver> payloadReceiverList, Long timestamp);
+
+    /**
+     * Delete payload data based on payload sn.
+     * @param payloadSns
+     */
+    void deletePayloadsByPayloadsSn(Collection<String> payloadSns);
 }

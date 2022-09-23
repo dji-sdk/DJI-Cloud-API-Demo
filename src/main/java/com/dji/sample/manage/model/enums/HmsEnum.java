@@ -54,6 +54,8 @@ public enum HmsEnum {
     @Getter
     public enum HmsFaqIdEnum {
 
+        DOCK_TIP("dock_tip_"),
+
         FPV_TIP("fpv_tip_");
 
         private String text;
@@ -150,6 +152,40 @@ public enum HmsEnum {
                     .filter(rod -> rod.val == val)
                     .findAny()
                     .orElse(UNKNOWN);
+        }
+    }
+
+    @Getter
+    public enum FormatKeyEnum {
+
+        ALARM_ID("alarmid", 0),
+
+        COMPONENT_INDEX("component_index", 1),
+
+        INDEX("index", 2),
+
+        BATTERY_INDEX("battery_index", 3),
+
+        DOCK_COVER_INDEX("dock_cover_index", 4),
+
+        CHARGING_ROD_INDEX("charging_rod_index", 5),
+
+        UNKNOWN("unknown", -1);
+
+        public static final char KEY_START = '%';
+
+        String key;
+        int index;
+
+        FormatKeyEnum(String key, int index) {
+            this.key = key;
+            this.index = index;
+        }
+
+        public static FormatKeyEnum find(String key) {
+            return Arrays.stream(FormatKeyEnum.values())
+                    .filter(format -> format.getKey().equals(key))
+                    .findAny().orElse(UNKNOWN);
         }
     }
 }

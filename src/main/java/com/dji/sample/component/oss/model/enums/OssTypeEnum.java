@@ -11,9 +11,6 @@ public enum OssTypeEnum {
 
     AWS("aws"),
 
-	/*
-	 * MinIO is temporarily unavailable.
-	*/
     MINIO("minio");
 
     private String type;

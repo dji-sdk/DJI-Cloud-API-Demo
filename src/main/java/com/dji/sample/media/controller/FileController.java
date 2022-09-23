@@ -37,18 +37,18 @@ public class FileController {
     }
 
     /**
-     * Query the download address of the file according to the media file fingerprint,
+     * Query the download address of the file according to the media file id,
      * and redirect to this address directly for download.
      * @param workspaceId
-     * @param fingerprint
+     * @param fileId
      * @param response
      */
-    @GetMapping("/{workspace_id}/file/{fingerprint}/url")
+    @GetMapping("/{workspace_id}/file/{file_id}/url")
     public void getFileUrl(@PathVariable(name = "workspace_id") String workspaceId,
-                           @PathVariable String fingerprint, HttpServletResponse response) {
+                           @PathVariable(name = "file_id") String fileId, HttpServletResponse response) {
 
         try {
-            URL url = fileService.getObjectUrl(workspaceId, fingerprint);
+            URL url = fileService.getObjectUrl(workspaceId, fileId);
             response.sendRedirect(url.toString());
         } catch (IOException e) {
             e.printStackTrace();

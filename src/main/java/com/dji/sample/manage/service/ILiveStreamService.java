@@ -24,8 +24,9 @@ public interface ILiveStreamService {
     /**
      * Save live capability data.
      * @param liveCapacityReceiver
+     * @param timestamp
      */
-    void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver);
+    void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver, Long timestamp);
 
     /**
      * Initiate a live streaming by publishing mqtt message.

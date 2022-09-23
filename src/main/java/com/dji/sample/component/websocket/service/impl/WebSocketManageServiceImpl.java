@@ -55,7 +55,7 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
             return;
         }
         redisOps.hashDel(RedisConst.WEBSOCKET_PREFIX + name[0], new String[] {sessionId});
-        redisOps.hashDel(RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(Integer.parseInt(name[1])), new String[] {sessionId});
+        redisOps.hashDel(RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(Integer.parseInt(name[1])).getDesc(), new String[] {sessionId});
         SESSIONS.remove(sessionId);
     }
 

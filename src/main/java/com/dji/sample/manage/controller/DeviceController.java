@@ -7,6 +7,7 @@ import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
+import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
 import com.dji.sample.manage.service.IDeviceService;
@@ -84,6 +85,10 @@ public class DeviceController {
         return ResponseResult.success(devicesList);
     }
 
+    /**
+     * Handle osd topic messages.
+     * @param message
+     */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_OSD)
     public void osdRealTime(Message<?> message) {
         String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
@@ -91,11 +96,21 @@ public class DeviceController {
         deviceService.handleOSD(topic, payload);
     }
 
+    /**
+     * Receive the reported firmware version data.
+     * @param receiver
+     */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
     public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
         deviceService.updateFirmwareVersion(receiver);
     }
 
+    /**
+     * After binding the device to the workspace, the device data can only be seen on the web.
+     * @param device
+     * @param deviceSn
+     * @return
+     */
     @PostMapping("/{device_sn}/binding")
     public ResponseResult bindDevice(@RequestBody DeviceDTO device, @PathVariable("device_sn") String deviceSn) {
         device.setDeviceSn(deviceSn);
@@ -103,6 +118,12 @@ public class DeviceController {
         return isUpd ? ResponseResult.success() : ResponseResult.error();
     }
 
+    /**
+     * Obtain device information according to device sn.
+     * @param workspaceId
+     * @param deviceSn
+     * @return
+     */
     @GetMapping("/{workspace_id}/devices/{device_sn}")
     public ResponseResult getDevice(@PathVariable("workspace_id") String workspaceId,
                                                @PathVariable("device_sn") String deviceSn) {
@@ -127,12 +148,24 @@ public class DeviceController {
         return ResponseResult.success(devices);
     }
 
+    /**
+     * Removing the binding state of the device.
+     * @param deviceSn
+     * @return
+     */
     @DeleteMapping("/{device_sn}/unbinding")
     public ResponseResult unbindingDevice(@PathVariable("device_sn") String deviceSn) {
         deviceService.unbindDevice(deviceSn);
         return ResponseResult.success();
     }
 
+    /**
+     * Update device information.
+     * @param device
+     * @param workspaceId
+     * @param deviceSn
+     * @return
+     */
     @PutMapping("/{workspace_id}/devices/{device_sn}")
     public ResponseResult updateDevice(@RequestBody DeviceDTO device,
                                        @PathVariable("workspace_id") String workspaceId,
@@ -140,5 +173,17 @@ public class DeviceController {
         device.setDeviceSn(deviceSn);
         boolean isUpd = deviceService.updateDevice(device);
         return isUpd ? ResponseResult.success() : ResponseResult.error();
+    }
+
+    /**
+     * Delivers offline firmware upgrade tasks.
+     * @param workspaceId
+     * @param upgradeDTOS
+     * @return
+     */
+    @PostMapping("/{workspace_id}/devices/ota")
+    public ResponseResult createOtaJob(@PathVariable("workspace_id") String workspaceId,
+                                       @RequestBody List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
+        return deviceService.createDeviceOtaJob(workspaceId, upgradeDTOS);
     }
 }

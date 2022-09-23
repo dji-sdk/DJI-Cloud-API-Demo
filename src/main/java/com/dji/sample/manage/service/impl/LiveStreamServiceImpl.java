@@ -5,6 +5,7 @@ import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.mqtt.model.ServiceReply;
 import com.dji.sample.component.mqtt.model.ServicesMethodEnum;
+import com.dji.sample.component.mqtt.model.StateDataEnum;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
@@ -25,10 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -80,11 +78,17 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     }
 
     @Override
-    public void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver) {
+    public void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver, Long timestamp) {
+        // Solve timing problems
         for (CapacityDeviceReceiver capacityDeviceReceiver : liveCapacityReceiver.getDeviceList()) {
+            long last = (long) Objects.requireNonNullElse(
+                    redisOps.get(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + capacityDeviceReceiver.getSn()), 0L);
+            if (last > timestamp) {
+                return;
+            }
             capacityCameraService.saveCapacityCameraReceiverList(
                     capacityDeviceReceiver.getCameraList(),
-                    capacityDeviceReceiver.getSn());
+                    capacityDeviceReceiver.getSn(), timestamp);
         }
     }
 

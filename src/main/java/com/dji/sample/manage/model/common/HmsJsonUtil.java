@@ -44,6 +44,9 @@ public class HmsJsonUtil {
     }
 
     public static HmsMessage get(String key) {
+        if (nodes.get(key) == null) {
+            return new HmsMessage();
+        }
         return mapper.convertValue(nodes.get(key), HmsMessage.class);
     }
 }

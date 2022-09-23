@@ -10,7 +10,7 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class Chan<T> {
 
-    private static final long THREAD_WAIT_TIME = 1000_000 * 2000;
+    private static final long THREAD_WAIT_TIME = 1000_000L * 10_000;
 
     private volatile T data;
 

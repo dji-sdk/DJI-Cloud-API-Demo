@@ -137,4 +137,19 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.INBOUND_EVENTS_CONTROL_PROGRESS)
+    public MessageChannel eventsControlProgress() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_OTA_PROGRESS)
+    public MessageChannel eventsOtaProgress() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_PROGRESS)
+    public MessageChannel eventsFileUploadProgress() {
+        return new DirectChannel();
+    }
+
 }

@@ -11,6 +11,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author sean
@@ -37,12 +38,8 @@ public class EventsRouter {
                 })
                 .<CommonTopicReceiver, EventsMethodEnum>route(
                         receiver -> EventsMethodEnum.find(receiver.getMethod()),
-                        mapping -> {
-                            mapping.channelMapping(EventsMethodEnum.FILE_UPLOAD_CALLBACK, ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK);
-                            mapping.channelMapping(EventsMethodEnum.FLIGHT_TASK_PROGRESS, ChannelName.INBOUND_EVENTS_FLIGHT_TASK_PROGRESS);
-                            mapping.channelMapping(EventsMethodEnum.HMS, ChannelName.INBOUND_EVENTS_HMS);
-                            mapping.channelMapping(EventsMethodEnum.UNKNOWN, ChannelName.DEFAULT);
-                        })
+                        mapping -> Arrays.stream(EventsMethodEnum.values()).forEach(
+                                methodEnum -> mapping.channelMapping(methodEnum, methodEnum.getChannelName())))
                 .get();
     }
 }

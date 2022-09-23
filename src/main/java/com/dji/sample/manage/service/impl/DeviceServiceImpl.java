@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dji.sample.common.error.CommonErrorEnum;
 import com.dji.sample.common.model.Pagination;
 import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.*;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.mqtt.service.IMqttTopicService;
@@ -20,8 +21,10 @@ import com.dji.sample.manage.dao.IDeviceMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceEntity;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
+import com.dji.sample.manage.model.enums.DeviceFirmwareStatusEnum;
 import com.dji.sample.manage.model.enums.IconUrlEnum;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.model.receiver.*;
 import com.dji.sample.manage.service.*;
@@ -90,6 +93,9 @@ public class DeviceServiceImpl implements IDeviceService {
     private IWebSocketManageService webSocketManageService;
 
     @Autowired
+    private IDeviceFirmwareService deviceFirmwareService;
+
+    @Autowired
     @Qualifier("gatewayOSDServiceImpl")
     private ITSAService tsaService;
 
@@ -120,13 +126,6 @@ public class DeviceServiceImpl implements IDeviceService {
             gatewayOpt.map(DeviceDTO::getWorkspaceId).ifPresent(gateway::setWorkspaceId);
             redisOps.setWithExpire(key, gateway, RedisConst.DEVICE_ALIVE_SECOND);
             this.pushDeviceOnlineTopo(gateway.getWorkspaceId(), gatewaySn, gatewaySn);
-            return true;
-        }
-
-        long expire = redisOps.getExpire(key);
-        // If the key about the device in redis has expired, the remote control is considered to be offline.
-        if (expire <= 0) {
-            log.debug("The remote control is already offline.");
             return true;
         }
 
@@ -165,10 +164,10 @@ public class DeviceServiceImpl implements IDeviceService {
         String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
         // change log:  Use redis instead of
         long time = redisOps.getExpire(key);
+        long gatewayTime = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + deviceGateway.getSn());
         long now = System.currentTimeMillis();
 
-        if (time > 0) {
-            redisOps.expireKey(RedisConst.DEVICE_ONLINE_PREFIX + deviceGateway.getSn(), RedisConst.DEVICE_ALIVE_SECOND);
+        if (time > 0 && gatewayTime > 0) {
             redisOps.expireKey(key, RedisConst.DEVICE_ALIVE_SECOND);
             DeviceDTO device = DeviceDTO.builder().loginTime(LocalDateTime.now()).deviceSn(deviceSn).build();
             DeviceDTO gateway = DeviceDTO.builder()
@@ -372,6 +371,9 @@ public class DeviceServiceImpl implements IDeviceService {
 
     @Override
     public Optional<TopologyDeviceDTO> getDeviceTopoForPilot(String sn) {
+        if (sn.isBlank()) {
+            return Optional.empty();
+        }
         List<TopologyDeviceDTO> topologyDeviceList = this.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .deviceSn(sn)
@@ -468,8 +470,18 @@ public class DeviceServiceImpl implements IDeviceService {
 
             DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + from);
 
-            if (device == null || !StringUtils.hasText(device.getWorkspaceId())) {
-                return;
+            if (device == null) {
+                Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(from);
+                if (deviceOpt.isEmpty()) {
+                    return;
+                }
+                device = deviceOpt.get();
+                if (!StringUtils.hasText(device.getWorkspaceId())) {
+                    return;
+                }
+                redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + from, device,
+                        RedisConst.DEVICE_ALIVE_SECOND);
+                this.subscribeTopicOnline(from);
             }
 
             receiver = objectMapper.readValue(payload, CommonTopicReceiver.class);
@@ -613,7 +625,7 @@ public class DeviceServiceImpl implements IDeviceService {
         if (entity == null) {
             return null;
         }
-        return DeviceDTO.builder()
+        DeviceDTO.DeviceDTOBuilder deviceDTOBuilder = DeviceDTO.builder()
                 .deviceSn(entity.getDeviceSn())
                 .childDeviceSn(entity.getChildSn())
                 .deviceName(entity.getDeviceName())
@@ -638,8 +650,31 @@ public class DeviceServiceImpl implements IDeviceService {
                 .firmwareVersion(entity.getFirmwareVersion())
                 .workspaceName(entity.getWorkspaceId() != null ?
                         workspaceService.getWorkspaceByWorkspaceId(entity.getWorkspaceId())
-                        .map(WorkspaceDTO::getWorkspaceName).orElse("") : "")
-                .build();
+                                .map(WorkspaceDTO::getWorkspaceName).orElse("") : "");
+
+        if (!StringUtils.hasText(entity.getFirmwareVersion())) {
+            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal()).build();
+        }
+        // Query whether the device is updating firmware.
+        Object progress = redisOps.get(RedisConst.FIRMWARE_UPGRADING_PREFIX + entity.getDeviceSn());
+        if (Objects.nonNull(progress)) {
+            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.UPGRADING.getVal()).firmwareProgress((int)progress).build();
+        }
+
+        // First query the latest firmware version of the device model and compare it with the current firmware version
+        // to see if it needs to be upgraded.
+        Optional<DeviceFirmwareNoteDTO> firmwareReleaseNoteOpt = deviceFirmwareService.getLatestFirmwareReleaseNote(entity.getDeviceName());
+        if (firmwareReleaseNoteOpt.isPresent()) {
+            DeviceFirmwareNoteDTO firmwareNoteDTO = firmwareReleaseNoteOpt.get();
+            if (firmwareNoteDTO.getProductVersion().equals(entity.getFirmwareVersion())) {
+                return deviceDTOBuilder.firmwareStatus(entity.getCompatibleStatus() ?
+                        DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal() :
+                        DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE.getVal()).build();
+            }
+
+            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NORMAL_UPGRADE.getVal()).build();
+        }
+        return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal()).build();
     }
 
     @Override
@@ -822,13 +857,57 @@ public class DeviceServiceImpl implements IDeviceService {
     @Override
     public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
         if (receiver.getDomain() == DeviceDomainEnum.SUB_DEVICE) {
-            this.updateDevice(DeviceDTO.builder()
+            final DeviceDTO device = DeviceDTO.builder()
                     .deviceSn(receiver.getSn())
                     .firmwareVersion(receiver.getFirmwareVersion())
-                    .build());
+                    .firmwareStatus(receiver.getCompatibleStatus() == null ?
+                            null : DeviceFirmwareStatusEnum.CompatibleStatusEnum.INCONSISTENT.getVal() != receiver.getCompatibleStatus() ?
+                            DeviceFirmwareStatusEnum.UNKNOWN.getVal() : DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE.getVal())
+                    .build();
+            this.updateDevice(device);
             return;
         }
         payloadService.updateFirmwareVersion(receiver);
+    }
+
+    @Override
+    public ResponseResult createDeviceOtaJob(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
+        List<DeviceOtaCreateParam> deviceOtaFirmwares = deviceFirmwareService.getDeviceOtaFirmware(upgradeDTOS);
+        if (deviceOtaFirmwares.isEmpty()) {
+            return ResponseResult.error();
+        }
+
+        DeviceOtaCreateParam deviceOtaFirmware = deviceOtaFirmwares.get(0);
+        List<DeviceDTO> devices = getDevicesByParams(DeviceQueryParam.builder().childSn(deviceOtaFirmware.getSn()).build());
+        String gatewaySn = devices.isEmpty() ? deviceOtaFirmware.getSn() : devices.get(0).getDeviceSn();
+
+        String topic = THING_MODEL_PRE + PRODUCT + gatewaySn + SERVICES_SUF;
+
+        // The bids in the progress messages reported subsequently are the same.
+        String bid = UUID.randomUUID().toString();
+        Optional<ServiceReply> serviceReplyOpt = messageSender.publishWithReply(
+                topic, CommonTopicResponse.<Map<String, List<DeviceOtaCreateParam>>>builder()
+                        .tid(UUID.randomUUID().toString())
+                        .bid(bid)
+                        .timestamp(System.currentTimeMillis())
+                        .method(ServicesMethodEnum.OTA_CREATE.getMethod())
+                        .data(Map.of(MapKeyConst.DEVICES, deviceOtaFirmwares))
+                        .build());
+        if (serviceReplyOpt.isEmpty()) {
+            return ResponseResult.error("No message reply received.");
+        }
+        ServiceReply serviceReply = serviceReplyOpt.get();
+        if (serviceReply.getResult() != ResponseResult.CODE_SUCCESS) {
+            return ResponseResult.error(serviceReply.getResult(), "Firmware Error Code: " + serviceReply.getResult());
+        }
+        if (ServicesMethodEnum.OTA_CREATE.getProgress()) {
+            // Record the device state that needs to be updated.
+            deviceOtaFirmwares.forEach(deviceOta -> redisOps.setWithExpire(
+                    RedisConst.FIRMWARE_UPGRADING_PREFIX + deviceOta.getSn(),
+                    bid,
+                    RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND));
+        }
+        return ResponseResult.success();
     }
 
     /**
@@ -854,6 +933,8 @@ public class DeviceServiceImpl implements IDeviceService {
                 .childSn(dto.getChildDeviceSn())
                 .domain(StringUtils.hasText(dto.getDomain()) ? DeviceDomainEnum.getVal(dto.getDomain()) : null)
                 .firmwareVersion(dto.getFirmwareVersion())
+                .compatibleStatus(dto.getFirmwareStatus() == null ? null :
+                        DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE != DeviceFirmwareStatusEnum.find(dto.getFirmwareStatus()))
                 .build();
     }
 

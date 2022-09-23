@@ -79,26 +79,25 @@ oss:
 #  enable: true
 #  provider: aws
 #  endpoint: https://s3.us-east-1.amazonaws.com
-#  access-key: 
-#  secret-key: 
+#  access-key:
+#  secret-key:
 #  expire: 3600
 #  region: us-east-1
 #  role-session-name: cloudApi
-#  role-arn: 
+#  role-arn:
 #  bucket: cloudapi-bucket
 #  object-dir-prefix: wayline
 
-# MinIO is temporarily unavailable.
 #oss:
-#  enable: false
+#  enable: true
 #  provider: minio
-#  endpoint: 
-#  access-key: 
-#  secret-key: 
-#  bucket: 
-#  expire: 
-#  region: 
-#  object-dir-prefix: 
+#  endpoint: http://192.168.1.1:9000
+#  access-key: minioadmin
+#  secret-key: minioadmin
+#  bucket: cloud-bucket
+#  expire: 3600
+#  region: us-east-1
+#  object-dir-prefix: wayline
 
 logging:
   level:

@@ -62,4 +62,10 @@ public class ChannelName {
     public static final String INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND = "inboundRequestsAirportOrganizationBind";
 
     public static final String INBOUND_EVENTS_HMS = "inboundEventsHms";
+
+    public static final String INBOUND_EVENTS_CONTROL_PROGRESS = "inboundEventsControlProgress";
+
+    public static final String INBOUND_EVENTS_OTA_PROGRESS = "inboundEventsOtaProgress";
+
+    public static final String INBOUND_EVENTS_FILE_UPLOAD_PROGRESS = "inboundEventsFileUploadProgress";
 }

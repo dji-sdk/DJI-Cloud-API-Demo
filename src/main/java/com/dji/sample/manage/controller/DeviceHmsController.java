@@ -27,20 +27,36 @@ public class DeviceHmsController {
     @Autowired
     private IDeviceHmsService deviceHmsService;
 
+    /**
+     * Page to query the hms information of the device.
+     * @param param
+     * @param workspaceId
+     * @return
+     */
     @GetMapping("/{workspace_id}/devices/hms")
-    public ResponseResult<PaginationData<DeviceHmsDTO>> getBoundDevicesWithDomain(DeviceHmsQueryParam param,
+    public ResponseResult<PaginationData<DeviceHmsDTO>> getHmsInformation(DeviceHmsQueryParam param,
                                                           @PathVariable("workspace_id") String workspaceId) {
         PaginationData<DeviceHmsDTO> devices = deviceHmsService.getDeviceHmsByParam(param);
 
         return ResponseResult.success(devices);
     }
 
+    /**
+     * Update unread hms messages to read status.
+     * @param deviceSn
+     * @return
+     */
     @PutMapping("/{workspace_id}/devices/hms/{device_sn}")
     public ResponseResult updateReadHmsByDeviceSn(@PathVariable("device_sn") String deviceSn) {
         deviceHmsService.updateUnreadHms(deviceSn);
         return ResponseResult.success();
     }
 
+    /**
+     * Get hms messages for a single device.
+     * @param deviceSn
+     * @return
+     */
     @GetMapping("/{workspace_id}/devices/hms/{device_sn}")
     public ResponseResult<List<DeviceHmsDTO>> getUnreadHmsByDeviceSn(@PathVariable("device_sn") String deviceSn) {
         PaginationData<DeviceHmsDTO> paginationData = deviceHmsService.getDeviceHmsByParam(

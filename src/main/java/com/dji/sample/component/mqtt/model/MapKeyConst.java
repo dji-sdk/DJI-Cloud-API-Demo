@@ -26,4 +26,6 @@ public final class MapKeyConst {
     public static final String BIND_STATUS = "bind_status";
 
     public static final String LIST = "list";
+
+    public static final String MODULE_LIST = "module_list";
 }

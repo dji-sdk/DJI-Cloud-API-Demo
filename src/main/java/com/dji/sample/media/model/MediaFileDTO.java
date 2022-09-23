@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MediaFileDTO {
 
+    private String fileId;
+
     private String fileName;
 
     private String filePath;

@@ -14,14 +14,13 @@ import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.service.ICapacityCameraService;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.manage.service.IDevicePayloadService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +28,7 @@ import java.util.stream.Collectors;
  * @version 0.1
  * @date 2021/11/19
  */
+@Slf4j
 @Service
 @Transactional
 public class DevicePayloadServiceImpl implements IDevicePayloadService {
@@ -122,6 +122,48 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
                         .build()
                 , new LambdaUpdateWrapper<DevicePayloadEntity>()
                         .eq(DevicePayloadEntity::getDeviceSn, receiver.getSn()));
+    }
+
+    @Override
+    public void saveDeviceBasicPayload(List<DevicePayloadReceiver> payloadReceiverList, Long timestamp) {
+        if (payloadReceiverList.isEmpty()) {
+            return;
+        }
+        String deviceSn = payloadReceiverList.stream().findAny().get().getDeviceSn();
+        String key = RedisConst.STATE_PAYLOAD_PREFIX + deviceSn;
+        // Solve timing problems
+        long last = (long) Objects.requireNonNullElse(redisOps.get(key), 0L);
+        if (last > timestamp) {
+            return;
+        }
+
+
+        // Filter unsaved payload information.
+        Set<String> payloadSns = this.getDevicePayloadEntitiesByDeviceSn(payloadReceiverList.get(0).getDeviceSn())
+                .stream().map(DevicePayloadDTO::getPayloadSn).collect(Collectors.toSet());
+
+        Set<String> newPayloadSns = payloadReceiverList.stream().map(DevicePayloadReceiver::getSn).collect(Collectors.toSet());
+        Set<String> needToDel = payloadSns.stream().filter(sn -> !newPayloadSns.contains(sn)).collect(Collectors.toSet());
+        this.deletePayloadsByPayloadsSn(needToDel);
+
+        List<DevicePayloadReceiver> needToSave = payloadReceiverList.stream()
+                .filter(payload -> !payloadSns.contains(payload.getSn())).collect(Collectors.toList());
+
+        // Save the new payload information.
+        boolean isSave = this.savePayloadDTOs(needToSave);
+        if (isSave) {
+            redisOps.setWithExpire(key, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
+        }
+        log.debug("The result of saving the payloads is {}.", isSave);
+    }
+
+    @Override
+    public void deletePayloadsByPayloadsSn(Collection<String> payloadSns) {
+        if (CollectionUtils.isEmpty(payloadSns)) {
+            return;
+        }
+        mapper.delete(new LambdaUpdateWrapper<DevicePayloadEntity>()
+                .or(wrapper -> payloadSns.forEach(sn -> wrapper.eq(DevicePayloadEntity::getPayloadSn, sn))));
     }
 
     /**

@@ -76,6 +76,9 @@ public class DeviceEntity implements Serializable {
     @TableField(value = "firmware_version")
     private String firmwareVersion;
 
+    @TableField(value = "compatible_status")
+    private Boolean compatibleStatus;
+
     @TableField(value = "bound_status")
     private Boolean boundStatus;
 

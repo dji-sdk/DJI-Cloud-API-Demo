@@ -18,4 +18,6 @@ public class EventsReceiver<T> {
 
     private String bid;
 
+    private String sn;
+
 }

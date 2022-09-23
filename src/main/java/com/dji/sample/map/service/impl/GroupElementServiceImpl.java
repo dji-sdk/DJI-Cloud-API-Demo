@@ -193,7 +193,7 @@ public class GroupElementServiceImpl implements IGroupElementService {
         groupElement.setElementType(ElementTypeEnum.findVal(elementUpdate.getContent().getGeometry().getType()));
         groupElement.setColor(elementUpdate.getContent().getProperties().getColor());
 
-        boolean clampToGround = elementUpdate.getContent().getProperties().getClampToGround();
+        Boolean clampToGround = elementUpdate.getContent().getProperties().getClampToGround();
         groupElement.setClampToGround(clampToGround);
     }
 }

@@ -2,24 +2,19 @@ package com.dji.sample.manage.controller;
 
 import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.Chan;
 import com.dji.sample.component.mqtt.model.ChannelName;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.component.mqtt.model.ServiceReply;
 import com.dji.sample.manage.model.dto.CapacityDeviceDTO;
 import com.dji.sample.manage.model.dto.LiveTypeDTO;
 import com.dji.sample.manage.model.receiver.LiveCapacityReceiver;
 import com.dji.sample.manage.service.ILiveStreamService;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.util.List;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
@@ -47,8 +42,8 @@ public class LiveStreamController {
      * @param liveCapacity    the capacity of drone and dock
      */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_CAPACITY)
-    public void stateCapacity(LiveCapacityReceiver liveCapacity) {
-        liveStreamService.saveLiveCapacity(liveCapacity);
+    public void stateCapacity(LiveCapacityReceiver liveCapacity, MessageHeaders headers) {
+        liveStreamService.saveLiveCapacity(liveCapacity, headers.getTimestamp());
     }
 
     /**
@@ -96,19 +91,4 @@ public class LiveStreamController {
         return liveStreamService.liveSetQuality(liveParam);
     }
 
-    /**
-     * Handle the reply message from the pilot side to the on-demand video.
-     * @param message   reply message
-     * @throws IOException
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_SERVICE_REPLY)
-    public void serviceReply(Message<?> message) throws IOException {
-        byte[] payload = (byte[])message.getPayload();
-        CommonTopicReceiver<ServiceReply> receiver = mapper.readValue(payload,
-                new TypeReference<CommonTopicReceiver<ServiceReply>>() {
-        });
-        Chan<CommonTopicReceiver> chan = Chan.getInstance();
-        // Put the message to the chan object.
-        chan.put(receiver);
-    }
 }

@@ -50,14 +50,18 @@ public class MessageSenderServiceImpl implements IMessageSenderService {
     }
 
     public Optional<ServiceReply> publishWithReply(String topic, CommonTopicResponse response) {
+        return this.publishWithReply(ServiceReply.class, topic, response, 2);
+    }
+
+    public <T> Optional<T> publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response, int retryTime) {
         AtomicInteger time = new AtomicInteger(0);
         // Retry three times
-        while (time.getAndIncrement() < 3) {
+        while (time.getAndIncrement() < retryTime) {
             this.publish(topic, response);
 
-            Chan<CommonTopicReceiver<ServiceReply>> chan = Chan.getInstance();
+            Chan<CommonTopicReceiver<T>> chan = Chan.getInstance();
             // If the message is not received in 0.5 seconds then resend it again.
-            CommonTopicReceiver<ServiceReply> receiver = chan.get(response.getMethod());
+            CommonTopicReceiver<T> receiver = chan.get(response.getMethod());
             if (receiver == null) {
                 continue;
             }

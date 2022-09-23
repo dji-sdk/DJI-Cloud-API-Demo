@@ -4,8 +4,10 @@ import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
+import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
+import io.minio.RemoveObjectArgs;
 import io.minio.credentials.AssumeRoleProvider;
 import io.minio.errors.*;
 import io.minio.http.Method;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -41,7 +44,7 @@ public class MinIOServiceImpl implements IOssService {
             AssumeRoleProvider provider = new AssumeRoleProvider(configuration.getEndpoint(), configuration.getAccessKey(),
                     configuration.getSecretKey(), Math.toIntExact(configuration.getExpire()),
                     null, configuration.getRegion(), null, null, null, null);
-            return new CredentialsDTO(provider.fetch(), Math.toIntExact(configuration.getExpire()));
+            return new CredentialsDTO(provider.fetch(), configuration.getExpire());
         } catch (NoSuchAlgorithmException e) {
             log.debug("Failed to obtain sts.");
             e.printStackTrace();
@@ -72,11 +75,25 @@ public class MinIOServiceImpl implements IOssService {
 
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
-        return null;
+        MinioClient client = this.createClient();
+        try {
+            client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build());
+        } catch (MinioException | NoSuchAlgorithmException | IOException | InvalidKeyException e) {
+            log.error("Failed to delete file.");
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     @Override
     public byte[] getObject(String bucket, String objectKey) {
+        MinioClient client = this.createClient();
+        try (InputStream objectResponse = client.getObject(GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+            return objectResponse.readAllBytes();
+        } catch (MinioException | InvalidKeyException | IOException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
         return new byte[0];
     }
 

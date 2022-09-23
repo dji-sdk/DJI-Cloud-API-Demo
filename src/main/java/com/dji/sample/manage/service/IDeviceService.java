@@ -1,10 +1,12 @@
 package com.dji.sample.manage.service;
 
 import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.manage.model.dto.DeviceDTO;
+import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
@@ -195,4 +197,12 @@ public interface IDeviceService {
      * @param receiver
      */
     void updateFirmwareVersion(FirmwareVersionReceiver receiver);
+
+    /**
+     * Create job for device firmware updates.
+     * @param workspaceId
+     * @param upgradeDTOS
+     * @return
+     */
+    ResponseResult createDeviceOtaJob(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
 }

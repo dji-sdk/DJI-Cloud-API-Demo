@@ -2,6 +2,7 @@ package com.dji.sample.component.oss.service.impl;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
@@ -70,7 +71,10 @@ public class AliyunOssServiceImpl implements IOssService {
         }
         OSS ossClient = this.createClient();
         // First check if the object can be fetched.
-        ossClient.getObject(bucket, objectKey);
+        boolean isExist = ossClient.doesObjectExist(bucket, objectKey);
+        if (!isExist) {
+            throw new OSSException("The object does not exist.");
+        }
 
         return ossClient.generatePresignedUrl(bucket, objectKey,
                 new Date(System.currentTimeMillis() + configuration.getExpire() * 1000));
@@ -79,6 +83,10 @@ public class AliyunOssServiceImpl implements IOssService {
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
         OSS ossClient = this.createClient();
+        if (!ossClient.doesObjectExist(bucket, objectKey)) {
+            ossClient.shutdown();
+            return true;
+        }
         ossClient.deleteObject(bucket, objectKey);
         ossClient.shutdown();
         return true;
@@ -88,19 +96,13 @@ public class AliyunOssServiceImpl implements IOssService {
     public byte[] getObject(String bucket, String objectKey) {
         OSS ossClient = this.createClient();
         OSSObject object = ossClient.getObject(bucket, objectKey);
-        InputStream stream = object.getObjectContent();
 
-        try {
+        try (InputStream stream = object.getObjectContent()) {
             return stream.readAllBytes();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                stream.close();
-                ossClient.shutdown();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            ossClient.shutdown();
         }
         return new byte[0];
     }

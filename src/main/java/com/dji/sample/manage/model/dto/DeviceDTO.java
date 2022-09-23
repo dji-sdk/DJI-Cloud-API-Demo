@@ -60,4 +60,8 @@ public class DeviceDTO {
     private String workspaceName;
 
     private DeviceDTO children;
+
+    private Integer firmwareStatus;
+
+    private Integer firmwareProgress;
 }

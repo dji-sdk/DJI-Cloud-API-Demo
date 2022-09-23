@@ -21,11 +21,11 @@ public class CredentialsDTO {
 
     private String accessKeySecret;
 
-    private Integer expire;
+    private Long expire;
 
     private String securityToken;
 
-    public CredentialsDTO(Credentials credentials, int expire) {
+    public CredentialsDTO(Credentials credentials, long expire) {
         this.accessKeyId = credentials.accessKey();
         this.accessKeySecret = credentials.secretKey();
         this.securityToken = credentials.sessionToken();
@@ -36,13 +36,13 @@ public class CredentialsDTO {
         this.accessKeyId = credentials.getAccessKeyId();
         this.accessKeySecret = credentials.getAccessKeySecret();
         this.securityToken = credentials.getSecurityToken();
-        this.expire = Math.toIntExact(expire);
+        this.expire = expire;
     }
 
     public CredentialsDTO(com.amazonaws.services.securitytoken.model.Credentials credentials) {
         this.accessKeyId = credentials.getAccessKeyId();
         this.accessKeySecret = credentials.getSecretAccessKey();
         this.securityToken = credentials.getSessionToken();
-        this.expire = Math.toIntExact((credentials.getExpiration().getTime() - System.currentTimeMillis()) / 1000);
+        this.expire = (credentials.getExpiration().getTime() - System.currentTimeMillis()) / 1000;
     }
 }

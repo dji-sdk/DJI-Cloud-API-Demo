@@ -49,8 +49,8 @@ public interface IFileService {
     /**
      * Get the download address of the file.
      * @param workspaceId
-     * @param fingerprint
+     * @param fileId
      * @return
      */
-    URL getObjectUrl(String workspaceId, String fingerprint);
+    URL getObjectUrl(String workspaceId, String fileId);
 }

@@ -29,7 +29,31 @@ public enum BizCodeEnum {
 
     FLIGHT_TASK_PROGRESS("flighttask_progress"),
 
-    DEVICE_HMS("device_hms");
+    DEVICE_HMS("device_hms"),
+
+    DEVICE_REBOOT("device_reboot"),
+
+    DRONE_OPEN("drone_open"),
+
+    DRONE_CLOSE("drone_close"),
+
+    DEVICE_CHECK("device_check"),
+
+    DRONE_FORMAT("drone_format"),
+
+    DEVICE_FORMAT("device_format"),
+
+    COVER_OPEN("cover_open"),
+
+    COVER_CLOSE("cover_close"),
+
+    PUTTER_OPEN("putter_open"),
+
+    PUTTER_CLOSE("putter_close"),
+
+    CHARGE_OPEN("charge_open"),
+
+    CHARGE_CLOSE("charge_close");
 
     private String code;
 
