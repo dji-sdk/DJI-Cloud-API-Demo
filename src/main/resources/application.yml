@@ -60,6 +60,9 @@ url:
   storage:
     prefix: /storage
     version: /api/v1
+  control:
+    prefix: /control
+    version: /api/v1
 
 # Tutorial: https://help.aliyun.com/document_detail/100624.htm?spm=a2c4g.11186623.0.0.74075e34eIhK7T#concept-xzh-nzk-2gb
 oss:

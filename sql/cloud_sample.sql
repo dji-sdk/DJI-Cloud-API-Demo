@@ -11,53 +11,99 @@ SET NAMES utf8mb4;
 
 
 
-#  manage_device
+
+# logs_file
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `logs_file`;
+
+CREATE TABLE `logs_file` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `file_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the file in the bucket.',
+  `size` int NOT NULL DEFAULT '0' COMMENT 'file size',
+  `logs_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The logs_id in the manage_device_logs table.',
+  `device_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The sn of the device.',
+  `fingerprint` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'file fingerprint',
+  `object_key` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The key of the file in the bucket.',
+  `status` tinyint(1) NOT NULL COMMENT 'Whether the upload was successful. 1: success; 0: failed;',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `file_id_UNIQUE` (`file_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Logs file information';
+
+
+
+# logs_file_index
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `logs_file_index`;
+
+CREATE TABLE `logs_file_index` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `boot_index` int NOT NULL COMMENT 'The file index reported by the dock.',
+  `file_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The file_id in the logs_file table.',
+  `start_time` bigint NOT NULL COMMENT 'The file start time reported by the dock.',
+  `end_time` bigint NOT NULL COMMENT 'The file end time reported by the dock.',
+  `size` int NOT NULL COMMENT 'The file size reported by the dock.',
+  `device_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The sn of the device.',
+  `domain` int NOT NULL COMMENT 'This parameter corresponds to the domain in the device dictionary table.',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='The boot index table corresponding to the logs file.';
+
+
+
+# manage_device
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device`;
 
 CREATE TABLE `manage_device` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `device_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `nickname` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `device_type` int NOT NULL DEFAULT '-1',
-  `sub_type` int NOT NULL DEFAULT '-1',
-  `domain` int NOT NULL DEFAULT '-1',
-  `firmware_version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `device_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `child_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'dock, drone, remote control',
+  `device_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'model of the device. This parameter corresponds to the device name in the device dictionary table.',
+  `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The account used when the device was bound.',
+  `nickname` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'custom name of the device',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The workspace to which the current device belongs.',
+  `device_type` int NOT NULL DEFAULT '-1' COMMENT 'This parameter corresponds to the device type in the device dictionary table.',
+  `sub_type` int NOT NULL DEFAULT '-1' COMMENT 'This parameter corresponds to the sub type in the device dictionary table.',
+  `domain` int NOT NULL DEFAULT '-1' COMMENT 'This parameter corresponds to the domain in the device dictionary table.',
+  `firmware_version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'firmware version of the device',
+  `compatible_status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '1: consistent; 0: inconsistent; Whether the firmware versions are consistent.',
+  `version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'version of the protocol. This field is currently not useful.',
+  `device_index` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'Control of the drone, A control or B control.',
+  `child_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The device controlled by the gateway.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
-  `bound_time` bigint DEFAULT NULL,
-  `bound_status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0:bund; 1:not bound',
-  `login_time` bigint DEFAULT NULL,
+  `bound_time` bigint DEFAULT NULL COMMENT 'The time when the device is bound to the workspace.',
+  `bound_status` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'The status when the device is bound to the workspace. 1: bound; 0: not bound;',
+  `login_time` bigint DEFAULT NULL COMMENT 'The time of the last device login.',
   `device_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `url_normal` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `url_select` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `url_normal` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The icon displayed on the remote control.',
+  `url_select` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The icon displayed on the remote control when it is selected.',
   PRIMARY KEY (`id`),
   UNIQUE KEY `product_sn_UNIQUE` (`device_sn`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Device information';
 
 
 
-#  manage_device_dictionary
+# manage_device_dictionary
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device_dictionary`;
 
 CREATE TABLE `manage_device_dictionary` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `domain` int NOT NULL,
-  `device_type` int NOT NULL,
-  `sub_type` int NOT NULL,
-  `device_name` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `device_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `domain` int NOT NULL COMMENT 'This parameter corresponds to the domain in the Product Type section of the document. 0: drone; 1: payload; 2: remote control; 3: dock;',
+  `device_type` int NOT NULL COMMENT 'This parameter corresponds to the type in the Product Type section of the document.',
+  `sub_type` int NOT NULL COMMENT 'This parameter corresponds to the sub_type in the Product Type section of the document.',
+  `device_name` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'This parameter corresponds to the name in the Product Type section of the document.',
+  `device_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'remark',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Device product enum';
 
 LOCK TABLES `manage_device_dictionary` WRITE;
 /*!40000 ALTER TABLE `manage_device_dictionary` DISABLE KEYS */;
@@ -87,6 +133,40 @@ VALUES
 UNLOCK TABLES;
 
 
+# manage_device_firmware
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `manage_device_firmware`;
+
+CREATE TABLE `manage_device_firmware` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `firmware_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `file_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'The file name of the firmware package, including the file suffix',
+  `firmware_version` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'It needs to be formatted according to the official firmware version. 00.00.0000',
+  `file_url` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The download address for the firmware package.',
+  `file_size` int NOT NULL COMMENT 'The size of the firmware package.',
+  `file_md5` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The md5 of the firmware package.',
+  `device_name` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'model of the device. This parameter corresponds to the device name in the device dictionary table.',
+  `release_note` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The release note of the firmware package.',
+  `release_date` bigint NOT NULL COMMENT 'The release date of the firmware package.',
+  `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Availability of the firmware package. 1: available; 0: unavailable',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNIQUE_firmware_id` (`firmware_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Firmware file information';
+
+LOCK TABLES `manage_device_firmware` WRITE;
+/*!40000 ALTER TABLE `manage_device_firmware` DISABLE KEYS */;
+
+INSERT INTO `manage_device_firmware` (`id`, `firmware_id`, `file_name`, `firmware_version`, `file_url`, `file_size`, `file_md5`, `device_name`, `release_note`, `release_date`, `status`, `create_time`, `update_time`)
+VALUES
+	(1,'1','Matrice_M30_Series_UAV_V04.01.00.20_Only_For_Pilot.zip','04.01.0020','https://terra-sz-hc1pro-cloudapi.oss-cn-shenzhen.aliyuncs.com/c0af9fe0d7eb4f35a8fe5b695e4d0b96/docker/Matrice_M30_Series_UAV_V04.01.00.20_Only_For_Pilot.zip',605830726,'601630a5c753cd6665974cc8fd791bf5','Matrice 30','release note',1663232356810,1,1663232356810,1663232356810);
+
+/*!40000 ALTER TABLE `manage_device_firmware` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
 # manage_device_hms
 # ------------------------------------------------------------
 
@@ -94,64 +174,86 @@ DROP TABLE IF EXISTS `manage_device_hms`;
 
 CREATE TABLE `manage_device_hms` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `hms_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `tid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `level` smallint NOT NULL,
-  `module` tinyint NOT NULL,
-  `hms_key` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `message_zh` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `message_en` varchar(300) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `hms_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `tid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The tid when the device reports the hms message.',
+  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The bid when the device reports the hms message.',
+  `sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which device reported the message.',
+  `level` smallint NOT NULL COMMENT 'hms level. 0: notice; 1: caution; 2: warning.',
+  `module` tinyint NOT NULL COMMENT 'Which module''s message. 0: flight task; 1:device manage; 2: media; 3: hms.',
+  `hms_key` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The key of the hms message, according to which the message text is obtained.',
+  `message_zh` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Chinese message.',
+  `message_en` varchar(300) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'English message.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQUE_hms_id` (`hms_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Device''s hms information';
 
 
-#  manage_device_payload
+
+# manage_device_logs
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `manage_device_logs`;
+
+CREATE TABLE `manage_device_logs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `logs_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `username` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
+  `device_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The sn of the device.',
+  `logs_info` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'A description of the log issue.',
+  `happen_time` bigint DEFAULT NULL COMMENT 'The time when the logging problem occurred.',
+  `status` tinyint NOT NULL COMMENT '1: uploading; 2: done 3: canceled; 4: failed;',
+  `update_time` bigint NOT NULL,
+  `create_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `log_id_UNIQUE` (`logs_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Log for uploading logs';
+
+
+
+# manage_device_payload
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_device_payload`;
 
 CREATE TABLE `manage_device_payload` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `payload_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `payload_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `payload_type` smallint NOT NULL,
-  `sub_type` smallint NOT NULL,
-  `firmware_version` varchar(32) DEFAULT NULL,
-  `payload_index` smallint NOT NULL,
-  `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `payload_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The sn of the device payload.',
+  `payload_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'model of the payload. This parameter corresponds to the device name in the device dictionary table.',
+  `payload_type` smallint NOT NULL COMMENT 'This parameter corresponds to the device type in the device dictionary table.',
+  `sub_type` smallint NOT NULL COMMENT 'This parameter corresponds to the sub type in the device dictionary table.',
+  `firmware_version` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'firmware version of the device payload',
+  `payload_index` smallint NOT NULL COMMENT 'The location of the payload on the device.',
+  `device_sn` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which device the current payload belongs to.',
   `payload_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `payload_sn_UNIQUE` (`payload_sn`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='The payload information of the device.';
 
 
 
-#  manage_user
+# manage_user
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_user`;
 
 CREATE TABLE `manage_user` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_id` varchar(64) NOT NULL DEFAULT '',
-  `user_type` smallint NOT NULL,
-  `mqtt_username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `mqtt_password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `user_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the account.',
+  `password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The password of the account.',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which workspace the current account belongs to.',
+  `user_type` smallint NOT NULL COMMENT 'The type of account. Different sides need to be logged in with the corresponding type of account. 1: web; 2: pilot.',
+  `mqtt_username` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The account name used by the current account when logging into the emqx server.',
+  `mqtt_password` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The account password used by the current account when logging into the emqx server.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id_UNIQUE` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='System account.';
 
 LOCK TABLES `manage_user` WRITE;
 /*!40000 ALTER TABLE `manage_user` DISABLE KEYS */;
@@ -165,20 +267,20 @@ VALUES
 UNLOCK TABLES;
 
 
-#  manage_workspace
+# manage_workspace
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `manage_workspace`;
 
 CREATE TABLE `manage_workspace` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `platform_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `workspace_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the workspace.',
+  `workspace_desc` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The description of the workspace.',
+  `platform_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The platform name of the workspace.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
-  `bind_code` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `bind_code` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The binding code for this workspace is required when the dock connects to a third-party cloud.',
   PRIMARY KEY (`id`),
   UNIQUE KEY `workspace_id_UNIQUE` (`workspace_id`),
   UNIQUE KEY `bind_code_UNIQUE` (`bind_code`)
@@ -195,40 +297,40 @@ VALUES
 UNLOCK TABLES;
 
 
-#  map_element_coordinate
+# map_element_coordinate
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_element_coordinate`;
 
 CREATE TABLE `map_element_coordinate` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `element_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `longitude` decimal(18,14) NOT NULL,
-  `latitude` decimal(17,14) NOT NULL,
-  `altitude` decimal(17,14) DEFAULT NULL,
+  `element_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The element_id in the logs_file table.',
+  `longitude` decimal(18,14) NOT NULL COMMENT 'The longitude of this element.',
+  `latitude` decimal(17,14) NOT NULL COMMENT 'The latitude of this element.',
+  `altitude` decimal(17,14) DEFAULT NULL COMMENT 'The altitude of this element. If the element is point, it is null.',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='The coordinate information corresponding to the element.';
 
 
 
-#  map_group
+# map_group
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_group`;
 
 CREATE TABLE `map_group` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `group_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `group_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `group_type` int NOT NULL,
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `is_distributed` tinyint(1) NOT NULL DEFAULT '1',
-  `is_lock` tinyint(1) NOT NULL DEFAULT '0',
+  `group_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `group_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the group.',
+  `group_type` int NOT NULL COMMENT 'The type of the group. 0: custome; 1: default; 2: app shared; see developer document for detail.',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The workspace_id in the manage_workspace table.',
+  `is_distributed` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'element group distributed status. Only data with value 1 is displayed on the pilot map. 1: true; 0: false.',
+  `is_lock` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether to lock. If locked, the elements under this element group cannot be deleted and modified. 1: locked; 0: unlock.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `group_id_UNIQUE` (`group_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='The group information of the map element.';
 
 LOCK TABLES `map_group` WRITE;
 /*!40000 ALTER TABLE `map_group` DISABLE KEYS */;
@@ -242,99 +344,101 @@ VALUES
 UNLOCK TABLES;
 
 
-#  map_group_element
+# map_group_element
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `map_group_element`;
 
 CREATE TABLE `map_group_element` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `element_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `element_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `display` smallint NOT NULL DEFAULT '1',
-  `group_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `element_type` smallint NOT NULL,
-  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `color` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `clamp_to_ground` tinyint(1) NOT NULL DEFAULT '0',
+  `element_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `element_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the element.',
+  `display` smallint NOT NULL DEFAULT '1' COMMENT 'It no longer works.',
+  `group_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The group_id in the map_group table.',
+  `element_type` smallint NOT NULL COMMENT 'element type. 0: point; 1: line; 2: polygon.',
+  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
+  `color` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The color of the element. Hexadecimal.',
+  `clamp_to_ground` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether it is on the ground. 1: true; 0: false.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `element_id_UNIQUE` (`element_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_bin COMMENT='Information about the element corresponding to the group.';
 
 
 
-#  media_file
+# media_file
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `media_file`;
 
 CREATE TABLE `media_file` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `file_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `file_path` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `fingerprint` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
-  `tinny_fingerprint` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `object_key` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `sub_file_type` int DEFAULT NULL,
-  `is_original` tinyint(1) NOT NULL,
-  `drone` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `payload` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined',
-  `job_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '',
+  `file_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `file_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The original name of the file.',
+  `file_path` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The path of the file.',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The workspace to which the file belongs.',
+  `fingerprint` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The fingerprint of the file. This property exists only for media files uploaded by Pilot.',
+  `tinny_fingerprint` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The tiny fingerprint of the file. This property exists only for media files uploaded by Pilot.',
+  `object_key` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The key of the file in the bucket.',
+  `sub_file_type` int DEFAULT NULL COMMENT 'This property exists only for image files uploaded by Pilot. 0: normal picture; 1: panorama.',
+  `is_original` tinyint(1) NOT NULL COMMENT 'Whether is the original image.',
+  `drone` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'The sn of the drone which create the file.',
+  `payload` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'The name of the drone payload which create the file.',
+  `job_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT '' COMMENT 'The job_id in the wayline_job table. Whether the file belongs to the dock task.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNIQUE_file_id` (`file_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Media file information';
 
 
 
-#  wayline_file
+# wayline_file
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `wayline_file`;
 
 CREATE TABLE `wayline_file` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `wayline_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `drone_model_key` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `payload_model_keys` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
-  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `sign` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'MD5',
-  `favorited` tinyint(1) NOT NULL DEFAULT '0',
-  `template_types` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `object_key` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `user_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'wayline name',
+  `wayline_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `drone_model_key` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'device product enum. format: domain-device_type-sub_type',
+  `payload_model_keys` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'payload product enum. format: domain-device_type-sub_type',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which workspace the current wayline belongs to.',
+  `sign` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The md5 of the wayline file.',
+  `favorited` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Whether the file is favorited or not.',
+  `template_types` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'wayline file template type. 0: waypoint;',
+  `object_key` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The key of the file in the bucket.',
+  `user_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL COMMENT 'required, can''t modify.',
   PRIMARY KEY (`id`),
   UNIQUE KEY `wayline_id_UNIQUE` (`wayline_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Wayline file information';
 
 
 
-#  wayline_job
+# wayline_job
 # ------------------------------------------------------------
 
 DROP TABLE IF EXISTS `wayline_job`;
 
 CREATE TABLE `wayline_job` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `job_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-  `name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `file_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `dock_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `workspace_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `type` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
-  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+  `job_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
+  `name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the job.',
+  `file_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The wayline file used for this job.',
+  `dock_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which dock executes the job.',
+  `workspace_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which workspace the current job belongs to.',
+  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The bid used to execute the job, and the subsequent progress of the job is reported using this bid.',
+  `type` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The type of the job. Available: wayline.',
+  `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `job_id_UNIQUE` (`job_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Wayline mission information of the dock.';
 
 
 
