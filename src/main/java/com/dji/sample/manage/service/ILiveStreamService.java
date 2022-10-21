@@ -48,4 +48,11 @@ public interface ILiveStreamService {
      * @return
      */
     ResponseResult liveSetQuality(LiveTypeDTO liveParam);
+
+    /**
+     * Switches the lens of the device during the live streaming.
+     * @param liveParam
+     * @return
+     */
+    ResponseResult liveLensChange(LiveTypeDTO liveParam);
 }

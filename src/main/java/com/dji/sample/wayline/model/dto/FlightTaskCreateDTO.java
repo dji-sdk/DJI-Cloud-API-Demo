@@ -18,7 +18,11 @@ public class FlightTaskCreateDTO {
 
     private String flightId;
 
-    private String type;
+    private Integer taskType;
+
+    private Integer waylineType;
+
+    private Long executeTime;
 
     private FlightTaskFileDTO file;
 }

@@ -126,7 +126,7 @@ public class ControlServiceImpl implements IControlService {
                             .bid(receiver.getBid())
                             .method(receiver.getMethod())
                             .timestamp(System.currentTimeMillis())
-                            .data(ResponseResult.success())
+                            .data(RequestsReply.success())
                             .build());
         }
     }

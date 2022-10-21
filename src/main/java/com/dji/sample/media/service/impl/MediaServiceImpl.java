@@ -77,7 +77,7 @@ public class MediaServiceImpl implements IMediaService {
         CommonTopicResponse<Object> data = CommonTopicResponse.builder()
                 .timestamp(System.currentTimeMillis())
                 .method(EventsMethodEnum.FILE_UPLOAD_CALLBACK.getMethod())
-                .data(ResponseResult.success())
+                .data(RequestsReply.success())
                 .tid(receiver.getTid())
                 .bid(receiver.getBid())
                 .build();

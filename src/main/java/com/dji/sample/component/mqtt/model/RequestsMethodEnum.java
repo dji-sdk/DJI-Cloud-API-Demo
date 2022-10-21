@@ -17,6 +17,8 @@ public enum RequestsMethodEnum {
 
     AIRPORT_ORGANIZATION_GET("airport_organization_get"),
 
+    FLIGHT_TASK_RESOURCE_GET("flighttask_resource_get"),
+
     UNKNOWN("Unknown");
 
     private String method;

@@ -28,4 +28,9 @@ public final class MapKeyConst {
     public static final String LIST = "list";
 
     public static final String MODULE_LIST = "module_list";
+
+    public static final String FLIGHT_ID = "flight_id";
+
+    public static final String FLIGHT_IDS = "flight_ids";
+
 }

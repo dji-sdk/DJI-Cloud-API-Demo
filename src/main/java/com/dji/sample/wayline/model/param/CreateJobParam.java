@@ -16,7 +16,9 @@ public class CreateJobParam {
 
     private String dockSn;
 
-    private String type;
+    private Integer waylineType;
 
-    private boolean immediate;
+    private Integer taskType;
+
+    private Long executeTime;
 }

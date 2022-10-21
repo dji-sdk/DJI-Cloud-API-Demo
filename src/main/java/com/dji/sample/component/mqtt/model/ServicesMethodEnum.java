@@ -15,7 +15,13 @@ public enum ServicesMethodEnum {
 
     LIVE_SET_QUALITY("live_set_quality", false),
 
-    FLIGHTTASK_CREATE("flighttask_create", false),
+    FLIGHT_TASK_CREATE("flighttask_create", false),
+
+    FLIGHT_TASK_PREPARE("flighttask_prepare", false),
+
+    FLIGHT_TASK_EXECUTE("flighttask_execute", false),
+
+    FLIGHT_TASK_CANCEL("flighttask_undo", false),
 
     DEBUG_MODE_OPEN("debug_mode_open", false),
 
@@ -60,6 +66,8 @@ public enum ServicesMethodEnum {
     FILE_UPLOAD_START("fileupload_start", true),
 
     FILE_UPLOAD_UPDATE("fileupload_update", false),
+
+    LIVE_LENS_CHANGE("live_lens_change", false),
 
     UNKNOWN("unknown", false);
 

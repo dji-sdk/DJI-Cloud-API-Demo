@@ -70,7 +70,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         return devicesList.stream()
                 .filter(device -> redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
                 .map(device -> CapacityDeviceDTO.builder()
-                        .name(device.getDeviceName())
+                        .name(Objects.requireNonNullElse(device.getNickname(), device.getDeviceName()))
                         .sn(device.getDeviceSn())
                         .camerasList(capacityCameraService.getCapacityCameraByDeviceSn(device.getDeviceSn()))
                         .build())
@@ -96,7 +96,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     public ResponseResult liveStart(LiveTypeDTO liveParam) {
         // Check if this lens is available live.
         ResponseResult responseResult = this.checkBeforeLive(liveParam.getVideoId());
-        if (responseResult.getCode() != 0) {
+        if (ResponseResult.CODE_SUCCESS != responseResult.getCode()) {
             return responseResult;
         }
 
@@ -109,7 +109,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         if (receiveReplyOpt.isEmpty()) {
             return ResponseResult.error(LiveErrorEnum.NO_REPLY);
         }
-        if (receiveReplyOpt.get().getResult() != 0) {
+        if (ResponseResult.CODE_SUCCESS != receiveReplyOpt.get().getResult()) {
             return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
         }
 
@@ -188,12 +188,52 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         return ResponseResult.success();
     }
 
+    @Override
+    public ResponseResult liveLensChange(LiveTypeDTO liveParam) {
+        if (!StringUtils.hasText(liveParam.getVideoType())) {
+            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
+        }
+
+        ResponseResult<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
+        if (ResponseResult.CODE_SUCCESS != responseResult.getCode()) {
+            return responseResult;
+        }
+        if (DeviceDomainEnum.GATEWAY.getDesc().equals(responseResult.getData().getDomain())) {
+            return ResponseResult.error(LiveErrorEnum.FUNCTION_NOT_SUPPORT);
+        }
+
+        String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
+
+        Optional<ServiceReply> receiveReplyOpt = this.publishLiveLensChange(respTopic, liveParam);
+        if (receiveReplyOpt.isEmpty()) {
+            return ResponseResult.error(LiveErrorEnum.NO_REPLY);
+        }
+        if (receiveReplyOpt.get().getResult() != 0) {
+            return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
+        }
+
+        return ResponseResult.success();
+    }
+
+    private Optional<ServiceReply> publishLiveLensChange(String respTopic, LiveTypeDTO liveParam) {
+        CommonTopicResponse<LiveTypeDTO> response = new CommonTopicResponse<>();
+        response.setTid(UUID.randomUUID().toString());
+        response.setBid(UUID.randomUUID().toString());
+        response.setMethod(ServicesMethodEnum.LIVE_LENS_CHANGE.getMethod());
+        response.setData(liveParam);
+
+        return messageSender.publishWithReply(respTopic, response);
+    }
+
     /**
      * Check if this lens is available live.
      * @param videoId
      * @return
      */
     private ResponseResult<DeviceDTO> checkBeforeLive(String videoId) {
+        if (!StringUtils.hasText(videoId)) {
+            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
+        }
         String[] videoIdArr = videoId.split("/");
         // drone sn / enumeration value of the location where the payload is mounted / payload lens
         if (videoIdArr.length != 3) {

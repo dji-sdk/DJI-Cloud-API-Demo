@@ -2,10 +2,14 @@ package com.dji.sample.wayline.service;
 
 import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.PaginationData;
+import com.dji.sample.common.model.ResponseResult;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.model.param.CreateJobParam;
+import org.springframework.messaging.MessageHeaders;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -16,20 +20,36 @@ import java.util.Optional;
 public interface IWaylineJobService {
 
     /**
-     * Create a wayline mission for the dock.
+     * Create wayline job in the database.
      * @param param
-     * @param customClaim user info
+     * @param customClaim   user info
      * @return
      */
-    Boolean createJob(CreateJobParam param, CustomClaim customClaim) throws SQLException;
+    Optional<WaylineJobDTO> createWaylineJob(CreateJobParam param, CustomClaim customClaim);
 
     /**
-     * Issue wayline mission to the dock for execution.
-     * @param workspaceId
-     * @param jobId
+     * Issue wayline mission to the dock.
+     * @param param
+     * @param customClaim   user info
      * @return
      */
-    void publishFlightTask(String workspaceId, String jobId) throws SQLException;
+    ResponseResult publishFlightTask(CreateJobParam param, CustomClaim customClaim) throws SQLException;
+
+    /**
+     * Execute the task immediately.
+     * @param jobId
+     * @throws SQLException
+     * @return
+     */
+    Boolean executeFlightTask(String jobId);
+
+    /**
+     * Cancel the task Base on job Ids.
+     * @param workspaceId
+     * @param jobIds
+     * @throws SQLException
+     */
+    void cancelFlightTask(String workspaceId, Collection<String> jobIds);
 
     /**
      * Query job information based on job id.
@@ -53,4 +73,11 @@ public interface IWaylineJobService {
      * @return
      */
     PaginationData<WaylineJobDTO> getJobsByWorkspaceId(String workspaceId, long page, long pageSize);
+
+    /**
+     * Process to get interface data of flight mission resources.
+     * @param receiver
+     * @param headers
+     */
+    void flightTaskResourceGet(CommonTopicReceiver receiver, MessageHeaders headers);
 }

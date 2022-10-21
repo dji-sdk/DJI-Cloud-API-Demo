@@ -34,4 +34,6 @@ public final class RedisConst {
     public static final String STATE_PAYLOAD_PREFIX = "payload" + DELIMITER;
 
     public static final String LOGS_FILE_PREFIX = "logs_file" + DELIMITER;
+
+    public static final String WAYLINE_JOB = "wayline_job";
 }

@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * @author sean.zhou
  * @date 2021/11/22
@@ -21,4 +23,6 @@ public class CapacityVideoDTO {
     private String index;
 
     private String type;
+
+    private List<String> switchVideoTypes;
 }

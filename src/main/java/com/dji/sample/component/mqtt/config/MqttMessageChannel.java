@@ -152,4 +152,9 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.INBOUND_REQUESTS_FLIGHT_TASK_RESOURCE_GET)
+    public MessageChannel requestsFlightTaskResourceGet() {
+        return new DirectChannel();
+    }
+
 }

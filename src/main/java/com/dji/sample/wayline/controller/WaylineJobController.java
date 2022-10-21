@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
+import java.util.List;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
@@ -39,8 +40,8 @@ public class WaylineJobController {
                                     @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
         CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
         customClaim.setWorkspaceId(workspaceId);
-        boolean isCreate = waylineJobService.createJob(param, customClaim);
-        return isCreate ? ResponseResult.success() : ResponseResult.error();
+
+        return waylineJobService.publishFlightTask(param, customClaim);
     }
 
     /**
@@ -59,16 +60,16 @@ public class WaylineJobController {
     }
 
     /**
-     * Issue wayline mission to the dock for execution.
-     * @param jobId
+     * Send the command to cancel the jobs.
+     * @param jobIds
      * @param workspaceId
      * @return
      * @throws SQLException
      */
-    @PostMapping("/{workspace_id}/jobs/{job_id}")
-    public ResponseResult publishJob(@PathVariable(name = "job_id") String jobId,
+    @DeleteMapping("/{workspace_id}/jobs")
+    public ResponseResult publishCancelJob(@RequestParam(name = "job_id") List<String> jobIds,
                                      @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
-        waylineJobService.publishFlightTask(workspaceId, jobId);
+        waylineJobService.cancelFlightTask(workspaceId, jobIds);
         return ResponseResult.success();
     }
 }

@@ -23,7 +23,8 @@ public class CameraVideoServiceImpl implements ICameraVideoService {
         if (receiver != null) {
             builder.id(UUID.randomUUID().toString())
                     .index(receiver.getVideoIndex())
-                    .type(receiver.getVideoType());
+                    .type(receiver.getVideoType())
+                    .switchVideoTypes(receiver.getSwitchableVideoTypes());
         }
         return builder.build();
     }

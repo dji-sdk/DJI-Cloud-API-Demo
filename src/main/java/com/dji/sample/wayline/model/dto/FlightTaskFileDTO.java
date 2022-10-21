@@ -18,5 +18,5 @@ public class FlightTaskFileDTO {
 
     private String url;
 
-    private String sign;
+    private String fingerprint;
 }

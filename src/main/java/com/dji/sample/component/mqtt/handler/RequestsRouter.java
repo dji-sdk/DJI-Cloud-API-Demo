@@ -42,6 +42,7 @@ public class RequestsRouter {
                             mapping.channelMapping(RequestsMethodEnum.AIRPORT_BIND_STATUS, ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS);
                             mapping.channelMapping(RequestsMethodEnum.AIRPORT_ORGANIZATION_GET, ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET);
                             mapping.channelMapping(RequestsMethodEnum.AIRPORT_ORGANIZATION_BIND, ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND);
+                            mapping.channelMapping(RequestsMethodEnum.FLIGHT_TASK_RESOURCE_GET, ChannelName.INBOUND_REQUESTS_FLIGHT_TASK_RESOURCE_GET);
                             mapping.channelMapping(RequestsMethodEnum.UNKNOWN, ChannelName.DEFAULT);
                         })
                 .get();
