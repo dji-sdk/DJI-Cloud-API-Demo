@@ -7,6 +7,7 @@ import com.dji.sample.media.model.CredentialsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -52,7 +53,11 @@ public class OssServiceContext {
         return this.ossService.deleteObject(bucket, objectKey);
     }
 
-    public byte[] getObject(String bucket, String objectKey) {
+    public InputStream getObject(String bucket, String objectKey) {
         return this.ossService.getObject(bucket, objectKey);
+    }
+
+    public void putObject(String bucket, String objectKey, InputStream stream) {
+        this.ossService.putObject(bucket, objectKey, stream);
     }
 }

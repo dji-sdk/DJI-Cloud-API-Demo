@@ -4,8 +4,8 @@ import lombok.Data;
 
 /**
  * @author sean
- * @version 1.0
- * @date 2022/5/11
+ * @version 1.3
+ * @date 2022/11/3
  */
 @Data
 public class OsdDockReceiver {
@@ -22,8 +22,6 @@ public class OsdDockReceiver {
 
     private Float environmentTemperature;
 
-    private Integer environmentHumidity;
-
     private Float temperature;
 
     private Integer humidity;
@@ -36,23 +34,11 @@ public class OsdDockReceiver {
 
     private AlternateLandPointReceiver alternateLandPoint;
 
-    private Integer jobNumber;
-
-    private Integer accTime;
-
     private Long firstPowerOn;
 
     private PositionStateReceiver positionState;
 
     private StorageReceiver storage;
-
-    private Integer electricSupplyVoltage;
-
-    private Integer workingVoltage;
-
-    private Integer workingCurrent;
-
-    private Integer backupBatteryVoltage;
 
     private Integer modeCode;
 
@@ -60,8 +46,43 @@ public class OsdDockReceiver {
 
     private Integer supplementLightState;
 
+    private Integer emergencyStopState;
+
+    private Integer airConditionerMode;
+
+    private Integer batteryStoreMode;
+
+    private Integer alarmState;
+
     private Integer putterState;
 
     private DockSubDeviceReceiver subDevice;
 
+    private Integer jobNumber;
+
+    private Long accTime;
+
+    private Long activationTime;
+
+    private DeviceMaintainStatusReceiver maintainStatus;
+
+    private Integer electricSupplyVoltage;
+
+    private Integer workingVoltage;
+
+    private Integer workingCurrent;
+
+    private BackupBatteryReceiver backupBattery;
+
+    private DroneBatteryMaintenanceInfoReceiver droneBatteryMaintenanceInfo;
+
+    private Integer flighttaskStepCode;
+
+    private Integer flighttaskPrepareCapacity;
+
+    private DockMediaFileDetailReceiver mediaFileDetail;
+
+    private DockSdrReceiver sdr;
+
+    private DockWirelessLinkReceiver wirelessLink;
 }

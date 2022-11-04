@@ -5,9 +5,7 @@ import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.BucketCrossOriginConfiguration;
-import com.amazonaws.services.s3.model.CORSRule;
-import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
@@ -18,6 +16,7 @@ import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +33,7 @@ import java.util.List;
  * @version 1.0
  * @date 2022/4/27
  */
+@Slf4j
 @Service
 public class AmazonS3ServiceImpl implements IOssService {
 
@@ -83,18 +83,29 @@ public class AmazonS3ServiceImpl implements IOssService {
         return true;
     }
 
-    public byte[] getObject(String bucket, String objectKey) {
+    public InputStream getObject(String bucket, String objectKey) {
         AmazonS3 client = this.createClient();
         S3Object object = client.getObject(bucket, objectKey);
-
-        try (InputStream stream = object.getObjectContent().getDelegateStream()) {
-            return stream.readAllBytes();
+        try (InputStream input = object.getObjectContent().getDelegateStream()) {
+            return input;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             client.shutdown();
         }
-        return new byte[0];
+        return InputStream.nullInputStream();
+    }
+
+    @Override
+    public void putObject(String bucket, String objectKey, InputStream input) {
+        AmazonS3 client = this.createClient();
+        if (client.doesObjectExist(bucket, objectKey)) {
+            client.shutdown();
+            throw new RuntimeException("The filename already exists.");
+        }
+        PutObjectResult objectResult = client.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
+        client.shutdown();
+        log.info("Upload File: {}", objectResult.toString());
     }
 
     private AmazonS3 createClient() {

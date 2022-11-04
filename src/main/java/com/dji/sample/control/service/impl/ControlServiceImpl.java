@@ -11,6 +11,7 @@ import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.control.service.IControlService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.service.IDeviceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,6 @@ import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -45,6 +45,9 @@ public class ControlServiceImpl implements IControlService {
     private IWebSocketManageService webSocketManageService;
 
     @Autowired
+    private IDeviceService deviceService;
+
+    @Autowired
     private ObjectMapper mapper;
 
     @Override
@@ -53,13 +56,13 @@ public class ControlServiceImpl implements IControlService {
         if (servicesMethodEnum == ServicesMethodEnum.UNKNOWN) {
             return ResponseResult.error("The " + serviceIdentifier + " method does not exist.");
         }
-        boolean isExist = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + sn) > 0;
+        boolean isExist = deviceService.checkDeviceOnline(sn);
         if (!isExist) {
             return ResponseResult.error("The dock is offline.");
         }
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + sn + TopicConst.SERVICES_SUF;
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReplyOpt = messageSenderService.publishWithReply(
+        ServiceReply serviceReplyOpt = messageSenderService.publishWithReply(
                 topic, CommonTopicResponse.builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
@@ -67,11 +70,9 @@ public class ControlServiceImpl implements IControlService {
                         .timestamp(System.currentTimeMillis())
                         .data("")
                         .build());
-        if (serviceReplyOpt.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
+
         ServiceReply<EventsOutputReceiver> serviceReply = mapper.convertValue(
-                serviceReplyOpt.get(), new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
+                serviceReplyOpt, new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
         if (serviceReply.getResult() != ResponseResult.CODE_SUCCESS) {
             return ResponseResult.error(serviceReply.getResult(), serviceReply.getOutput().getStatus());
         }

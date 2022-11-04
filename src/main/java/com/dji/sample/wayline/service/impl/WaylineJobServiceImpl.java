@@ -107,8 +107,8 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
         }
         WaylineJobDTO waylineJob = waylineJobOpt.get();
 
-        long expire = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + waylineJob.getDockSn());
-        if (expire < 0) {
+        boolean isOnline = deviceService.checkDeviceOnline(waylineJob.getDockSn());
+        if (!isOnline) {
             throw new RuntimeException("Dock is offline.");
         }
 
@@ -142,20 +142,16 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
                 .method(ServicesMethodEnum.FLIGHT_TASK_PREPARE.getMethod())
                 .build();
 
-        Optional<ServiceReply> serviceReplyOpt = messageSender.publishWithReply(topic, response);
-        if (serviceReplyOpt.isEmpty()) {
-            log.info("Timeout to receive reply.");
-            throw new RuntimeException("Timeout to receive reply.");
-        }
-        if (serviceReplyOpt.get().getResult() != 0) {
-            log.info("Prepare task ====> Error code: {}", serviceReplyOpt.get().getResult());
+        ServiceReply serviceReply = messageSender.publishWithReply(topic, response);
+        if (ResponseResult.CODE_SUCCESS == serviceReply.getResult()) {
+            log.info("Prepare task ====> Error code: {}", serviceReply.getResult());
             this.updateJob(WaylineJobDTO.builder()
                     .workspaceId(waylineJob.getWorkspaceId())
                     .jobId(waylineJob.getJobId())
                     .status(WaylineJobStatusEnum.FAILED.getVal())
                     .endTime(LocalDateTime.now())
-                    .code(serviceReplyOpt.get().getResult()).build());
-            return ResponseResult.error("Prepare task ====> Error code: " + serviceReplyOpt.get().getResult());
+                    .code(serviceReply.getResult()).build());
+            return ResponseResult.error("Prepare task ====> Error code: " + serviceReply.getResult());
         }
 
         // Issue an immediate task execution command.
@@ -184,8 +180,8 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
             throw new IllegalArgumentException("Job doesn't exist.");
         }
 
-        long expire = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + waylineJob.get().getDockSn());
-        if (expire < 0) {
+        boolean isOnline = deviceService.checkDeviceOnline(waylineJob.get().getDockSn());
+        if (!isOnline) {
             throw new RuntimeException("Dock is offline.");
         }
 
@@ -202,18 +198,14 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
                 .method(ServicesMethodEnum.FLIGHT_TASK_EXECUTE.getMethod())
                 .build();
 
-        Optional<ServiceReply> serviceReplyOpt = messageSender.publishWithReply(topic, response);
-        if (serviceReplyOpt.isEmpty()) {
-            log.info("Timeout to receive reply.");
-            throw new RuntimeException("Timeout to receive reply.");
-        }
-        if (serviceReplyOpt.get().getResult() != 0) {
-            log.info("Execute job ====> Error code: {}", serviceReplyOpt.get().getResult());
+        ServiceReply serviceReply = messageSender.publishWithReply(topic, response);
+        if (serviceReply.getResult() != 0) {
+            log.info("Execute job ====> Error code: {}", serviceReply.getResult());
             this.updateJob(WaylineJobDTO.builder()
                     .jobId(jobId)
                     .status(WaylineJobStatusEnum.FAILED.getVal())
                     .endTime(LocalDateTime.now())
-                    .code(serviceReplyOpt.get().getResult()).build());
+                    .code(serviceReply.getResult()).build());
             return false;
         }
 
@@ -258,8 +250,8 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
     }
 
     private void publishCancelTask(String workspaceId, String dockSn, List<String> jobIds) {
-        long expire = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
-        if (expire < 0) {
+        boolean isOnline = deviceService.checkDeviceOnline(dockSn);
+        if (isOnline) {
             throw new RuntimeException("Dock is offline.");
         }
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + dockSn + TopicConst.SERVICES_SUF;
@@ -272,13 +264,9 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
                 .method(ServicesMethodEnum.FLIGHT_TASK_CANCEL.getMethod())
                 .build();
 
-        Optional<ServiceReply> serviceReplyOpt = messageSender.publishWithReply(topic, response);
-        if (serviceReplyOpt.isEmpty()) {
-            log.info("Timeout to receive reply.");
-            throw new RuntimeException("Timeout to receive reply.");
-        }
-        if (serviceReplyOpt.get().getResult() != 0) {
-            log.info("Cancel job ====> Error code: {}", serviceReplyOpt.get().getResult());
+        ServiceReply serviceReply = messageSender.publishWithReply(topic, response);
+        if (serviceReply.getResult() != 0) {
+            log.info("Cancel job ====> Error code: {}", serviceReply.getResult());
             throw new RuntimeException("Failed to cancel the wayline job of " + dockSn);
         }
 

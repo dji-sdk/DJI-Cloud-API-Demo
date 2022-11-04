@@ -28,6 +28,10 @@ public class TopicConst {
 
     public static final String EVENTS_SUF = "/events";
 
+    public static final String PROPERTY_SUF = "/property";
+
+    public static final String SET_SUF = "/set";
+
     public static final String REGEX_SN = "[A-Za-z0-9]+";
 
 }

@@ -104,13 +104,10 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         // target topic
         String respTopic = THING_MODEL_PRE + PRODUCT +
                 data.getDeviceSn() + SERVICES_SUF;
-        Optional<ServiceReply> receiveReplyOpt = this.publishLiveStart(respTopic, liveParam);
+        ServiceReply receiveReply = this.publishLiveStart(respTopic, liveParam);
 
-        if (receiveReplyOpt.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_REPLY);
-        }
-        if (ResponseResult.CODE_SUCCESS != receiveReplyOpt.get().getResult()) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
+        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
+            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
         }
 
         LiveUrlTypeEnum urlType = LiveUrlTypeEnum.find(liveParam.getUrlType());
@@ -132,7 +129,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
                         .toString());
                 break;
             case RTSP:
-                String url = receiveReplyOpt.get().getInfo().toString();
+                String url = receiveReply.getInfo().toString();
                 this.resolveUrlUser(url, live);
                 break;
             case UNKNOWN:
@@ -151,12 +148,9 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
 
         String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
 
-        Optional<ServiceReply> receiveReplyOpt = this.publishLiveStop(respTopic, videoId);
-        if (receiveReplyOpt.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_REPLY);
-        }
-        if (receiveReplyOpt.get().getResult() != 0) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
+        ServiceReply receiveReply = this.publishLiveStop(respTopic, videoId);
+        if (receiveReply.getResult() != 0) {
+            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
         }
 
         return ResponseResult.success();
@@ -177,12 +171,9 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
 
         String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
 
-        Optional<ServiceReply> receiveReplyOpt = this.publishLiveSetQuality(respTopic, liveParam);
-        if (receiveReplyOpt.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_REPLY);
-        }
-        if (receiveReplyOpt.get().getResult() != 0) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
+        ServiceReply receiveReply = this.publishLiveSetQuality(respTopic, liveParam);
+        if (ResponseResult.CODE_SUCCESS == receiveReply.getResult()) {
+            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
         }
 
         return ResponseResult.success();
@@ -204,18 +195,16 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
 
         String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
 
-        Optional<ServiceReply> receiveReplyOpt = this.publishLiveLensChange(respTopic, liveParam);
-        if (receiveReplyOpt.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_REPLY);
-        }
-        if (receiveReplyOpt.get().getResult() != 0) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReplyOpt.get().getResult()));
+        ServiceReply receiveReply = this.publishLiveLensChange(respTopic, liveParam);
+
+        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
+            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
         }
 
         return ResponseResult.success();
     }
 
-    private Optional<ServiceReply> publishLiveLensChange(String respTopic, LiveTypeDTO liveParam) {
+    private ServiceReply publishLiveLensChange(String respTopic, LiveTypeDTO liveParam) {
         CommonTopicResponse<LiveTypeDTO> response = new CommonTopicResponse<>();
         response.setTid(UUID.randomUUID().toString());
         response.setBid(UUID.randomUUID().toString());
@@ -312,7 +301,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
      * @param liveParam
      * @return
      */
-    private Optional<ServiceReply> publishLiveStart(String topic, LiveTypeDTO liveParam) {
+    private ServiceReply publishLiveStart(String topic, LiveTypeDTO liveParam) {
         CommonTopicResponse<LiveTypeDTO> response = new CommonTopicResponse<>();
         response.setTid(UUID.randomUUID().toString());
         response.setBid(UUID.randomUUID().toString());
@@ -328,7 +317,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
      * @param liveParam
      * @return
      */
-    private Optional<ServiceReply> publishLiveSetQuality(String respTopic, LiveTypeDTO liveParam) {
+    private ServiceReply publishLiveSetQuality(String respTopic, LiveTypeDTO liveParam) {
         Map<String, Object> data = new ConcurrentHashMap<>(Map.of(
                 "video_id", liveParam.getVideoId(),
                 "video_quality", liveParam.getVideoQuality()));
@@ -347,7 +336,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
      * @param videoId
      * @return
      */
-    private Optional<ServiceReply> publishLiveStop(String topic, String videoId) {
+    private ServiceReply publishLiveStop(String topic, String videoId) {
         Map<String, String> data = new ConcurrentHashMap<>(Map.of("video_id", videoId));
         CommonTopicResponse<Map<String, String>> response = new CommonTopicResponse<>();
         response.setTid(UUID.randomUUID().toString());

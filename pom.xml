@@ -11,7 +11,7 @@
 
 	<groupId>com.dji</groupId>
 	<artifactId>cloud-api-sample</artifactId>
-	<version>1.1.0</version>
+	<version>1.3.0-beta2</version>
 	<name>cloud-api-sample</name>
 
 	<properties>
@@ -155,6 +155,17 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.dom4j</groupId>
+			<artifactId>dom4j</artifactId>
+			<version>2.1.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>jaxen</groupId>
+			<artifactId>jaxen</artifactId>
 		</dependency>
 	</dependencies>
 

@@ -157,4 +157,9 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.INBOUND_PROPERTY_SET_REPLY)
+    public MessageChannel propertySetReply() {
+        return new DirectChannel();
+    }
+
 }

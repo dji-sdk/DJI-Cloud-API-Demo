@@ -703,6 +703,36 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Set Property",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"night_lights_state\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/devices/{{workspace_id}}/devices/{{device_sn}}/property",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"devices",
+								"{{workspace_id}}",
+								"devices",
+								"{{device_sn}}",
+								"property"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -710,7 +740,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NjM1NTkxMTAsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NjM2NDU1MTAsImlhdCI6MTY2MzU1OTExMCwidXNlcm5hbWUiOiJhZG1pblBDIn0.LG1JXZkuTdMaqnXn5WMJvnysNkHHbc4HLe_qZPWz_nM",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njc0NzcwNTUsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njc1NjM0NTUsImlhdCI6MTY2NzQ3NzA1NSwidXNlcm5hbWUiOiJhZG1pblBDIn0.VMJ0ZKn895uvkMDjg2fw3p4trVCUx9ltVFKeP7QmYpo",
 						"type": "string"
 					},
 					{
@@ -1322,6 +1352,37 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Import KMZ File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/waylines/file/upload",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"waylines",
+								"file",
+								"upload"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -1329,7 +1390,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NTU0NDk2MDIsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NTU1MzYwMDIsImlhdCI6MTY1NTQ0OTYwMiwidXNlcm5hbWUiOiJhZG1pblBDIn0.YZWHJ65Pl_DT2Ampxk0WC01KD_fNTm_rYVUBIHAZD-4",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njc1MzMwNDMsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njc2MTk0NDMsImlhdCI6MTY2NzUzMzA0MywidXNlcm5hbWUiOiJhZG1pblBDIn0.es0boeLSuSD8ysMft7OP701zYuaAHlrmf68iNCvqvnw",
 						"type": "string"
 					},
 					{

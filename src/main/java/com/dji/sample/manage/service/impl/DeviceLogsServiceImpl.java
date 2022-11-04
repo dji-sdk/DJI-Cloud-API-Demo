@@ -113,7 +113,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         }
 
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF;
-        Optional<LogsFileUploadList> serviceReplyOpt = messageSenderService.publishWithReply(
+        LogsFileUploadList data = messageSenderService.publishWithReply(
                 LogsFileUploadList.class,
                 topic,
                 CommonTopicResponse.builder()
@@ -123,10 +123,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
                         .timestamp(System.currentTimeMillis())
                         .data(Map.of(MapKeyConst.MODULE_LIST, domainList))
                         .build(), 1);
-        if (serviceReplyOpt.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        LogsFileUploadList data = serviceReplyOpt.get();
+
         for (LogsFileUpload file : data.getFiles()) {
             if (file.getDeviceSn().isBlank()) {
                 file.setDeviceSn(deviceSn);
@@ -170,7 +167,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
 
         credentialsDTO.setParams(LogsFileUploadList.builder().files(files).build());
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReply = messageSenderService.publishWithReply(
+        ServiceReply reply = messageSenderService.publishWithReply(
                 TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF,
                 CommonTopicResponse.<LogsUploadCredentialsDTO>builder()
                         .tid(UUID.randomUUID().toString())
@@ -180,10 +177,6 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
                         .data(credentialsDTO)
                         .build());
 
-        if (serviceReply.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        ServiceReply reply = serviceReply.get();
         if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
             return ResponseResult.error(String.valueOf(reply.getResult()));
         }
@@ -207,7 +200,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         }
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF;
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReply = messageSenderService.publishWithReply(topic,
+        ServiceReply reply = messageSenderService.publishWithReply(topic,
                 CommonTopicResponse.<LogsFileUpdateParam>builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
@@ -216,10 +209,6 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
                         .data(param)
                         .build());
 
-        if (serviceReply.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        ServiceReply reply = serviceReply.get();
         if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
             return ResponseResult.error("Error Code : " + reply.getResult());
         }
@@ -284,7 +273,6 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
             List<LogsExtFileReceiver> fileReceivers = output.getExt().getFiles();
             if (CollectionUtils.isEmpty(fileReceivers)) {
                 redisOpsUtils.del(RedisConst.LOGS_FILE_PREFIX + sn);
-                return;
             }
 
             // refresh cache.

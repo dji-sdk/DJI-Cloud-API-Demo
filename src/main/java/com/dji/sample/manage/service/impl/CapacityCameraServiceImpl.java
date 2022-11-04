@@ -5,6 +5,7 @@ import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.CapacityCameraDTO;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
+import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.CapacityCameraReceiver;
 import com.dji.sample.manage.service.ICameraVideoService;
 import com.dji.sample.manage.service.ICapacityCameraService;
@@ -68,7 +69,7 @@ public class CapacityCameraServiceImpl implements ICapacityCameraService {
         // type-subType-index
         if (indexArr.length == 3) {
             Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                    .getOneDictionaryInfoByTypeSubType(indexArr[0], indexArr[1]);
+                    .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(), indexArr[0], indexArr[1]);
             dictionaryOpt.ifPresent(dictionary ->
                     builder.name(dictionary.getDeviceName()));
         }

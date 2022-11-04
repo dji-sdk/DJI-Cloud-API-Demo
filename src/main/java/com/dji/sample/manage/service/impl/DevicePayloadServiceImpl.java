@@ -9,6 +9,7 @@ import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
 import com.dji.sample.manage.model.dto.DevicePayloadDTO;
 import com.dji.sample.manage.model.entity.DevicePayloadEntity;
+import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
 import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.service.ICapacityCameraService;
@@ -204,7 +205,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
             if (arr.length == 3) {
                 Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                        .getOneDictionaryInfoByTypeSubType(arr[0], arr[1]);
+                        .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(), arr[0], arr[1]);
                 dictionaryOpt.ifPresent(dictionary ->
                         builder.payloadName(dictionary.getDeviceName())
                                 .payloadDesc(dictionary.getDeviceDesc()));

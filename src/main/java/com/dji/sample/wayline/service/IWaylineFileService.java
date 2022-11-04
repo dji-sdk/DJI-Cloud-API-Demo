@@ -3,6 +3,7 @@ package com.dji.sample.wayline.service;
 import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.wayline.model.dto.WaylineFileDTO;
 import com.dji.sample.wayline.model.param.WaylineQueryParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URL;
 import java.sql.SQLException;
@@ -71,4 +72,13 @@ public interface IWaylineFileService {
      * @param waylineId
      */
     Boolean deleteByWaylineId(String workspaceId, String waylineId);
+
+    /**
+     * Import kmz wayline file.
+     * @param file
+     * @param workspaceId
+     * @param creator
+     * @return
+     */
+    void importKmzFile(MultipartFile file, String workspaceId, String creator);
 }

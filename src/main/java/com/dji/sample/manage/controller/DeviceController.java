@@ -1,21 +1,20 @@
 package com.dji.sample.manage.controller;
 
+import com.dji.sample.common.error.CommonErrorEnum;
 import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.ChannelName;
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
-import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
-import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
+import com.dji.sample.manage.model.enums.DeviceSetPropertyEnum;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
 import com.dji.sample.manage.service.IDeviceService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
-import org.springframework.messaging.Message;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,9 +33,6 @@ public class DeviceController {
     @Autowired
     private IDeviceService deviceService;
 
-    @Autowired
-    private ISendMessageService sendMessageService;
-
     /**
      * Handles the message that the drone goes online.
      * @param receiver  The drone information is not empty.
@@ -50,6 +46,8 @@ public class DeviceController {
                     CommonTopicResponse.builder()
                             .tid(receiver.getTid())
                             .bid(receiver.getBid())
+                            .timestamp(System.currentTimeMillis())
+                            .method(receiver.getMethod())
                             .build());
         }
     }
@@ -68,6 +66,8 @@ public class DeviceController {
                     CommonTopicResponse.builder()
                             .tid(receiver.getTid())
                             .bid(receiver.getBid())
+                            .timestamp(System.currentTimeMillis())
+                            .method(receiver.getMethod())
                             .build());
 
         }
@@ -83,26 +83,6 @@ public class DeviceController {
         List<DeviceDTO> devicesList = deviceService.getDevicesTopoForWeb(workspaceId);
 
         return ResponseResult.success(devicesList);
-    }
-
-    /**
-     * Handle osd topic messages.
-     * @param message
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_OSD)
-    public void osdRealTime(Message<?> message) {
-        String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
-        byte[] payload = (byte[])message.getPayload();
-        deviceService.handleOSD(topic, payload);
-    }
-
-    /**
-     * Receive the reported firmware version data.
-     * @param receiver
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
-    public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
-        deviceService.updateFirmwareVersion(receiver);
     }
 
     /**
@@ -185,5 +165,28 @@ public class DeviceController {
     public ResponseResult createOtaJob(@PathVariable("workspace_id") String workspaceId,
                                        @RequestBody List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
         return deviceService.createDeviceOtaJob(workspaceId, upgradeDTOS);
+    }
+
+    /**
+     * Set the property parameters of the drone.
+     * @param workspaceId
+     * @param dockSn
+     * @param param
+     * @return
+     */
+    @PutMapping("/{workspace_id}/devices/{device_sn}/property")
+    public ResponseResult devicePropertySet(@PathVariable("workspace_id") String workspaceId,
+                                            @PathVariable("device_sn") String dockSn,
+                                            @RequestBody JsonNode param) {
+        if (param.size() != 1) {
+            return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+        }
+        String property = param.fieldNames().next();
+        Optional<DeviceSetPropertyEnum> propertyEnumOpt = DeviceSetPropertyEnum.find(property);
+        if (propertyEnumOpt.isEmpty()) {
+            return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+        }
+        deviceService.devicePropertySet(workspaceId, dockSn, propertyEnumOpt.get(), param.get(property));
+        return ResponseResult.success();
     }
 }

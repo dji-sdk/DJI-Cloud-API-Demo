@@ -8,10 +8,10 @@ import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.TelemetryDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.OsdDockReceiver;
-import com.dji.sample.manage.model.receiver.OsdDockTransmissionReceiver;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * @author sean
@@ -39,11 +39,10 @@ public class DockOSDServiceImpl extends AbstractTSAService {
         if (DeviceDomainEnum.DOCK.getDesc().equals(device.getDomain())) {
             wsMessage.setBizCode(BizCodeEnum.DOCK_OSD.getCode());
             OsdDockReceiver data = mapper.convertValue(receiver.getData(), OsdDockReceiver.class);
-            wsMessage.getData().setHost(data);
-            if (data.getSubDevice() == null) {
-                OsdDockTransmissionReceiver transmission = mapper.convertValue(receiver.getData(), OsdDockTransmissionReceiver.class);
-                wsMessage.getData().setHost(transmission);
+            if (Objects.nonNull(data.getMaintainStatus())) {
+                return;
             }
+            wsMessage.getData().setHost(data);
             sendMessageService.sendBatch(webSessions, wsMessage);
         }
     }

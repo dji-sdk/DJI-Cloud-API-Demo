@@ -50,7 +50,7 @@ public class LogsFileIndexServiceImpl implements ILogsFileIndexService {
         files.forEach(file -> {
             Optional<LogsFileUpload> fileOpt = this.getFileIndexByFileId(file.getFileId());
             fileOpt.ifPresent(fileUpload -> {
-                fileUpload.setObjectKey(file.getStatus() ? file.getObjectKey() : "");
+                fileUpload.setObjectKey(file.getStatus() ? file.getObjectKey() : null);
                 list.add(fileUpload);
             });
         });

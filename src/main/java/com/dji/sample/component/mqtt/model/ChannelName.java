@@ -70,4 +70,6 @@ public class ChannelName {
     public static final String INBOUND_EVENTS_FILE_UPLOAD_PROGRESS = "inboundEventsFileUploadProgress";
 
     public static final String INBOUND_REQUESTS_FLIGHT_TASK_RESOURCE_GET = "inboundEventsFlightTaskResourceGet";
+
+    public static final String INBOUND_PROPERTY_SET_REPLY = "inboundPropertySetReply";
 }
