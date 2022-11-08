@@ -143,7 +143,7 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
                 .build();
 
         ServiceReply serviceReply = messageSender.publishWithReply(topic, response);
-        if (ResponseResult.CODE_SUCCESS == serviceReply.getResult()) {
+        if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
             log.info("Prepare task ====> Error code: {}", serviceReply.getResult());
             this.updateJob(WaylineJobDTO.builder()
                     .workspaceId(waylineJob.getWorkspaceId())
@@ -199,7 +199,7 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
                 .build();
 
         ServiceReply serviceReply = messageSender.publishWithReply(topic, response);
-        if (serviceReply.getResult() != 0) {
+        if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
             log.info("Execute job ====> Error code: {}", serviceReply.getResult());
             this.updateJob(WaylineJobDTO.builder()
                     .jobId(jobId)
