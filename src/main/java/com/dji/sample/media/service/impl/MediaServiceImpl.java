@@ -3,6 +3,8 @@ package com.dji.sample.media.service.impl;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.*;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
+import com.dji.sample.manage.model.dto.DeviceDTO;
+import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sample.media.model.FileUploadCallback;
 import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.model.MediaFileDTO;
@@ -38,6 +40,9 @@ public class MediaServiceImpl implements IMediaService {
 
     @Autowired
     private IMessageSenderService messageSenderService;
+
+    @Autowired
+    private IDeviceService deviceService;
 
     @Override
     public Boolean fastUpload(String workspaceId, String fingerprint) {
@@ -77,7 +82,7 @@ public class MediaServiceImpl implements IMediaService {
         CommonTopicResponse<Object> data = CommonTopicResponse.builder()
                 .timestamp(System.currentTimeMillis())
                 .method(EventsMethodEnum.FILE_UPLOAD_CALLBACK.getMethod())
-                .data(ResponseResult.success())
+                .data(RequestsReply.success())
                 .tid(receiver.getTid())
                 .bid(receiver.getBid())
                 .build();
@@ -85,6 +90,14 @@ public class MediaServiceImpl implements IMediaService {
             String jobId = callback.getFile().getExt().getFlightId();
             Optional<WaylineJobDTO> jobOpt = waylineJobService.getJobByJobId(jobId);
             if (jobOpt.isPresent()) {
+                // Set the drone sn that shoots the media
+                Optional<DeviceDTO> dockDTO = deviceService.getDeviceBySn(jobOpt.get().getDockSn());
+                dockDTO.ifPresent(dock -> callback.getFile().getExt().setSn(dock.getChildDeviceSn()));
+
+                // set path
+                String objectKey = callback.getFile().getObjectKey();
+                callback.getFile().setPath(objectKey.substring(objectKey.indexOf("/") + 1, objectKey.lastIndexOf("/")));
+
                 int id = fileService.saveFile(jobOpt.get().getWorkspaceId(), callback.getFile());
                 if (id <= 0) {
                     data.setData(ResponseResult.error());

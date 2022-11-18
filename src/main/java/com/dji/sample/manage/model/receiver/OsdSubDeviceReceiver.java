@@ -58,4 +58,13 @@ public class OsdSubDeviceReceiver {
     private List<OsdPayloadReceiver> payloads;
 
     private StorageReceiver storage;
+
+    private Integer nightLightsState;
+
+    private Integer heightLimit;
+
+    private DistanceLimitStatusReceiver distanceLimitStatus;
+
+    private ObstacleAvoidanceReceiver obstacleAvoidance;
+
 }

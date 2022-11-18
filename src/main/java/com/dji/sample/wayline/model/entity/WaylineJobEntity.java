@@ -38,14 +38,35 @@ public class WaylineJobEntity implements Serializable {
     @TableField("workspace_id")
     private String workspaceId;
 
-    @TableField("bid")
-    private String bid;
+    @TableField("task_type")
+    private Integer taskType;
 
-    @TableField("type")
-    private String type;
+    @TableField("wayline_type")
+    private Integer waylineType;
 
     @TableField("username")
     private String username;
+
+    @TableField("execute_time")
+    private Long executeTime;
+
+    @TableField("end_time")
+    private Long endTime;
+
+    @TableField("error_code")
+    private Integer errorCode;
+
+    @TableField("status")
+    private Integer status;
+
+    @TableField("rth_altitude")
+    private Integer rthAltitude;
+
+    @TableField("out_of_control")
+    private Integer outOfControlAction;
+
+    @TableField("media_count")
+    private Integer mediaCount;
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Long createTime;

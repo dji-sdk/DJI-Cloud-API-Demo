@@ -2,7 +2,6 @@ package com.dji.sample.common.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTCreator;
-import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
@@ -85,14 +84,7 @@ public class JwtUtil {
      * @throws TokenExpiredException
      */
     public static DecodedJWT verifyToken(String token) {
-        try {
-            JWTVerifier verifier = JWT.require(algorithm).build();
-            return verifier.verify(token);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
+        return JWT.require(algorithm).build().verify(token);
     }
 
     /**
@@ -101,7 +93,13 @@ public class JwtUtil {
      * @return custom claim
      */
     public static Optional<CustomClaim> parseToken(String token) {
-        DecodedJWT jwt = verifyToken(token);
-        return jwt == null ? Optional.empty() : Optional.of(new CustomClaim(jwt.getClaims()));
+        DecodedJWT jwt;
+        try {
+            jwt = verifyToken(token);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+        return Optional.of(new CustomClaim(jwt.getClaims()));
     }
 }

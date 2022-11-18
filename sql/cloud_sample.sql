@@ -127,7 +127,12 @@ VALUES
 	(15,1,90742,0,'L1',NULL),
 	(16,2,56,0,'DJI Smart Controller','Remote control for M300'),
 	(17,2,119,0,'DJI RC Plus','Remote control for M30'),
-	(18,3,1,0,'DJI Dock','');
+	(18,3,1,0,'DJI Dock',''),
+	(19,0,77,0,'Mavic 3E',NULL),
+	(20,0,77,1,'Mavic 3T',NULL),
+	(21,1,66,0,'Mavic 3E Camera',NULL),
+	(22,1,67,0,'Mavic 3T Camera',NULL),
+	(23,2,144,0,'DJI RC Pro','Remote control for Mavic 3E/T');
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -431,15 +436,21 @@ CREATE TABLE `wayline_job` (
   `file_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The wayline file used for this job.',
   `dock_sn` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which dock executes the job.',
   `workspace_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which workspace the current job belongs to.',
-  `bid` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The bid used to execute the job, and the subsequent progress of the job is reported using this bid.',
-  `type` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The type of the job. Available: wayline.',
+  `task_type` int NOT NULL,
+  `wayline_type` int NOT NULL COMMENT 'The template type of the wayline.',
+  `execute_time` bigint NOT NULL,
   `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
+  `end_time` bigint DEFAULT NULL COMMENT 'end time of the job.',
+  `error_code` int DEFAULT NULL,
+  `status` int NOT NULL COMMENT '1: pending; 2: in progress; 3: success; 4: cancel; 5: failed',
+  `rth_altitude` int NOT NULL COMMENT 'return to home altitude. min: 20m; max: 500m',
+  `out_of_control` int NOT NULL COMMENT 'out of control action. 0: go home; 1: hover; 2: landing;',
+  `media_count` int NOT NULL DEFAULT '0',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `job_id_UNIQUE` (`job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Wayline mission information of the dock.';
-
 
 
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;

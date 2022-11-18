@@ -16,10 +16,7 @@ import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.dao.IDeviceLogsMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceLogsEntity;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-import com.dji.sample.manage.model.enums.DeviceLogsStatusEnum;
-import com.dji.sample.manage.model.enums.LogsFileUpdateMethodEnum;
-import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.model.enums.*;
 import com.dji.sample.manage.model.param.DeviceLogsCreateParam;
 import com.dji.sample.manage.model.param.DeviceLogsQueryParam;
 import com.dji.sample.manage.model.param.LogsFileUpdateParam;
@@ -113,20 +110,17 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         }
 
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF;
-        Optional<LogsFileUploadList> serviceReplyOpt = messageSenderService.publishWithReply(
+        LogsFileUploadList data = messageSenderService.publishWithReply(
                 LogsFileUploadList.class,
                 topic,
                 CommonTopicResponse.builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(UUID.randomUUID().toString())
-                        .method(ServicesMethodEnum.FILE_UPLOAD_LIST.getMethod())
+                        .method(LogsFileMethodEnum.FILE_UPLOAD_LIST.getMethod())
                         .timestamp(System.currentTimeMillis())
                         .data(Map.of(MapKeyConst.MODULE_LIST, domainList))
                         .build(), 1);
-        if (serviceReplyOpt.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        LogsFileUploadList data = serviceReplyOpt.get();
+
         for (LogsFileUpload file : data.getFiles()) {
             if (file.getDeviceSn().isBlank()) {
                 file.setDeviceSn(deviceSn);
@@ -170,20 +164,16 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
 
         credentialsDTO.setParams(LogsFileUploadList.builder().files(files).build());
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReply = messageSenderService.publishWithReply(
+        ServiceReply reply = messageSenderService.publishWithReply(
                 TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF,
                 CommonTopicResponse.<LogsUploadCredentialsDTO>builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
                         .timestamp(System.currentTimeMillis())
-                        .method(ServicesMethodEnum.FILE_UPLOAD_START.getMethod())
+                        .method(LogsFileMethodEnum.FILE_UPLOAD_START.getMethod())
                         .data(credentialsDTO)
                         .build());
 
-        if (serviceReply.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        ServiceReply reply = serviceReply.get();
         if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
             return ResponseResult.error(String.valueOf(reply.getResult()));
         }
@@ -207,19 +197,15 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         }
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + deviceSn + TopicConst.SERVICES_SUF;
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReply = messageSenderService.publishWithReply(topic,
+        ServiceReply reply = messageSenderService.publishWithReply(topic,
                 CommonTopicResponse.<LogsFileUpdateParam>builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
                         .timestamp(System.currentTimeMillis())
-                        .method(ServicesMethodEnum.FILE_UPLOAD_UPDATE.getMethod())
+                        .method(LogsFileMethodEnum.FILE_UPLOAD_UPDATE.getMethod())
                         .data(param)
                         .build());
 
-        if (serviceReply.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        ServiceReply reply = serviceReply.get();
         if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
             return ResponseResult.error("Error Code : " + reply.getResult());
         }
@@ -249,7 +235,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
                             .bid(receiver.getBid())
                             .method(receiver.getMethod())
                             .timestamp(System.currentTimeMillis())
-                            .data(ResponseResult.success())
+                            .data(RequestsReply.success())
                             .build());
         }
 
@@ -284,7 +270,6 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
             List<LogsExtFileReceiver> fileReceivers = output.getExt().getFiles();
             if (CollectionUtils.isEmpty(fileReceivers)) {
                 redisOpsUtils.del(RedisConst.LOGS_FILE_PREFIX + sn);
-                return;
             }
 
             // refresh cache.

@@ -31,5 +31,4 @@ public class CommonTopicReceiver<T> {
 
     private Integer needReply;
 
-    private String from;
 }

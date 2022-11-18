@@ -18,6 +18,7 @@ import com.dji.sample.manage.model.entity.DeviceFirmwareEntity;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
+import com.dji.sample.manage.service.IDeviceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,9 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
     @Autowired
     private IWebSocketManageService webSocketManageService;
 
+    @Autowired
+    private IDeviceService deviceService;
+
     @Override
     public Optional<DeviceFirmwareDTO> getFirmware(String deviceName, String version) {
         return Optional.ofNullable(entity2Dto(mapper.selectOne(
@@ -83,7 +87,7 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
     public List<DeviceOtaCreateParam> getDeviceOtaFirmware(List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
         List<DeviceOtaCreateParam> deviceOtaList = new ArrayList<>();
         upgradeDTOS.forEach(upgradeDevice -> {
-            boolean exist = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + upgradeDevice.getSn()) > 0;
+            boolean exist = deviceService.checkDeviceOnline(upgradeDevice.getSn());
             if (!exist) {
                 throw new IllegalArgumentException("Device is offline.");
             }
@@ -169,7 +173,7 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                             .bid(receiver.getBid())
                             .method(receiver.getMethod())
                             .timestamp(System.currentTimeMillis())
-                            .data(ResponseResult.success())
+                            .data(RequestsReply.success())
                             .build());
         }
     }

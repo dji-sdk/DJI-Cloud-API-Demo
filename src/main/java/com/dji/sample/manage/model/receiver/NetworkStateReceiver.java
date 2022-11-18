@@ -14,5 +14,5 @@ public class NetworkStateReceiver {
 
     private Integer quality;
 
-    private float rate;
+    private Float rate;
 }

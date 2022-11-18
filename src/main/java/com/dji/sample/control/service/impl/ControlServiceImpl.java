@@ -1,5 +1,6 @@
 package com.dji.sample.control.service.impl;
 
+import com.dji.sample.common.error.CommonErrorEnum;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.*;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
@@ -8,9 +9,13 @@ import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
+import com.dji.sample.control.model.enums.RemoteControlMethodEnum;
+import com.dji.sample.control.model.param.RemoteDebugParam;
 import com.dji.sample.control.service.IControlService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
+import com.dji.sample.manage.service.IDeviceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +25,7 @@ import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -45,37 +50,50 @@ public class ControlServiceImpl implements IControlService {
     private IWebSocketManageService webSocketManageService;
 
     @Autowired
+    private IDeviceService deviceService;
+
+    @Autowired
     private ObjectMapper mapper;
 
     @Override
-    public ResponseResult controlDock(String sn, String serviceIdentifier) {
-        ServicesMethodEnum servicesMethodEnum = ServicesMethodEnum.find(serviceIdentifier);
-        if (servicesMethodEnum == ServicesMethodEnum.UNKNOWN) {
+    public ResponseResult controlDock(String sn, String serviceIdentifier, RemoteDebugParam param) {
+        RemoteControlMethodEnum controlMethodEnum = RemoteControlMethodEnum.find(serviceIdentifier);
+        if (RemoteControlMethodEnum.UNKNOWN == controlMethodEnum) {
             return ResponseResult.error("The " + serviceIdentifier + " method does not exist.");
         }
-        boolean isExist = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + sn) > 0;
+
+        // Add parameter validation.
+        if (Objects.nonNull(controlMethodEnum.getClazz())) {
+            if (Objects.isNull(param)) {
+                return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+            }
+            BasicDeviceProperty basicDeviceProperty = mapper.convertValue(param.getAction(), controlMethodEnum.getClazz());
+            if (!basicDeviceProperty.valid()) {
+                return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+            }
+        }
+
+        boolean isExist = deviceService.checkDeviceOnline(sn);
         if (!isExist) {
             return ResponseResult.error("The dock is offline.");
         }
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + sn + TopicConst.SERVICES_SUF;
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReplyOpt = messageSenderService.publishWithReply(
+        ServiceReply serviceReplyOpt = messageSenderService.publishWithReply(
                 topic, CommonTopicResponse.builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
                         .method(serviceIdentifier)
                         .timestamp(System.currentTimeMillis())
-                        .data("")
+                        .data(Objects.requireNonNullElse(param, ""))
                         .build());
-        if (serviceReplyOpt.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
+
         ServiceReply<EventsOutputReceiver> serviceReply = mapper.convertValue(
-                serviceReplyOpt.get(), new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
-        if (serviceReply.getResult() != ResponseResult.CODE_SUCCESS) {
+                serviceReplyOpt, new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
+        if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
             return ResponseResult.error(serviceReply.getResult(), serviceReply.getOutput().getStatus());
         }
-        if (servicesMethodEnum.getProgress()) {
+        if (controlMethodEnum.getProgress()) {
             redisOps.setWithExpire(serviceIdentifier + RedisConst.DELIMITER +  bid, sn,
                     RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
         }
@@ -126,7 +144,7 @@ public class ControlServiceImpl implements IControlService {
                             .bid(receiver.getBid())
                             .method(receiver.getMethod())
                             .timestamp(System.currentTimeMillis())
-                            .data(ResponseResult.success())
+                            .data(RequestsReply.success())
                             .build());
         }
     }

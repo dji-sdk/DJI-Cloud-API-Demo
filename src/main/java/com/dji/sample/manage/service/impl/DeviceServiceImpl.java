@@ -20,21 +20,20 @@ import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.dao.IDeviceMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceEntity;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-import com.dji.sample.manage.model.enums.DeviceFirmwareStatusEnum;
-import com.dji.sample.manage.model.enums.IconUrlEnum;
-import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.model.enums.*;
 import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.model.receiver.*;
 import com.dji.sample.manage.service.*;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mqtt.support.MqttHeaders;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,8 +98,12 @@ public class DeviceServiceImpl implements IDeviceService {
     @Qualifier("gatewayOSDServiceImpl")
     private ITSAService tsaService;
 
+    private static final List<String> INIT_TOPICS_SUFFIX = List.of(
+            OSD_SUF, STATE_SUF, SERVICES_SUF + _REPLY_SUF, REQUESTS_SUF, EVENTS_SUF, PROPERTY_SUF + SET_SUF + _REPLY_SUF);
+
     @Override
-    public Boolean deviceOffline(String gatewaySn) {
+    public Boolean deviceOffline(StatusGatewayReceiver gateway) {
+        String gatewaySn = gateway.getSn();
         this.subscribeTopicOnline(gatewaySn);
 
         // Only the remote controller is logged in and the aircraft is not connected.
@@ -111,26 +114,21 @@ public class DeviceServiceImpl implements IDeviceService {
             Optional<DeviceDTO> gatewayOpt = this.getDeviceBySn(gatewaySn);
             if (gatewayOpt.isPresent()) {
                 DeviceDTO value = gatewayOpt.get();
-                value.setChildDeviceSn(value.getDeviceSn());
                 value.setBoundTime(null);
                 value.setLoginTime(null);
                 redisOps.setWithExpire(key, value, RedisConst.DEVICE_ALIVE_SECOND);
                 this.pushDeviceOnlineTopo(value.getWorkspaceId(), gatewaySn, gatewaySn);
                 return true;
             }
-            DeviceDTO gateway = DeviceDTO.builder()
-                    .deviceSn(gatewaySn)
-                    .childDeviceSn(gatewaySn)
-                    .domain(DeviceDomainEnum.GATEWAY.getDesc())
-                    .build();
-            gatewayOpt.map(DeviceDTO::getWorkspaceId).ifPresent(gateway::setWorkspaceId);
-            redisOps.setWithExpire(key, gateway, RedisConst.DEVICE_ALIVE_SECOND);
-            this.pushDeviceOnlineTopo(gateway.getWorkspaceId(), gatewaySn, gatewaySn);
-            return true;
+
+            // When connecting for the first time
+            DeviceEntity gatewayDevice = deviceGatewayConvertToDeviceEntity(gateway);
+            return firstSaveDevice(gatewayDevice, null);
         }
 
-        String deviceSn = ((DeviceDTO)(redisOps.get(key))).getChildDeviceSn();
-        if (deviceSn.equals(gatewaySn)) {
+        DeviceDTO deviceDTO = (DeviceDTO) (redisOps.get(key));
+        String deviceSn = deviceDTO.getChildDeviceSn();
+        if (!StringUtils.hasText(deviceSn)) {
             return true;
         }
 
@@ -139,21 +137,23 @@ public class DeviceServiceImpl implements IDeviceService {
 
     @Override
     public Boolean subDeviceOffline(String deviceSn) {
-        // Cancel drone-related subscriptions.
-        this.unsubscribeTopicOffline(deviceSn);
 
-        payloadService.deletePayloadsByDeviceSn(new ArrayList<>(List.of(deviceSn)));
-        // If no information about this gateway device exists in the database, the drone is considered to be offline.
+        // If no information about this device exists in the cache, the drone is considered to be offline.
         String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
         if (!redisOps.checkExist(key) || redisOps.getExpire(key) <= 0) {
             log.debug("The drone is already offline.");
             return true;
         }
         DeviceDTO device = (DeviceDTO) redisOps.get(key);
+        // Cancel drone-related subscriptions.
+        this.unsubscribeTopicOffline(deviceSn);
+
+        payloadService.deletePayloadsByDeviceSn(new ArrayList<>(List.of(deviceSn)));
         // Publish the latest device topology information in the current workspace.
         this.pushDeviceOfflineTopo(device.getWorkspaceId(), deviceSn);
 
         redisOps.del(key);
+        redisOps.del(RedisConst.OSD_PREFIX + device.getDeviceSn());
         log.debug("{} offline.", deviceSn);
         return true;
     }
@@ -165,7 +165,6 @@ public class DeviceServiceImpl implements IDeviceService {
         // change log:  Use redis instead of
         long time = redisOps.getExpire(key);
         long gatewayTime = redisOps.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + deviceGateway.getSn());
-        long now = System.currentTimeMillis();
 
         if (time > 0 && gatewayTime > 0) {
             redisOps.expireKey(key, RedisConst.DEVICE_ALIVE_SECOND);
@@ -197,61 +196,37 @@ public class DeviceServiceImpl implements IDeviceService {
                     this.updateDevice(gateway);
                 });
 
-
         DeviceEntity gateway = deviceGatewayConvertToDeviceEntity(deviceGateway);
-        gateway.setChildSn(deviceSn);
-        // Set the icon of the gateway device displayed in the pilot's map, required in the TSA module.
-        gateway.setUrlNormal(IconUrlEnum.NORMAL_PERSON.getUrl());
-        // Set the icon of the gateway device displayed in the pilot's map when it is selected, required in the TSA module.
-        gateway.setUrlSelect(IconUrlEnum.SELECT_PERSON.getUrl());
-        gateway.setLoginTime(now);
-
         DeviceEntity subDevice = subDeviceConvertToDeviceEntity(deviceGateway.getSubDevices().get(0));
-        // Set the icon of the drone device displayed in the pilot's map when it is selected, required in the TSA module.
-        subDevice.setUrlNormal(IconUrlEnum.NORMAL_EQUIPMENT.getUrl());
-        // Set the icon of the drone device displayed in the pilot's map, required in the TSA module.
-        subDevice.setUrlSelect(IconUrlEnum.SELECT_EQUIPMENT.getUrl());
-        subDevice.setLoginTime(now);
+        boolean isSave = firstSaveDevice(gateway, deviceSn) && firstSaveDevice(subDevice, null);
+        if (!isSave) {
+            return false;
+        }
 
         // dock go online
         if (deviceGateway.getDomain() != null && DeviceDomainEnum.DOCK.getVal() == deviceGateway.getDomain()) {
             Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(deviceGateway.getSn());
             if (deviceOpt.isEmpty()) {
-                log.info("The dock is not bound and cannot go online.");
+                log.info("The dock is not bound and cannot go online. Please refer to the Cloud API document video for binding.");
                 return false;
             }
             gateway.setNickname(null);
             subDevice.setNickname(null);
         }
 
-        Optional<DeviceEntity> gatewayOpt = this.saveDevice(gateway);
-        String workspaceId = this.saveDevice(subDevice).orElse(subDevice).getWorkspaceId();
+        String workspaceId = subDevice.getWorkspaceId();
 
-        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + deviceSn,
-                DeviceDTO.builder()
-                        .deviceSn(deviceSn)
-                        .domain(DeviceDomainEnum.SUB_DEVICE.getDesc())
-                        .workspaceId(workspaceId)
-                        .build(),
-                RedisConst.DEVICE_ALIVE_SECOND);
-        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + gateway.getDeviceSn(),
-                DeviceDTO.builder()
-                        .deviceSn(gateway.getDeviceSn())
-                        .workspaceId(gatewayOpt.orElse(gateway).getWorkspaceId())
-                        .childDeviceSn(deviceSn)
-                        .domain(deviceGateway.getDomain() != null ?
-                                DeviceDomainEnum.getDesc(deviceGateway.getDomain()) :
-                                DeviceDomainEnum.GATEWAY.getDesc())
-                        .build(),
-                RedisConst.DEVICE_ALIVE_SECOND);
-        log.debug("{} online.", subDevice.getDeviceSn());
-
-        if (StringUtils.hasText(workspaceId)) {
-            this.pushDeviceOnlineTopo(workspaceId, deviceGateway.getSn(), deviceSn);
+        this.subscribeTopicOnline(deviceGateway.getSn());
+        if (!StringUtils.hasText(workspaceId)) {
+            log.info("The drone is not bound and cannot go online. Please refer to the Cloud API document video for binding.");
+            return true;
         }
+
         // Subscribe to topic related to drone devices.
         this.subscribeTopicOnline(deviceSn);
-        this.subscribeTopicOnline(deviceGateway.getSn());
+        this.pushDeviceOnlineTopo(workspaceId, deviceGateway.getSn(), deviceSn);
+
+        log.debug("{} online.", subDevice.getDeviceSn());
         return true;
     }
 
@@ -264,20 +239,14 @@ public class DeviceServiceImpl implements IDeviceService {
                 return;
             }
         }
-        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + OSD_SUF);
-        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + STATE_SUF);
-        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + SERVICES_SUF + _REPLY_SUF);
-        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + REQUESTS_SUF);
-        topicService.subscribe(THING_MODEL_PRE + PRODUCT + sn + EVENTS_SUF);
+        String prefix = THING_MODEL_PRE + PRODUCT + sn;
+        INIT_TOPICS_SUFFIX.forEach(suffix -> topicService.subscribe(prefix + suffix));
     }
 
     @Override
     public void unsubscribeTopicOffline(String sn) {
-        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + OSD_SUF);
-        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + STATE_SUF);
-        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + SERVICES_SUF + _REPLY_SUF);
-        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + REQUESTS_SUF);
-        topicService.unsubscribe(THING_MODEL_PRE + PRODUCT + sn + EVENTS_SUF);
+        String prefix = THING_MODEL_PRE + PRODUCT + sn;
+        INIT_TOPICS_SUFFIX.forEach(suffix -> topicService.unsubscribe(prefix + suffix));
     }
 
     @Override
@@ -459,7 +428,10 @@ public class DeviceServiceImpl implements IDeviceService {
     }
 
     @Override
-    public void handleOSD(String topic, byte[] payload) {
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_OSD)
+    public void handleOSD(Message<?> message) {
+        String topic = message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC).toString();
+        byte[] payload = (byte[])message.getPayload();
         CommonTopicReceiver receiver;
         try {
             String from = topic.substring((THING_MODEL_PRE + PRODUCT).length(),
@@ -568,7 +540,9 @@ public class DeviceServiceImpl implements IDeviceService {
 
         // Query the model information of this gateway device.
         Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                .getOneDictionaryInfoByTypeSubType(gateway.getType(), gateway.getSubType());
+                .getOneDictionaryInfoByTypeSubType(Objects.nonNull(gateway.getDomain()) ?
+                                gateway.getDomain() : DeviceDomainEnum.GATEWAY.getVal(),
+                        gateway.getType(), gateway.getSubType());
 
         dictionaryOpt.ifPresent(entity ->
                 builder.deviceName(entity.getDeviceName())
@@ -598,7 +572,7 @@ public class DeviceServiceImpl implements IDeviceService {
 
         // Query the model information of this drone device.
         Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                .getOneDictionaryInfoByTypeSubType(device.getType(), device.getSubType());
+                .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.SUB_DEVICE.getVal(), device.getType(), device.getSubType());
 
         dictionaryOpt.ifPresent(dictionary ->
                 builder.deviceName(dictionary.getDeviceName())
@@ -611,8 +585,7 @@ public class DeviceServiceImpl implements IDeviceService {
                 .subType(device.getSubType())
                 .version(device.getVersion())
                 .deviceIndex(device.getIndex())
-                .domain(device.getDomain() != null ?
-                        device.getDomain() : DeviceDomainEnum.SUB_DEVICE.getVal())
+                .domain(DeviceDomainEnum.SUB_DEVICE.getVal())
                 .build();
     }
 
@@ -690,15 +663,15 @@ public class DeviceServiceImpl implements IDeviceService {
         device.setBoundTime(LocalDateTime.now());
 
         boolean isUpd = this.saveDevice(this.deviceDTO2Entity(device)).isPresent();
-        if (DeviceDomainEnum.DOCK.getDesc().equals(device.getDomain())) {
-            return isUpd;
-        }
         if (!isUpd) {
             return false;
         }
 
         String key = RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn();
         DeviceDTO redisDevice = (DeviceDTO)redisOps.get(key);
+        if (Objects.isNull(redisDevice)) {
+            return false;
+        }
         redisDevice.setWorkspaceId(device.getWorkspaceId());
         redisOps.setWithExpire(key, redisDevice, RedisConst.DEVICE_ALIVE_SECOND);
 
@@ -767,8 +740,8 @@ public class DeviceServiceImpl implements IDeviceService {
 
         assert dock != null;
 
-        Optional<DeviceEntity> dockEntityOpt = this.bindDevice2Entity(dock);
-        Optional<DeviceEntity> droneEntityOpt = this.bindDevice2Entity(drone);
+        Optional<DeviceEntity> dockEntityOpt = this.bindDevice2Entity(DeviceDomainEnum.DOCK.getVal(), dock);
+        Optional<DeviceEntity> droneEntityOpt = this.bindDevice2Entity(DeviceDomainEnum.SUB_DEVICE.getVal(), drone);
 
         List<ErrorInfoReply> bindResult = new ArrayList<>();
 
@@ -855,7 +828,13 @@ public class DeviceServiceImpl implements IDeviceService {
     }
 
     @Override
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
     public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
+        // If the reported version is empty, it will not be processed to prevent misleading page.
+        if (!StringUtils.hasText(receiver.getFirmwareVersion())) {
+            return;
+        }
+
         if (receiver.getDomain() == DeviceDomainEnum.SUB_DEVICE) {
             final DeviceDTO device = DeviceDTO.builder()
                     .deviceSn(receiver.getSn())
@@ -885,29 +864,97 @@ public class DeviceServiceImpl implements IDeviceService {
 
         // The bids in the progress messages reported subsequently are the same.
         String bid = UUID.randomUUID().toString();
-        Optional<ServiceReply> serviceReplyOpt = messageSender.publishWithReply(
+        ServiceReply serviceReply = messageSender.publishWithReply(
                 topic, CommonTopicResponse.<Map<String, List<DeviceOtaCreateParam>>>builder()
                         .tid(UUID.randomUUID().toString())
                         .bid(bid)
                         .timestamp(System.currentTimeMillis())
-                        .method(ServicesMethodEnum.OTA_CREATE.getMethod())
+                        .method(FirmwareMethodEnum.OTA_CREATE.getMethod())
                         .data(Map.of(MapKeyConst.DEVICES, deviceOtaFirmwares))
                         .build());
-        if (serviceReplyOpt.isEmpty()) {
-            return ResponseResult.error("No message reply received.");
-        }
-        ServiceReply serviceReply = serviceReplyOpt.get();
         if (serviceReply.getResult() != ResponseResult.CODE_SUCCESS) {
             return ResponseResult.error(serviceReply.getResult(), "Firmware Error Code: " + serviceReply.getResult());
         }
-        if (ServicesMethodEnum.OTA_CREATE.getProgress()) {
-            // Record the device state that needs to be updated.
-            deviceOtaFirmwares.forEach(deviceOta -> redisOps.setWithExpire(
-                    RedisConst.FIRMWARE_UPGRADING_PREFIX + deviceOta.getSn(),
-                    bid,
-                    RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND));
-        }
+
+        // Record the device state that needs to be updated.
+        deviceOtaFirmwares.forEach(deviceOta -> redisOps.setWithExpire(
+                RedisConst.FIRMWARE_UPGRADING_PREFIX + deviceOta.getSn(),
+                bid,
+                RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND));
         return ResponseResult.success();
+    }
+
+    @Override
+    public void devicePropertySet(String workspaceId, String dockSn, DeviceSetPropertyEnum propertyEnum, JsonNode param) {
+        boolean dockOnline = this.checkDeviceOnline(dockSn);
+        if (!dockOnline) {
+            throw new RuntimeException("Dock is offline.");
+        }
+        DeviceDTO deviceDTO = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
+        boolean deviceOnline = this.checkDeviceOnline(deviceDTO.getChildDeviceSn());
+        if (!deviceOnline) {
+            throw new RuntimeException("Device is offline.");
+        }
+
+        // Make sure the data is valid.
+        BasicDeviceProperty basicDeviceProperty = objectMapper.convertValue(param, propertyEnum.getClazz());
+        boolean valid = basicDeviceProperty.valid();
+        if (!valid) {
+            throw new IllegalArgumentException(CommonErrorEnum.ILLEGAL_ARGUMENT.getErrorMsg());
+        }
+
+        String topic = THING_MODEL_PRE + PRODUCT + dockSn + PROPERTY_SUF + SET_SUF;
+        OsdSubDeviceReceiver osd = (OsdSubDeviceReceiver) redisOps.get(RedisConst.OSD_PREFIX + deviceDTO.getChildDeviceSn());
+        if (!param.isObject()) {
+            this.deviceOnePropertySet(topic, propertyEnum, Map.entry(propertyEnum.getProperty(), param));
+            return;
+        }
+        // If there are multiple parameters, set them separately.
+        for (Iterator<Map.Entry<String, JsonNode>> filed = param.fields(); filed.hasNext(); ) {
+            Map.Entry<String, JsonNode> node = filed.next();
+            boolean isPublish = basicDeviceProperty.canPublish(node.getKey(), osd);
+            if (!isPublish) {
+                continue;
+            }
+            this.deviceOnePropertySet(topic, propertyEnum, Map.entry(propertyEnum.getProperty(), node));
+        }
+
+    }
+
+    @Override
+    public void deviceOnePropertySet(String topic, DeviceSetPropertyEnum propertyEnum, Map.Entry<String, Object> value) {
+        if (Objects.isNull(value) || Objects.isNull(value.getValue())) {
+            throw new IllegalArgumentException(CommonErrorEnum.ILLEGAL_ARGUMENT.getErrorMsg());
+        }
+
+        Map reply = messageSender.publishWithReply(
+                Map.class, topic,
+                CommonTopicResponse.builder()
+                        .bid(UUID.randomUUID().toString())
+                        .tid(UUID.randomUUID().toString())
+                        .timestamp(System.currentTimeMillis())
+                        .data(value)
+                        .build(),
+                2);
+
+        while (true) {
+            reply = (Map<String, Object>) reply.get(value.getKey());
+            if (value.getValue() instanceof JsonNode) {
+                break;
+            }
+            value = (Map.Entry) value.getValue();
+        }
+
+        SetReply setReply = objectMapper.convertValue(reply, SetReply.class);
+        if (SetReplyStatusResultEnum.SUCCESS.getVal() != setReply.getResult()) {
+            throw new RuntimeException("Failed to set " + value.getKey() + "; Error Code: " + setReply.getResult());
+        }
+
+    }
+
+    public Boolean checkDeviceOnline(String sn) {
+        String key = RedisConst.DEVICE_ONLINE_PREFIX + sn;
+        return redisOps.checkExist(key) && redisOps.getExpire(key) > 0;
     }
 
     /**
@@ -940,15 +987,17 @@ public class DeviceServiceImpl implements IDeviceService {
 
     /**
      * Convert device binding data object into database entity object.
+     *
+     * @param domain
      * @param receiver
      * @return
      */
-    private Optional<DeviceEntity> bindDevice2Entity(BindDeviceReceiver receiver) {
+    private Optional<DeviceEntity> bindDevice2Entity(Integer domain, BindDeviceReceiver receiver) {
         if (receiver == null) {
             return Optional.empty();
         }
         int[] droneKey = Arrays.stream(receiver.getDeviceModelKey().split("-")).mapToInt(Integer::parseInt).toArray();
-        Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService.getOneDictionaryInfoByTypeSubType(droneKey[1], droneKey[2]);
+        Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService.getOneDictionaryInfoByTypeSubType(domain, droneKey[1], droneKey[2]);
         DeviceEntity.DeviceEntityBuilder builder = DeviceEntity.builder();
 
         dictionaryOpt.ifPresent(entity ->
@@ -992,5 +1041,37 @@ public class DeviceServiceImpl implements IDeviceService {
                 .organizationId(device.getWorkspaceId())
                 .organizationName(device.getWorkspaceName())
                 .build();
+    }
+
+    private Boolean firstSaveDevice(DeviceEntity device, String deviceSn) {
+
+        Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(device.getDeviceSn());
+        if (deviceOpt.isEmpty()) {
+            // Set the icon of the gateway device displayed in the pilot's map, required in the TSA module.
+            device.setUrlNormal(IconUrlEnum.NORMAL_PERSON.getUrl());
+            // Set the icon of the gateway device displayed in the pilot's map when it is selected, required in the TSA module.
+            device.setUrlSelect(IconUrlEnum.SELECT_PERSON.getUrl());
+        }
+        device.setChildSn(deviceSn);
+        device.setLoginTime(System.currentTimeMillis());
+
+        Optional<DeviceEntity> saveDeviceOpt = this.saveDevice(device);
+        if (saveDeviceOpt.isEmpty()) {
+            return false;
+        }
+        device.setWorkspaceId(saveDeviceOpt.get().getWorkspaceId());
+
+        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn(),
+                DeviceDTO.builder()
+                        .deviceSn(device.getDeviceSn())
+                        .workspaceId(device.getWorkspaceId())
+                        .childDeviceSn(deviceSn)
+                        .domain(DeviceDomainEnum.getDesc(device.getDomain()))
+                        .type(device.getDeviceType())
+                        .subType(device.getSubType())
+                        .build(),
+                RedisConst.DEVICE_ALIVE_SECOND);
+
+        return true;
     }
 }

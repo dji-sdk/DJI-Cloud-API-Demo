@@ -67,9 +67,9 @@ public enum LiveErrorEnum implements IErrorInfo {
      * @return enumeration object
      */
     public static LiveErrorEnum find(int code) {
-
+        final int MOD = 100_000;
         for (LiveErrorEnum errorEnum : LiveErrorEnum.class.getEnumConstants()) {
-            if (errorEnum.code == code) {
+            if (errorEnum.code % MOD == code % MOD) {
                 return errorEnum;
             }
         }

@@ -11,6 +11,7 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author sean
@@ -37,13 +38,8 @@ public class RequestsRouter {
                 })
                 .<CommonTopicReceiver, RequestsMethodEnum>route(
                         receiver -> RequestsMethodEnum.find(receiver.getMethod()),
-                        mapping -> {
-                            mapping.channelMapping(RequestsMethodEnum.STORAGE_CONFIG_GET, ChannelName.INBOUND_REQUESTS_STORAGE_CONFIG_GET);
-                            mapping.channelMapping(RequestsMethodEnum.AIRPORT_BIND_STATUS, ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS);
-                            mapping.channelMapping(RequestsMethodEnum.AIRPORT_ORGANIZATION_GET, ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET);
-                            mapping.channelMapping(RequestsMethodEnum.AIRPORT_ORGANIZATION_BIND, ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND);
-                            mapping.channelMapping(RequestsMethodEnum.UNKNOWN, ChannelName.DEFAULT);
-                        })
+                                mapping -> Arrays.stream(RequestsMethodEnum.values()).forEach(
+                                        methodEnum -> mapping.channelMapping(methodEnum, methodEnum.getChannelName())))
                 .get();
     }
 }

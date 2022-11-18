@@ -28,6 +28,8 @@ public enum EventsResultStatusEnum {
 
     TIMEOUT("timeout", true),
 
+    PARTIALLY_DONE("partially_done", true),
+
     UNKNOWN("unknown", false);
 
     String desc;

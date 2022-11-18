@@ -1,5 +1,7 @@
 package com.dji.sample.component.mqtt.model;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 
 /**
@@ -7,26 +9,30 @@ import java.util.Arrays;
  * @version 1.0
  * @date 2022/5/25
  */
+@Getter
 public enum RequestsMethodEnum {
 
-    STORAGE_CONFIG_GET("storage_config_get"),
+    STORAGE_CONFIG_GET("storage_config_get", ChannelName.INBOUND_REQUESTS_STORAGE_CONFIG_GET),
 
-    AIRPORT_BIND_STATUS("airport_bind_status"),
+    AIRPORT_BIND_STATUS("airport_bind_status", ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS),
 
-    AIRPORT_ORGANIZATION_BIND("airport_organization_bind"),
+    AIRPORT_ORGANIZATION_BIND("airport_organization_bind", ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND),
 
-    AIRPORT_ORGANIZATION_GET("airport_organization_get"),
+    AIRPORT_ORGANIZATION_GET("airport_organization_get", ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET),
 
-    UNKNOWN("Unknown");
+    FLIGHT_TASK_RESOURCE_GET("flighttask_resource_get", ChannelName.INBOUND_REQUESTS_FLIGHT_TASK_RESOURCE_GET),
+
+    CONFIG("config", ChannelName.INBOUND_REQUESTS_CONFIG),
+
+    UNKNOWN("Unknown", ChannelName.DEFAULT);
 
     private String method;
 
-    RequestsMethodEnum(String method) {
-        this.method = method;
-    }
+    private String channelName;
 
-    public String getMethod() {
-        return method;
+    RequestsMethodEnum(String method, String channelName) {
+        this.method = method;
+        this.channelName = channelName;
     }
 
     public static RequestsMethodEnum find(String method) {

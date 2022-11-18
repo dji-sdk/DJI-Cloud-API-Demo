@@ -8,13 +8,17 @@ import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
+import com.dji.sample.manage.model.enums.DeviceSetPropertyEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -33,10 +37,10 @@ public interface IDeviceService {
 
     /**
      * The device goes offline.
-     * @param gatewaySn
+     * @param gateway
      * @return Whether the offline is successful.
      */
-    Boolean deviceOffline(String gatewaySn);
+    Boolean deviceOffline(StatusGatewayReceiver gateway);
 
     /**
      * The aircraft goes offline.
@@ -133,10 +137,9 @@ public interface IDeviceService {
 
     /**
      * Handle messages from the osd topic.
-     * @param topic     osd
-     * @param payload
+     * @param message     osd
      */
-    void handleOSD(String topic, byte[] payload);
+    void handleOSD(Message<?> message);
 
     /**
      * Update the device information.
@@ -205,4 +208,28 @@ public interface IDeviceService {
      * @return
      */
     ResponseResult createDeviceOtaJob(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
+
+    /**
+     * Set the property parameters of the drone.
+     * @param workspaceId
+     * @param dockSn
+     * @param propertyEnum
+     * @param param
+     */
+    void devicePropertySet(String workspaceId, String dockSn, DeviceSetPropertyEnum propertyEnum, JsonNode param);
+
+    /**
+     * Set one property parameters of the drone.
+     * @param topic
+     * @param propertyEnum
+     * @param value
+     */
+    void deviceOnePropertySet(String topic, DeviceSetPropertyEnum propertyEnum, Map.Entry<String, Object> value);
+
+    /**
+     * Determine if the device is online.
+     * @param sn
+     * @return
+     */
+    Boolean checkDeviceOnline(String sn);
 }

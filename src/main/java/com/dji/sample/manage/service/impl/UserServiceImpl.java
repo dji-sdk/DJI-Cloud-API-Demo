@@ -1,6 +1,8 @@
 package com.dji.sample.manage.service.impl;
 
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -29,6 +31,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -115,10 +118,22 @@ public class UserServiceImpl implements IUserService {
         if (!StringUtils.hasText(token)) {
             return Optional.empty();
         }
-        CustomClaim customClaim = new CustomClaim(JWT.decode(token).getClaims());
+        CustomClaim customClaim;
+        try {
+            DecodedJWT jwt = JwtUtil.verifyToken(token);
+            customClaim = new CustomClaim(jwt.getClaims());
+        } catch (TokenExpiredException e) {
+            customClaim = new CustomClaim(JWT.decode(token).getClaims());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
         String refreshToken = JwtUtil.createToken(customClaim.convertToMap());
 
         UserDTO user = entityConvertToDTO(this.getUserByUsername(customClaim.getUsername()));
+        if (Objects.isNull(user)) {
+            return Optional.empty();
+        }
         user.setWorkspaceId(customClaim.getWorkspaceId());
         user.setAccessToken(refreshToken);
         return Optional.of(user);
@@ -195,7 +210,7 @@ public class UserServiceImpl implements IUserService {
      */
     private UserDTO entityConvertToDTO(UserEntity entity) {
         if (entity == null) {
-            return new UserDTO();
+            return null;
         }
         return UserDTO.builder()
                 .userId(entity.getUserId())

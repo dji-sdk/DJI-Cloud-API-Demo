@@ -8,7 +8,6 @@ import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.TelemetryDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.receiver.OsdDockReceiver;
-import com.dji.sample.manage.model.receiver.OsdDockTransmissionReceiver;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -40,10 +39,6 @@ public class DockOSDServiceImpl extends AbstractTSAService {
             wsMessage.setBizCode(BizCodeEnum.DOCK_OSD.getCode());
             OsdDockReceiver data = mapper.convertValue(receiver.getData(), OsdDockReceiver.class);
             wsMessage.getData().setHost(data);
-            if (data.getSubDevice() == null) {
-                OsdDockTransmissionReceiver transmission = mapper.convertValue(receiver.getData(), OsdDockTransmissionReceiver.class);
-                wsMessage.getData().setHost(transmission);
-            }
             sendMessageService.sendBatch(webSessions, wsMessage);
         }
     }

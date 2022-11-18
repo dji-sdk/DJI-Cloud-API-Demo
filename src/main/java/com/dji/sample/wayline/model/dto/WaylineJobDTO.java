@@ -32,12 +32,25 @@ public class WaylineJobDTO {
 
     private String workspaceId;
 
-    private String bid;
+    private Integer waylineType;
 
-    private String type;
+    private Integer taskType;
+
+    private LocalDateTime executeTime;
+
+    private LocalDateTime endTime;
+
+    private Integer status;
+
+    private Integer progress;
 
     private String username;
 
-    private LocalDateTime updateTime;
+    private Integer code;
 
+    private Integer rthAltitude;
+
+    private Integer outOfControlAction;
+
+    private Integer mediaCount;
 }

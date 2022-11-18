@@ -1,6 +1,10 @@
 package com.dji.sample.component.mqtt.handler;
 
-import com.dji.sample.component.mqtt.model.*;
+import com.dji.sample.component.mqtt.model.Chan;
+import com.dji.sample.component.mqtt.model.ChannelName;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
+import com.dji.sample.component.mqtt.model.ServiceReply;
+import com.dji.sample.manage.model.enums.LogsFileMethodEnum;
 import com.dji.sample.manage.model.receiver.LogsFileUploadList;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +36,7 @@ public class ServicesReplyHandler {
         byte[] payload = (byte[])message.getPayload();
 
         CommonTopicReceiver receiver = mapper.readValue(payload, new TypeReference<CommonTopicReceiver>() {});
-        if (ServicesMethodEnum.FILE_UPLOAD_LIST.getMethod().equals(receiver.getMethod())) {
+        if (LogsFileMethodEnum.FILE_UPLOAD_LIST.getMethod().equals(receiver.getMethod())) {
             LogsFileUploadList list = mapper.convertValue(receiver.getData(), new TypeReference<LogsFileUploadList>() {});
             receiver.setData(list);
         } else {

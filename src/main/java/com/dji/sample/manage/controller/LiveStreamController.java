@@ -91,4 +91,9 @@ public class LiveStreamController {
         return liveStreamService.liveSetQuality(liveParam);
     }
 
+    @PostMapping("/streams/switch")
+    public ResponseResult liveLensChange(@RequestBody LiveTypeDTO liveParam) {
+        return liveStreamService.liveLensChange(liveParam);
+    }
+
 }

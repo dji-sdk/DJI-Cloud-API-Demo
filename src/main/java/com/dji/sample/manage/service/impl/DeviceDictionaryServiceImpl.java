@@ -25,16 +25,18 @@ public class DeviceDictionaryServiceImpl implements IDeviceDictionaryService {
     private IDeviceDictionaryMapper mapper;
 
     @Override
-    public Optional<DeviceDictionaryDTO> getOneDictionaryInfoByTypeSubType(Integer deviceType, Integer subType) {
-        if (deviceType == null || subType == null) {
+    public Optional<DeviceDictionaryDTO> getOneDictionaryInfoByTypeSubType(Integer domain, Integer deviceType, Integer subType) {
+        if (domain == null || deviceType == null || subType == null) {
             return Optional.empty();
         }
         return Optional.ofNullable(
                 entityConvertToDTO(
                         mapper.selectOne(
                                 new LambdaQueryWrapper<DeviceDictionaryEntity>()
+                                        .eq(DeviceDictionaryEntity::getDomain, domain)
                                         .eq(DeviceDictionaryEntity::getDeviceType, deviceType)
-                                        .eq(DeviceDictionaryEntity::getSubType, subType))));
+                                        .eq(DeviceDictionaryEntity::getSubType, subType)
+                                        .last(" limit 1 "))));
     }
 
     /**

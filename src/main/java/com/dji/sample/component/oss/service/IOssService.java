@@ -2,6 +2,7 @@ package com.dji.sample.component.oss.service;
 
 import com.dji.sample.media.model.CredentialsDTO;
 
+import java.io.InputStream;
 import java.net.URL;
 
 /**
@@ -41,5 +42,7 @@ public interface IOssService {
      * @param objectKey
      * @return
      */
-    byte[] getObject(String bucket, String objectKey);
+    InputStream getObject(String bucket, String objectKey);
+
+    void putObject(String bucket, String objectKey, InputStream input);
 }

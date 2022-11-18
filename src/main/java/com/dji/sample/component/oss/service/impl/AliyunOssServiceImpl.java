@@ -4,6 +4,9 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PutObjectRequest;
+import com.aliyun.oss.model.PutObjectResult;
 import com.aliyuncs.DefaultAcsClient;
 import com.aliyuncs.IAcsClient;
 import com.aliyuncs.exceptions.ClientException;
@@ -93,18 +96,30 @@ public class AliyunOssServiceImpl implements IOssService {
     }
 
     @Override
-    public byte[] getObject(String bucket, String objectKey) {
+    public InputStream getObject(String bucket, String objectKey) {
         OSS ossClient = this.createClient();
         OSSObject object = ossClient.getObject(bucket, objectKey);
 
-        try (InputStream stream = object.getObjectContent()) {
-            return stream.readAllBytes();
+        try (InputStream input = object.getObjectContent()) {
+            return input;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             ossClient.shutdown();
         }
-        return new byte[0];
+        return InputStream.nullInputStream();
+    }
+
+    @Override
+    public void putObject(String bucket, String objectKey, InputStream input) {
+        OSS ossClient = this.createClient();
+        if (ossClient.doesObjectExist(bucket, objectKey)) {
+            ossClient.shutdown();
+            throw new RuntimeException("The filename already exists.");
+        }
+        PutObjectResult objectResult = ossClient.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
+        ossClient.shutdown();
+        log.info("Upload File: {}", objectResult.getETag());
     }
 
     private OSS createClient() {

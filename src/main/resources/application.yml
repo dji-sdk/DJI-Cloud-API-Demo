@@ -107,3 +107,7 @@ logging:
     com.dji.sample: debug
   file:
     name: logs/cloud-api-sample.log
+
+ntp:
+  server:
+    host: Google.mzr.me

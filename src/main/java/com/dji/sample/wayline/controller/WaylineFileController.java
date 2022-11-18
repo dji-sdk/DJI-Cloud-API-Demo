@@ -9,6 +9,7 @@ import com.dji.sample.wayline.model.param.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
@@ -157,5 +159,22 @@ public class WaylineFileController {
                                         @PathVariable(name = "wayline_id") String waylineId) {
         boolean isDel = waylineFileService.deleteByWaylineId(workspaceId, waylineId);
         return isDel ? ResponseResult.success() : ResponseResult.error("Failed to delete wayline.");
+    }
+
+    /**
+     * Import kmz wayline files.
+     * @param file
+     * @return
+     */
+    @PostMapping("/{workspace_id}/waylines/file/upload")
+    public ResponseResult importKmzFile(HttpServletRequest request, MultipartFile file) {
+        if (Objects.isNull(file)) {
+            return ResponseResult.error("No file received.");
+        }
+        CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
+        String workspaceId = customClaim.getWorkspaceId();
+        String creator = customClaim.getUsername();
+        waylineFileService.importKmzFile(file, workspaceId, creator);
+        return ResponseResult.success();
     }
 }

@@ -3,8 +3,6 @@ package com.dji.sample.component.mqtt.service;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.mqtt.model.ServiceReply;
 
-import java.util.Optional;
-
 /**
  * @author sean.zhou
  * @version 0.1
@@ -33,7 +31,7 @@ public interface IMessageSenderService {
      * @param response  notification of whether the start is successful.
      * @return
      */
-    Optional<ServiceReply> publishWithReply(String topic, CommonTopicResponse response);
+    ServiceReply publishWithReply(String topic, CommonTopicResponse response);
 
     /**
      * Send live streaming start message and receive a response at the same time.
@@ -44,5 +42,5 @@ public interface IMessageSenderService {
      * @param <T>
      * @return
      */
-    <T> Optional<T> publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response, int retryTime);
+    <T> T publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response, int retryTime);
 }

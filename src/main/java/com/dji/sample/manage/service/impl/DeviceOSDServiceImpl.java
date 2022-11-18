@@ -1,6 +1,7 @@
 package com.dji.sample.manage.service.impl;
 
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
+import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
@@ -74,7 +75,7 @@ public class DeviceOSDServiceImpl extends AbstractTSAService {
                 log.warn("Please remount the payload, or restart the drone. Otherwise the data of the payload will not be received.");
             }
 
-
+            redisOps.setWithExpire(RedisConst.OSD_PREFIX + device.getDeviceSn(), data, RedisConst.DEVICE_ALIVE_SECOND);
             wsMessage.getData().setHost(data);
 
             sendMessageService.sendBatch(webSessions, wsMessage);

@@ -7,6 +7,7 @@ import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
+import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.media.dao.IFileMapper;
 import com.dji.sample.media.model.FileUploadDTO;
@@ -89,7 +90,8 @@ public class FileServiceImpl implements IFileService {
         Page<MediaFileEntity> pageData = mapper.selectPage(
                 new Page<MediaFileEntity>(page, pageSize),
                 new LambdaQueryWrapper<MediaFileEntity>()
-                        .eq(MediaFileEntity::getWorkspaceId, workspaceId));
+                        .eq(MediaFileEntity::getWorkspaceId, workspaceId)
+                        .orderByDesc(MediaFileEntity::getId));
         List<MediaFileDTO> records = pageData.getRecords()
                 .stream()
                 .map(this::entityConvertToDto)
@@ -133,7 +135,7 @@ public class FileServiceImpl implements IFileService {
                     .mapToInt(Integer::intValue)
                     .toArray();
             Optional<DeviceDictionaryDTO> payloadDict = deviceDictionaryService
-                    .getOneDictionaryInfoByTypeSubType(payloadModel[1], payloadModel[2]);
+                    .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(), payloadModel[1], payloadModel[2]);
             payloadDict.ifPresent(payload -> builder.payload(payload.getDeviceName()));
         }
         return builder.build();

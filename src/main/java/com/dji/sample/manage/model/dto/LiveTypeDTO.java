@@ -23,4 +23,6 @@ public class LiveTypeDTO {
     @JsonProperty("video_quality")
     private Integer videoQuality;
 
+    private String videoType;
+
 }

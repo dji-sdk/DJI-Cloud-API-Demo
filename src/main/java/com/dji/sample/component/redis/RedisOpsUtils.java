@@ -3,6 +3,7 @@ package com.dji.sample.component.redis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -184,4 +185,57 @@ public class RedisOpsUtils {
     public Long listLen(String key) {
         return redisTemplate.opsForList().size(key);
     }
+
+    /**
+     * ZADD
+     * @param key
+     * @param value
+     * @param score
+     */
+    public Boolean zAdd(String key, Object value, double score) {
+        return redisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    /**
+     * ZREM
+     * @param key
+     * @param value
+     */
+    public Boolean zRemove(String key, Object... value) {
+        return redisTemplate.opsForZSet().remove(key, value) > 0;
+    }
+    /**
+     * ZRANGE
+     * @param key
+     * @param start
+     * @param end
+     * @return
+     */
+    public Set<Object> zRange(String key, long start, long end) {
+        return redisTemplate.opsForZSet().range(key, start, end);
+    }
+
+    /**
+     * ZRANGE
+     * @param key
+     * @return
+     */
+    public Object zGetMin(String key) {
+        Set<Object> objects = zRange(key, 0, 0);
+        if (CollectionUtils.isEmpty(objects)) {
+            return null;
+        }
+        return objects.iterator().next();
+    }
+
+    /**
+     * ZSCORE
+     * @param key
+     * @param value
+     * @return
+     */
+    public Double zScore(String key, Object value) {
+        return redisTemplate.opsForZSet().score(key, value);
+    }
+
 }

@@ -15,4 +15,6 @@ public class AlternateLandPointReceiver {
     private Double longitude;
 
     private Double safeLandHeight;
+
+    private Integer isConfigured;
 }

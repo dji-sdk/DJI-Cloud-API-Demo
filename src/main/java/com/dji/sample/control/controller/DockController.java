@@ -1,13 +1,11 @@
 package com.dji.sample.control.controller;
 
 import com.dji.sample.common.model.ResponseResult;
+import com.dji.sample.control.model.param.RemoteDebugParam;
 import com.dji.sample.control.service.IControlService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author sean
@@ -24,7 +22,8 @@ public class DockController {
 
     @PostMapping("/{sn}/jobs/{service_identifier}")
     public ResponseResult createControlJob(@PathVariable String sn,
-                                           @PathVariable("service_identifier") String serviceIdentifier) {
-        return controlService.controlDock(sn, serviceIdentifier);
+                                           @PathVariable("service_identifier") String serviceIdentifier,
+                                           @RequestBody(required = false) RemoteDebugParam param) {
+        return controlService.controlDock(sn, serviceIdentifier, param);
     }
 }
