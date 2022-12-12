@@ -24,7 +24,7 @@ public class DeviceFirmwareDTO {
 
     private String productVersion;
 
-    private String fileUrl;
+    private String objectKey;
 
     private Long fileSize;
 
@@ -37,4 +37,8 @@ public class DeviceFirmwareDTO {
     private LocalDate releasedTime;
 
     private Boolean firmwareStatus;
+
+    private String workspaceId;
+
+    private String username;
 }

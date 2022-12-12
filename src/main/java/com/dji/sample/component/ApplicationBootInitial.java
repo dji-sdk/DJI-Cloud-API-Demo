@@ -18,9 +18,6 @@ public class ApplicationBootInitial implements CommandLineRunner {
     @Autowired
     private IDeviceService deviceService;
 
-    @Autowired
-    private RedisOpsUtils redisOps;
-
     /**
      * Subscribe to the devices that exist in the redis when the program starts,
      * to prevent the data from being different from the pilot side due to program interruptions.
@@ -31,7 +28,7 @@ public class ApplicationBootInitial implements CommandLineRunner {
     public void run(String... args) throws Exception {
         int start = RedisConst.DEVICE_ONLINE_PREFIX.length();
 
-        redisOps.getAllKeys(RedisConst.DEVICE_ONLINE_PREFIX + "*")
+        RedisOpsUtils.getAllKeys(RedisConst.DEVICE_ONLINE_PREFIX + "*")
                 .forEach(key -> deviceService.subscribeTopicOnline(key.substring(start)));
 
     }

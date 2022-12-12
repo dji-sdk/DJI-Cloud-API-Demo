@@ -6,7 +6,6 @@ import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -26,10 +25,7 @@ import java.util.stream.Collectors;
 public class WebSocketManageServiceImpl implements IWebSocketManageService {
 
     private static final ConcurrentHashMap<String, ConcurrentWebSocketSession> SESSIONS = new ConcurrentHashMap<>(16);
-
-    @Autowired
-    private RedisOpsUtils redisOps;
-
+    
     @Override
     public void put(String key, ConcurrentWebSocketSession val) {
         String[] name = key.split("/");
@@ -40,11 +36,11 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
         String sessionId = val.getId();
         String workspaceKey = RedisConst.WEBSOCKET_PREFIX + name[0];
         String userTypeKey = RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(Integer.parseInt(name[1])).getDesc();
-        redisOps.hashSet(workspaceKey, sessionId, name[2]);
-        redisOps.hashSet(userTypeKey, sessionId, name[2]);
+        RedisOpsUtils.hashSet(workspaceKey, sessionId, name[2]);
+        RedisOpsUtils.hashSet(userTypeKey, sessionId, name[2]);
         SESSIONS.put(sessionId, val);
-        redisOps.expireKey(workspaceKey, RedisConst.WEBSOCKET_ALIVE_SECOND);
-        redisOps.expireKey(userTypeKey, RedisConst.WEBSOCKET_ALIVE_SECOND);
+        RedisOpsUtils.expireKey(workspaceKey, RedisConst.WEBSOCKET_ALIVE_SECOND);
+        RedisOpsUtils.expireKey(userTypeKey, RedisConst.WEBSOCKET_ALIVE_SECOND);
     }
 
     @Override
@@ -54,8 +50,8 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
             log.debug("The key is out of format. [{workspaceId}/{userType}/{userId}]");
             return;
         }
-        redisOps.hashDel(RedisConst.WEBSOCKET_PREFIX + name[0], new String[] {sessionId});
-        redisOps.hashDel(RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(Integer.parseInt(name[1])).getDesc(), new String[] {sessionId});
+        RedisOpsUtils.hashDel(RedisConst.WEBSOCKET_PREFIX + name[0], new String[] {sessionId});
+        RedisOpsUtils.hashDel(RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(Integer.parseInt(name[1])).getDesc(), new String[] {sessionId});
         SESSIONS.remove(sessionId);
     }
 
@@ -66,7 +62,7 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
         }
         String key = RedisConst.WEBSOCKET_PREFIX + workspaceId;
 
-        return redisOps.hashKeys(key)
+        return RedisOpsUtils.hashKeys(key)
                 .stream()
                 .map(SESSIONS::get)
                 .filter(Objects::nonNull)
@@ -76,7 +72,7 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
     @Override
     public Collection<ConcurrentWebSocketSession> getValueWithWorkspaceAndUserType(String workspaceId, Integer userType) {
         String key = RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(userType).getDesc();
-        return redisOps.hashKeys(key)
+        return RedisOpsUtils.hashKeys(key)
                 .stream()
                 .map(SESSIONS::get)
                 .filter(Objects::nonNull)

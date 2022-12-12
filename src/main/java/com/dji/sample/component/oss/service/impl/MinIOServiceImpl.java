@@ -9,7 +9,6 @@ import io.minio.credentials.AssumeRoleProvider;
 import io.minio.errors.*;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -30,10 +29,7 @@ import java.util.Objects;
 public class MinIOServiceImpl implements IOssService {
 
     private MinioClient client;
-
-    @Autowired
-    private OssConfiguration configuration;
-
+    
     @Override
     public String getOssType() {
         return OssTypeEnum.MINIO.getType();
@@ -42,10 +38,10 @@ public class MinIOServiceImpl implements IOssService {
     @Override
     public CredentialsDTO getCredentials() {
         try {
-            AssumeRoleProvider provider = new AssumeRoleProvider(configuration.getEndpoint(), configuration.getAccessKey(),
-                    configuration.getSecretKey(), Math.toIntExact(configuration.getExpire()),
-                    null, configuration.getRegion(), null, null, null, null);
-            return new CredentialsDTO(provider.fetch(), configuration.getExpire());
+            AssumeRoleProvider provider = new AssumeRoleProvider(OssConfiguration.endpoint, OssConfiguration.accessKey,
+                    OssConfiguration.secretKey, Math.toIntExact(OssConfiguration.expire),
+                    null, OssConfiguration.region, null, null, null, null);
+            return new CredentialsDTO(provider.fetch(), OssConfiguration.expire);
         } catch (NoSuchAlgorithmException e) {
             log.debug("Failed to obtain sts.");
             e.printStackTrace();
@@ -57,26 +53,22 @@ public class MinIOServiceImpl implements IOssService {
     public URL getObjectUrl(String bucket, String objectKey) {
         try {
             return new URL(
-                    this.createClient()
-                            .getPresignedObjectUrl(
+                    client.getPresignedObjectUrl(
                                     GetPresignedObjectUrlArgs.builder()
                                             .method(Method.GET)
                                             .bucket(bucket)
                                             .object(objectKey)
-                                            .expiry(Math.toIntExact(configuration.getExpire()))
+                                            .expiry(Math.toIntExact(OssConfiguration.expire))
                                             .build()));
         } catch (ErrorResponseException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException |
                 NoSuchAlgorithmException | XmlParserException | ServerException e) {
-            log.error("The file does not exist on the OssConfiguration.");
-            e.printStackTrace();
+            throw new RuntimeException("The file does not exist on the OssConfiguration.");
         }
-        return null;
     }
 
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
-        MinioClient client = this.createClient();
         try {
             client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build());
         } catch (MinioException | NoSuchAlgorithmException | IOException | InvalidKeyException e) {
@@ -90,7 +82,7 @@ public class MinIOServiceImpl implements IOssService {
     @Override
     public InputStream getObject(String bucket, String objectKey) {
         try {
-            GetObjectResponse object = this.createClient().getObject(GetObjectArgs.builder().bucket(bucket).object(objectKey).build());
+            GetObjectResponse object = client.getObject(GetObjectArgs.builder().bucket(bucket).object(objectKey).build());
             return new ByteArrayInputStream(object.readAllBytes());
         } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidKeyException | InvalidResponseException | IOException | NoSuchAlgorithmException | ServerException | XmlParserException e) {
             e.printStackTrace();
@@ -101,7 +93,6 @@ public class MinIOServiceImpl implements IOssService {
     @Override
     public void putObject(String bucket, String objectKey, InputStream input) {
         try {
-            MinioClient client = this.createClient();
             client.statObject(StatObjectArgs.builder().bucket(bucket).object(objectKey).build());
             throw new RuntimeException("The filename already exists.");
         } catch (MinioException | InvalidKeyException | IOException | NoSuchAlgorithmException e) {
@@ -117,15 +108,14 @@ public class MinIOServiceImpl implements IOssService {
         }
     }
 
-    private MinioClient createClient() {
+    public void createClient() {
         if (Objects.nonNull(this.client)) {
-            return this.client;
+            return;
         }
         this.client = MinioClient.builder()
-                .endpoint(configuration.getEndpoint())
-                .credentials(configuration.getAccessKey(), configuration.getSecretKey())
-                .region(configuration.getRegion())
+                .endpoint(OssConfiguration.endpoint)
+                .credentials(OssConfiguration.accessKey, OssConfiguration.secretKey)
+                .region(OssConfiguration.region)
                 .build();
-        return this.client;
     }
 }

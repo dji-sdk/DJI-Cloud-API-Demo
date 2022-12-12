@@ -34,25 +34,22 @@ public class CapacityCameraServiceImpl implements ICapacityCameraService {
     @Autowired
     private IDeviceDictionaryService dictionaryService;
 
-    @Autowired
-    private RedisOpsUtils redisOps;
-
     @Override
     public List<CapacityCameraDTO> getCapacityCameraByDeviceSn(String deviceSn) {
-        return (List<CapacityCameraDTO>) redisOps.hashGet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn);
+        return (List<CapacityCameraDTO>) RedisOpsUtils.hashGet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn);
     }
 
     @Override
     public Boolean deleteCapacityCameraByDeviceSn(String deviceSn) {
-        return redisOps.hashDel(StateDataEnum.LIVE_CAPACITY.getDesc(), new String[]{deviceSn});
+        return RedisOpsUtils.hashDel(StateDataEnum.LIVE_CAPACITY.getDesc(), new String[]{deviceSn});
     }
 
     @Override
     public void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn, Long timestamp) {
         List<CapacityCameraDTO> capacity = capacityCameraReceivers.stream()
                 .map(this::receiver2Dto).collect(Collectors.toList());
-        redisOps.hashSet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn, capacity);
-        redisOps.setWithExpire(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + deviceSn, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
+        RedisOpsUtils.hashSet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn, capacity);
+        RedisOpsUtils.setWithExpire(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + deviceSn, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
     }
 
     @Override

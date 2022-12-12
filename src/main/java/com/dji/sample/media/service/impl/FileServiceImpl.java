@@ -46,9 +46,6 @@ public class FileServiceImpl implements IFileService {
     @Autowired
     private OssServiceContext ossService;
 
-    @Autowired
-    private OssConfiguration configuration;
-
     private Optional<MediaFileEntity> getMediaByFingerprint(String workspaceId, String fingerprint) {
         MediaFileEntity fileEntity = mapper.selectOne(new LambdaQueryWrapper<MediaFileEntity>()
                 .eq(MediaFileEntity::getWorkspaceId, workspaceId)
@@ -86,7 +83,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
-    public PaginationData<MediaFileDTO> getJobsPaginationByWorkspaceId(String workspaceId, long page, long pageSize) {
+    public PaginationData<MediaFileDTO> getMediaFilesPaginationByWorkspaceId(String workspaceId, long page, long pageSize) {
         Page<MediaFileEntity> pageData = mapper.selectPage(
                 new Page<MediaFileEntity>(page, pageSize),
                 new LambdaQueryWrapper<MediaFileEntity>()
@@ -107,7 +104,16 @@ public class FileServiceImpl implements IFileService {
             throw new IllegalArgumentException("{} doesn't exist.");
         }
 
-        return ossService.getObjectUrl(configuration.getBucket(), mediaFileOpt.get().getObjectKey());
+        return ossService.getObjectUrl(OssConfiguration.bucket, mediaFileOpt.get().getObjectKey());
+    }
+
+    @Override
+    public List<MediaFileDTO> getFilesByWorkspaceAndJobId(String workspaceId, String jobId) {
+        return mapper.selectList(new LambdaQueryWrapper<MediaFileEntity>()
+                .eq(MediaFileEntity::getWorkspaceId, workspaceId)
+                .eq(MediaFileEntity::getJobId, jobId))
+                .stream()
+                .map(this::entityConvertToDto).collect(Collectors.toList());
     }
 
     /**
@@ -160,7 +166,8 @@ public class FileServiceImpl implements IFileService {
                     .payload(entity.getPayload())
                     .createTime(LocalDateTime.ofInstant(
                             Instant.ofEpochMilli(entity.getCreateTime()), ZoneId.systemDefault()))
-                    .drone(entity.getDrone());
+                    .drone(entity.getDrone())
+                    .jobId(entity.getJobId());
 
         }
 

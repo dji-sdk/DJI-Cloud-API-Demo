@@ -6,6 +6,7 @@ import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.service.IDeviceService;
+import com.dji.sample.wayline.service.IWaylineJobService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,10 +28,10 @@ public class GlobalScheduleService {
     private IDeviceService deviceService;
 
     @Autowired
-    private RedisOpsUtils redisOps;
+    private IMqttTopicService topicService;
 
     @Autowired
-    private IMqttTopicService topicService;
+    private IWaylineJobService waylineJobService;
 
     /**
      * Check the status of the devices every 30 seconds. It is recommended to use cache.
@@ -39,17 +40,17 @@ public class GlobalScheduleService {
     private void deviceStatusListen() {
         int start = RedisConst.DEVICE_ONLINE_PREFIX.length();
 
-        redisOps.getAllKeys(RedisConst.DEVICE_ONLINE_PREFIX + "*").forEach(key -> {
-            long expire = redisOps.getExpire(key);
+        RedisOpsUtils.getAllKeys(RedisConst.DEVICE_ONLINE_PREFIX + "*").forEach(key -> {
+            long expire = RedisOpsUtils.getExpire(key);
             if (expire <= 30) {
-                DeviceDTO device = (DeviceDTO) redisOps.get(key);
+                DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(key);
                 if (device.getDomain().equals(DeviceDomainEnum.SUB_DEVICE.getDesc())) {
                     deviceService.subDeviceOffline(key.substring(start));
                 } else {
                     deviceService.unsubscribeTopicOffline(key.substring(start));
                     deviceService.pushDeviceOfflineTopo(device.getWorkspaceId(), device.getDeviceSn());
                 }
-                redisOps.del(key);
+                RedisOpsUtils.del(key);
             }
         });
 

@@ -3,7 +3,6 @@ package com.dji.sample.component.oss.service.impl;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
-import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
@@ -18,14 +17,12 @@ import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * @author sean
@@ -36,9 +33,8 @@ import java.util.Date;
 @Slf4j
 public class AliyunOssServiceImpl implements IOssService {
 
-    @Autowired
-    public OssConfiguration configuration;
-
+    private OSS ossClient;
+    
     @Override
     public String getOssType() {
         return OssTypeEnum.ALIYUN.getType();
@@ -49,16 +45,16 @@ public class AliyunOssServiceImpl implements IOssService {
 
         try {
             DefaultProfile profile = DefaultProfile.getProfile(
-                    configuration.getRegion(), configuration.getAccessKey(), configuration.getSecretKey());
+                    OssConfiguration.region, OssConfiguration.accessKey, OssConfiguration.secretKey);
             IAcsClient client = new DefaultAcsClient(profile);
 
             AssumeRoleRequest request = new AssumeRoleRequest();
-            request.setDurationSeconds(configuration.getExpire());
-            request.setRoleArn(configuration.getRoleArn());
-            request.setRoleSessionName(configuration.getRoleSessionName());
+            request.setDurationSeconds(OssConfiguration.expire);
+            request.setRoleArn(OssConfiguration.roleArn);
+            request.setRoleSessionName(OssConfiguration.roleSessionName);
 
             AssumeRoleResponse response = client.getAcsResponse(request);
-            return new CredentialsDTO(response.getCredentials(), configuration.getExpire());
+            return new CredentialsDTO(response.getCredentials(), OssConfiguration.expire);
 
         } catch (ClientException e) {
             log.debug("Failed to obtain sts.");
@@ -69,10 +65,6 @@ public class AliyunOssServiceImpl implements IOssService {
 
     @Override
     public URL getObjectUrl(String bucket, String objectKey) {
-        if (!StringUtils.hasText(bucket) || !StringUtils.hasText(objectKey)) {
-            return null;
-        }
-        OSS ossClient = this.createClient();
         // First check if the object can be fetched.
         boolean isExist = ossClient.doesObjectExist(bucket, objectKey);
         if (!isExist) {
@@ -80,50 +72,37 @@ public class AliyunOssServiceImpl implements IOssService {
         }
 
         return ossClient.generatePresignedUrl(bucket, objectKey,
-                new Date(System.currentTimeMillis() + configuration.getExpire() * 1000));
+                new Date(System.currentTimeMillis() + OssConfiguration.expire * 1000));
     }
 
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
-        OSS ossClient = this.createClient();
         if (!ossClient.doesObjectExist(bucket, objectKey)) {
-            ossClient.shutdown();
             return true;
         }
         ossClient.deleteObject(bucket, objectKey);
-        ossClient.shutdown();
         return true;
     }
 
     @Override
     public InputStream getObject(String bucket, String objectKey) {
-        OSS ossClient = this.createClient();
-        OSSObject object = ossClient.getObject(bucket, objectKey);
-
-        try (InputStream input = object.getObjectContent()) {
-            return input;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            ossClient.shutdown();
-        }
-        return InputStream.nullInputStream();
+        return ossClient.getObject(bucket, objectKey).getObjectContent();
     }
 
     @Override
     public void putObject(String bucket, String objectKey, InputStream input) {
-        OSS ossClient = this.createClient();
         if (ossClient.doesObjectExist(bucket, objectKey)) {
-            ossClient.shutdown();
             throw new RuntimeException("The filename already exists.");
         }
         PutObjectResult objectResult = ossClient.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
-        ossClient.shutdown();
         log.info("Upload File: {}", objectResult.getETag());
     }
 
-    private OSS createClient() {
-        return new OSSClientBuilder()
-                .build(configuration.getEndpoint(), configuration.getAccessKey(), configuration.getSecretKey());
+    public void createClient() {
+        if (Objects.nonNull(this.ossClient)) {
+            return;
+        }
+        this.ossClient = new OSSClientBuilder()
+                .build(OssConfiguration.endpoint, OssConfiguration.accessKey, OssConfiguration.secretKey);
     }
 }

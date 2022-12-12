@@ -27,6 +27,10 @@ spring:
         max-idle: 8
         min-idle: 0
 
+  servlet:
+    multipart:
+      max-file-size: 2GB
+      max-request-size: 2GB
 
 jwt:
   issuer: DJI

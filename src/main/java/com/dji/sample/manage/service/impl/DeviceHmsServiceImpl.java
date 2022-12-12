@@ -63,9 +63,6 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private RedisOpsUtils redisOps;
-
-    @Autowired
     private SendMessageServiceImpl sendMessageService;
 
     @Autowired
@@ -95,9 +92,9 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
                 .build();
         String key = RedisConst.HMS_PREFIX + sn;
         // Query all unread hms messages of the device in redis.
-        Set<String> hmsMap = redisOps.listGetAll(key).stream().map(String::valueOf).collect(Collectors.toSet());
+        Set<String> hmsMap = RedisOpsUtils.listGetAll(key).stream().map(String::valueOf).collect(Collectors.toSet());
 
-        DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
 
         List<DeviceHmsDTO> unReadList = new ArrayList<>();
         objectMapper.convertValue(((Map) (receiver.getData())).get(MapKeyConst.LIST),
@@ -117,7 +114,7 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
         if (unReadList.isEmpty()) {
             return;
         }
-        redisOps.listRPush(key, unReadList.stream().map(DeviceHmsDTO::getKey).toArray(String[]::new));
+        RedisOpsUtils.listRPush(key, unReadList.stream().map(DeviceHmsDTO::getKey).toArray(String[]::new));
         // push to the web
         Collection<ConcurrentWebSocketSession> sessions = webSocketManageService.getValueWithWorkspaceAndUserType(
                 device.getWorkspaceId(), UserTypeEnum.WEB.getVal());
@@ -162,7 +159,7 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
                         .eq(DeviceHmsEntity::getSn, deviceSn)
                         .eq(DeviceHmsEntity::getUpdateTime, 0L));
         // Delete unread messages cached in redis.
-        redisOps.del(RedisConst.HMS_PREFIX + deviceSn);
+        RedisOpsUtils.del(RedisConst.HMS_PREFIX + deviceSn);
     }
 
     private DeviceHmsDTO entity2Dto(DeviceHmsEntity entity) {

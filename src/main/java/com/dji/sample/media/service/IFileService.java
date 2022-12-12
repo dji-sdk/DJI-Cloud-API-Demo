@@ -44,7 +44,7 @@ public interface IFileService {
      * @param pageSize
      * @return
      */
-    PaginationData<MediaFileDTO> getJobsPaginationByWorkspaceId(String workspaceId, long page, long pageSize);
+    PaginationData<MediaFileDTO> getMediaFilesPaginationByWorkspaceId(String workspaceId, long page, long pageSize);
 
     /**
      * Get the download address of the file.
@@ -53,4 +53,12 @@ public interface IFileService {
      * @return
      */
     URL getObjectUrl(String workspaceId, String fileId);
+
+    /**
+     * Query all media files of a job.
+     * @param workspaceId
+     * @param jobId
+     * @return
+     */
+    List<MediaFileDTO> getFilesByWorkspaceAndJobId(String workspaceId, String jobId);
 }

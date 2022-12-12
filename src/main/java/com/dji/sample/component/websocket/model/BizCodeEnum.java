@@ -53,7 +53,11 @@ public enum BizCodeEnum {
 
     CHARGE_OPEN("charge_open"),
 
-    CHARGE_CLOSE("charge_close");
+    CHARGE_CLOSE("charge_close"),
+
+    FILE_UPLOAD_CALLBACK("file_upload_callback"),
+
+    HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA("HIGHEST_PRIORITY_UPLOAD_FLIGHTTASK_MEDIA");
 
     private String code;
 

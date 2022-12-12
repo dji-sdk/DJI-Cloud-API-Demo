@@ -1,9 +1,6 @@
 package com.dji.sample.manage.model.enums;
 
-import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
-import com.dji.sample.manage.model.receiver.DistanceLimitStatusReceiver;
-import com.dji.sample.manage.model.receiver.HeightLimitReceiver;
-import com.dji.sample.manage.model.receiver.ObstacleAvoidanceReceiver;
+import com.dji.sample.manage.model.receiver.*;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -17,7 +14,7 @@ import java.util.Optional;
 @Getter
 public enum DeviceSetPropertyEnum {
 
-    NIGHT_LIGHTS_STATE("night_lights_state", StateSwitchReceiver.class),
+    NIGHT_LIGHTS_STATE("night_lights_state", NightLightsStateReceiver.class),
 
     HEIGHT_LIMIT("height_limit", HeightLimitReceiver.class),
 

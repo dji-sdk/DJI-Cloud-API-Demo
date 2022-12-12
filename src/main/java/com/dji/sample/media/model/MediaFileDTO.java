@@ -39,4 +39,6 @@ public class MediaFileDTO {
     private String fingerprint;
 
     private LocalDateTime createTime;
+
+    private String jobId;
 }

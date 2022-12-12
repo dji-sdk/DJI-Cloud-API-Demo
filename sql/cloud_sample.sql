@@ -148,12 +148,14 @@ CREATE TABLE `manage_device_firmware` (
   `firmware_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'uuid',
   `file_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT 'undefined' COMMENT 'The file name of the firmware package, including the file suffix',
   `firmware_version` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'It needs to be formatted according to the official firmware version. 00.00.0000',
-  `file_url` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The download address for the firmware package.',
+  `object_key` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'The object key of the firmware package in the bucket.',
   `file_size` int NOT NULL COMMENT 'The size of the firmware package.',
   `file_md5` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The md5 of the firmware package.',
   `device_name` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'model of the device. This parameter corresponds to the device name in the device dictionary table.',
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `release_note` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The release note of the firmware package.',
   `release_date` bigint NOT NULL COMMENT 'The release date of the firmware package.',
+  `user_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'The name of the creator.',
   `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Availability of the firmware package. 1: available; 0: unavailable',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
@@ -161,15 +163,6 @@ CREATE TABLE `manage_device_firmware` (
   UNIQUE KEY `UNIQUE_firmware_id` (`firmware_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Firmware file information';
 
-LOCK TABLES `manage_device_firmware` WRITE;
-/*!40000 ALTER TABLE `manage_device_firmware` DISABLE KEYS */;
-
-INSERT INTO `manage_device_firmware` (`id`, `firmware_id`, `file_name`, `firmware_version`, `file_url`, `file_size`, `file_md5`, `device_name`, `release_note`, `release_date`, `status`, `create_time`, `update_time`)
-VALUES
-	(1,'1','Matrice_M30_Series_UAV_V04.01.00.20_Only_For_Pilot.zip','04.01.0020','https://terra-sz-hc1pro-cloudapi.oss-cn-shenzhen.aliyuncs.com/c0af9fe0d7eb4f35a8fe5b695e4d0b96/docker/Matrice_M30_Series_UAV_V04.01.00.20_Only_For_Pilot.zip',605830726,'601630a5c753cd6665974cc8fd791bf5','Matrice 30','release note',1663232356810,1,1663232356810,1663232356810);
-
-/*!40000 ALTER TABLE `manage_device_firmware` ENABLE KEYS */;
-UNLOCK TABLES;
 
 
 # manage_device_hms

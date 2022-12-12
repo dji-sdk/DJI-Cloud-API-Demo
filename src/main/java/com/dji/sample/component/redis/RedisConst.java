@@ -38,4 +38,8 @@ public final class RedisConst {
     public static final String WAYLINE_JOB = "wayline_job";
 
     public static final String OSD_PREFIX = "osd" + DELIMITER;
+
+    public static final String MEDIA_FILE_PREFIX = "media_file" + DELIMITER;
+
+    public static final String MEDIA_HIGHEST_PRIORITY_PREFIX = "media_highest_priority" + DELIMITER;
 }

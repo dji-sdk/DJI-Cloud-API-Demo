@@ -43,6 +43,8 @@ public enum EventsMethodEnum {
 
     FILE_UPLOAD_PROGRESS("fileupload_progress", ChannelName.INBOUND_EVENTS_FILE_UPLOAD_PROGRESS),
 
+    HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA("highest_priority_upload_flighttask_media", ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA),
+
     UNKNOWN("Unknown", ChannelName.DEFAULT);
 
     private String method;

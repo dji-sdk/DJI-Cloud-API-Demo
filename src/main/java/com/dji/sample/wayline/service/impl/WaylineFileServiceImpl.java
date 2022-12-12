@@ -53,9 +53,6 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
     @Autowired
     private OssServiceContext ossService;
 
-    @Autowired
-    private OssConfiguration configuration;
-
     @Override
     public PaginationData<WaylineFileDTO> getWaylinesByParam(String workspaceId, WaylineQueryParam param) {
         // Paging Query
@@ -97,7 +94,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
         if (waylineOpt.isEmpty()) {
             throw new SQLException(waylineId + " does not exist.");
         }
-        return ossService.getObjectUrl(configuration.getBucket(), waylineOpt.get().getObjectKey());
+        return ossService.getObjectUrl(OssConfiguration.bucket, waylineOpt.get().getObjectKey());
     }
 
     @Override
@@ -107,10 +104,10 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
         file.setWorkspaceId(workspaceId);
 
         if (!StringUtils.hasText(file.getSign())) {
-            try (InputStream object = ossService.getObject(configuration.getBucket(), metadata.getObjectKey())) {
+            try (InputStream object = ossService.getObject(OssConfiguration.bucket, metadata.getObjectKey())) {
                 if (object.available() == 0) {
                     throw new RuntimeException("The file " + metadata.getObjectKey() +
-                            " does not exist in the bucket[" + configuration.getBucket() + "].");
+                            " does not exist in the bucket[" + OssConfiguration.bucket + "].");
                 }
                 file.setSign(DigestUtils.md5DigestAsHex(object));
             } catch (IOException e) {
@@ -159,7 +156,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
         if (!isDel) {
             return false;
         }
-        return ossService.deleteObject(configuration.getBucket(), wayline.getObjectKey());
+        return ossService.deleteObject(OssConfiguration.bucket, wayline.getObjectKey());
     }
 
     @Override
@@ -174,7 +171,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
             waylineFile.setWaylineId(workspaceId);
             waylineFile.setUsername(creator);
 
-            ossService.putObject(configuration.getBucket(), waylineFile.getObjectKey(), file.getInputStream());
+            ossService.putObject(OssConfiguration.bucket, waylineFile.getObjectKey(), file.getInputStream());
             this.saveWaylineFile(workspaceId, waylineFile);
         } catch (IOException e) {
             e.printStackTrace();
@@ -222,7 +219,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                 return Optional.of(WaylineFileDTO.builder()
                         .droneModelKey(String.format("%s-%s-%s", DeviceDomainEnum.SUB_DEVICE.getVal(), type, subType))
                         .payloadModelKeys(List.of(String.format("%s-%s-%s",DeviceDomainEnum.PAYLOAD.getVal(), payloadType, payloadSubType)))
-                        .objectKey(configuration.getObjectDirPrefix() + File.separator + filename)
+                        .objectKey(OssConfiguration.objectDirPrefix + File.separator + filename)
                         .name(filename.substring(0, filename.lastIndexOf(WAYLINE_FILE_SUFFIX)))
                         .sign(DigestUtils.md5DigestAsHex(file.getInputStream()))
                         .templateTypes(List.of(Integer.parseInt(templateId)))

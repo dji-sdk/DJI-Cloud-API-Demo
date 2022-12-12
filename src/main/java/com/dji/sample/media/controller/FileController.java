@@ -32,7 +32,7 @@ public class FileController {
     public ResponseResult<PaginationData<MediaFileDTO>> getFilesList(@RequestParam(defaultValue = "1") Long page,
                                @RequestParam(name = "page_size", defaultValue = "10") Long pageSize,
                                @PathVariable(name = "workspace_id") String workspaceId) {
-        PaginationData<MediaFileDTO> filesList = fileService.getJobsPaginationByWorkspaceId(workspaceId, page, pageSize);
+        PaginationData<MediaFileDTO> filesList = fileService.getMediaFilesPaginationByWorkspaceId(workspaceId, page, pageSize);
         return ResponseResult.success(filesList);
     }
 

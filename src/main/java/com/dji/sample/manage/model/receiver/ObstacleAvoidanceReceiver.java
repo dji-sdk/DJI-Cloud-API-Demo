@@ -1,7 +1,8 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.StateSwitchReceiver;
+import com.dji.sample.manage.model.enums.StateSwitchEnum;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.Objects;
 
@@ -10,6 +11,7 @@ import java.util.Objects;
  * @version 1.3
  * @date 2022/10/27
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 public class ObstacleAvoidanceReceiver extends BasicDeviceProperty {
 
@@ -23,18 +25,14 @@ public class ObstacleAvoidanceReceiver extends BasicDeviceProperty {
     public boolean valid() {
         boolean valid = Objects.nonNull(this.horizon) || Objects.nonNull(this.upside) || Objects.nonNull(this.downside);
 
-        StateSwitchReceiver stateSwitch = new StateSwitchReceiver();
         if (Objects.nonNull(this.horizon)) {
-            stateSwitch.setValue(this.horizon);
-            valid = stateSwitch.valid();
+            valid = StateSwitchEnum.find(horizon).isPresent();
         }
         if (Objects.nonNull(this.upside)) {
-            stateSwitch.setValue(this.upside);
-            valid &= stateSwitch.valid();
+            valid &= StateSwitchEnum.find(upside).isPresent();
         }
         if (Objects.nonNull(this.downside)) {
-            stateSwitch.setValue(this.downside);
-            valid &= stateSwitch.valid();
+            valid &= StateSwitchEnum.find(downside).isPresent();
         }
         return valid;
     }

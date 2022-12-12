@@ -1,6 +1,7 @@
 package com.dji.sample.component;
 
 import com.dji.sample.common.model.ResponseResult;
+import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,8 +33,9 @@ public class GlobalExceptionHandler {
         return ResponseResult.error("A null object appeared.");
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseResult methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e) {
+    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    public ResponseResult methodArgumentNotValidExceptionHandler(BindException e) {
+        e.printStackTrace();
         return ResponseResult.error(e.getBindingResult().getAllErrors().get(0).getDefaultMessage());
     }
 

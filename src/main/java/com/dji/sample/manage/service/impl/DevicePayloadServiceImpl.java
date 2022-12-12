@@ -43,9 +43,6 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     @Autowired
     private ICapacityCameraService capacityCameraService;
 
-    @Autowired
-    private RedisOpsUtils redisOps;
-
     @Override
     public Integer checkPayloadExist(String payloadSn) {
         DevicePayloadEntity devicePayload = mapper.selectOne(
@@ -72,7 +69,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
         String deviceSn = payloadReceiverList.get(0).getDeviceSn();
         String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
-        DeviceDTO device = (DeviceDTO) redisOps.get(key);
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(key);
         List<DevicePayloadDTO> payloads = new ArrayList<>();
 
         for (DevicePayloadReceiver payloadReceiver : payloadReceiverList) {
@@ -87,7 +84,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
             payloads = this.getDevicePayloadEntitiesByDeviceSn(deviceSn);
         }
         device.setPayloadsList(payloads);
-        redisOps.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn(), device, RedisConst.DEVICE_ALIVE_SECOND);
+        RedisOpsUtils.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn(), device, RedisConst.DEVICE_ALIVE_SECOND);
         return true;
     }
 
@@ -133,7 +130,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
         String deviceSn = payloadReceiverList.stream().findAny().get().getDeviceSn();
         String key = RedisConst.STATE_PAYLOAD_PREFIX + deviceSn;
         // Solve timing problems
-        long last = (long) Objects.requireNonNullElse(redisOps.get(key), 0L);
+        long last = (long) Objects.requireNonNullElse(RedisOpsUtils.get(key), 0L);
         if (last > timestamp) {
             return;
         }
@@ -153,7 +150,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
         // Save the new payload information.
         boolean isSave = this.savePayloadDTOs(needToSave);
         if (isSave) {
-            redisOps.setWithExpire(key, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
+            RedisOpsUtils.setWithExpire(key, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
         }
         log.debug("The result of saving the payloads is {}.", isSave);
     }

@@ -26,18 +26,15 @@ public class StorageServiceImpl implements IStorageService {
     @Autowired
     private OssServiceContext ossService;
 
-    @Autowired
-    private OssConfiguration configuration;
-
     @Override
     public StsCredentialsDTO getSTSCredentials() {
         return StsCredentialsDTO.builder()
-                .endpoint(configuration.getEndpoint())
-                .bucket(configuration.getBucket())
+                .endpoint(OssConfiguration.endpoint)
+                .bucket(OssConfiguration.bucket)
                 .credentials(ossService.getCredentials())
-                .provider(configuration.getProvider())
-                .objectKeyPrefix(configuration.getObjectDirPrefix())
-                .region(configuration.getRegion())
+                .provider(OssConfiguration.provider)
+                .objectKeyPrefix(OssConfiguration.objectDirPrefix)
+                .region(OssConfiguration.region)
                 .build();
     }
 

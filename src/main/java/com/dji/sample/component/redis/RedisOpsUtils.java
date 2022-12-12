@@ -17,8 +17,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisOpsUtils {
 
+    private static RedisTemplate<String, Object> redisTemplate;
+
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
+        RedisOpsUtils.redisTemplate = redisTemplate;
+    }
 
     /**
      * HSET
@@ -26,7 +30,7 @@ public class RedisOpsUtils {
      * @param field
      * @param value
      */
-    public void hashSet(String key, String field, Object value) {
+    public static void hashSet(String key, String field, Object value) {
         redisTemplate.opsForHash().put(key, field, value);
     }
 
@@ -36,7 +40,7 @@ public class RedisOpsUtils {
      * @param field
      * @return
      */
-    public Object hashGet(String key, String field) {
+    public static Object hashGet(String key, String field) {
         return redisTemplate.opsForHash().get(key, field);
     }
 
@@ -45,7 +49,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public Set<Object> hashKeys(String key) {
+    public static Set<Object> hashKeys(String key) {
         return redisTemplate.opsForHash().keys(key);
     }
 
@@ -55,7 +59,7 @@ public class RedisOpsUtils {
      * @param field
      * @return
      */
-    public boolean hashCheck(String key, String field) {
+    public static boolean hashCheck(String key, String field) {
         return redisTemplate.opsForHash().hasKey(key, field);
     }
 
@@ -65,8 +69,17 @@ public class RedisOpsUtils {
      * @param fields
      * @return
      */
-    public boolean hashDel(String key, Object[] fields) {
+    public static boolean hashDel(String key, Object[] fields) {
         return redisTemplate.opsForHash().delete(key, fields) > 0;
+    }
+
+    /**
+     * HLEN
+     * @param key
+     * @return
+     */
+    public static long hashLen(String key) {
+        return redisTemplate.opsForHash().size(key);
     }
 
     /**
@@ -75,7 +88,7 @@ public class RedisOpsUtils {
      * @param timeout
      * @return
      */
-    public boolean expireKey(String key, long timeout) {
+    public static boolean expireKey(String key, long timeout) {
         return redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
     }
 
@@ -84,7 +97,7 @@ public class RedisOpsUtils {
      * @param key
      * @param value
      */
-    public void set(String key, Object value) {
+    public static void set(String key, Object value) {
         redisTemplate.opsForValue().set(key, value);
     }
 
@@ -93,7 +106,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public Object get(String key) {
+    public static Object get(String key) {
         return redisTemplate.opsForValue().get(key);
     }
 
@@ -103,7 +116,7 @@ public class RedisOpsUtils {
      * @param value
      * @param expire
      */
-    public void setWithExpire(String key, Object value, long expire) {
+    public static void setWithExpire(String key, Object value, long expire) {
         redisTemplate.opsForValue().set(key, value, expire, TimeUnit.SECONDS);
     }
 
@@ -112,7 +125,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public long getExpire(String key) {
+    public static long getExpire(String key) {
         return redisTemplate.getExpire(key, TimeUnit.SECONDS);
     }
 
@@ -121,7 +134,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public boolean checkExist(String key) {
+    public static boolean checkExist(String key) {
         return redisTemplate.hasKey(key);
     }
 
@@ -130,8 +143,8 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public boolean del(String key) {
-        return this.checkExist(key) && redisTemplate.delete(key);
+    public static boolean del(String key) {
+        return RedisOpsUtils.checkExist(key) && redisTemplate.delete(key);
     }
 
     /**
@@ -139,7 +152,7 @@ public class RedisOpsUtils {
      * @param pattern
      * @return
      */
-    public Set<String> getAllKeys(String pattern) {
+    public static Set<String> getAllKeys(String pattern) {
         return redisTemplate.keys(pattern);
     }
 
@@ -148,7 +161,7 @@ public class RedisOpsUtils {
      * @param key
      * @param value
      */
-    public void listRPush(String key, Object... value) {
+    public static void listRPush(String key, Object... value) {
         if (value.length == 0) {
             return;
         }
@@ -164,7 +177,7 @@ public class RedisOpsUtils {
      * @param end
      * @return
      */
-    public List<Object> listGet(String key, long start, long end) {
+    public static List<Object> listGet(String key, long start, long end) {
         return redisTemplate.opsForList().range(key, start, end);
     }
 
@@ -173,7 +186,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public List<Object> listGetAll(String key) {
+    public static List<Object> listGetAll(String key) {
         return redisTemplate.opsForList().range(key, 0, -1);
     }
 
@@ -182,7 +195,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public Long listLen(String key) {
+    public static Long listLen(String key) {
         return redisTemplate.opsForList().size(key);
     }
 
@@ -192,7 +205,7 @@ public class RedisOpsUtils {
      * @param value
      * @param score
      */
-    public Boolean zAdd(String key, Object value, double score) {
+    public static Boolean zAdd(String key, Object value, double score) {
         return redisTemplate.opsForZSet().add(key, value, score);
     }
 
@@ -201,7 +214,7 @@ public class RedisOpsUtils {
      * @param key
      * @param value
      */
-    public Boolean zRemove(String key, Object... value) {
+    public static Boolean zRemove(String key, Object... value) {
         return redisTemplate.opsForZSet().remove(key, value) > 0;
     }
     /**
@@ -211,7 +224,7 @@ public class RedisOpsUtils {
      * @param end
      * @return
      */
-    public Set<Object> zRange(String key, long start, long end) {
+    public static Set<Object> zRange(String key, long start, long end) {
         return redisTemplate.opsForZSet().range(key, start, end);
     }
 
@@ -220,7 +233,7 @@ public class RedisOpsUtils {
      * @param key
      * @return
      */
-    public Object zGetMin(String key) {
+    public static Object zGetMin(String key) {
         Set<Object> objects = zRange(key, 0, 0);
         if (CollectionUtils.isEmpty(objects)) {
             return null;
@@ -234,7 +247,7 @@ public class RedisOpsUtils {
      * @param value
      * @return
      */
-    public Double zScore(String key, Object value) {
+    public static Double zScore(String key, Object value) {
         return redisTemplate.opsForZSet().score(key, value);
     }
 

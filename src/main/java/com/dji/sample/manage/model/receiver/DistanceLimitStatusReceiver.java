@@ -1,8 +1,9 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.StateSwitchReceiver;
+import com.dji.sample.manage.model.enums.StateSwitchEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.Objects;
@@ -13,6 +14,7 @@ import java.util.Objects;
  * @version 1.3
  * @date 2022/10/27
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -30,10 +32,10 @@ public class DistanceLimitStatusReceiver extends BasicDeviceProperty {
     public boolean valid() {
         boolean valid = Objects.nonNull(state) || Objects.nonNull(distanceLimit);
         if (Objects.nonNull(state)) {
-            valid = new StateSwitchReceiver(this.state).valid();
+            valid = StateSwitchEnum.find(state).isPresent();
         }
         if (Objects.nonNull(distanceLimit)) {
-            valid &= distanceLimit >= DISTANCE_MIN && distanceLimit <= DISTANCE_MAX;
+            valid &= StateSwitchEnum.find(distanceLimit).isPresent();
         }
         return valid;
     }

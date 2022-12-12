@@ -761,6 +761,125 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get All Firmwares",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/firmwares?page=1&page_size=50",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"firmwares"
+							],
+							"query": [
+								{
+									"key": "device_name",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "product_version",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "true",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "page_size",
+									"value": "50"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Import Firmware File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "release_note",
+									"value": "123",
+									"type": "text"
+								},
+								{
+									"key": "device_name",
+									"value": "DJI Dock",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "0",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/firmwares/file/upload",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"firmwares",
+								"file",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Firmware Status",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\": false\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{manage_version}}/workspaces/{{workspace_id}}/firmwares/{{firmware_id}}",
+							"host": [
+								"{{base_url}}{{manage_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"firmwares",
+								"{{firmware_id}}"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -768,7 +887,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njc0NzcwNTUsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njc1NjM0NTUsImlhdCI6MTY2NzQ3NzA1NSwidXNlcm5hbWUiOiJhZG1pblBDIn0.VMJ0ZKn895uvkMDjg2fw3p4trVCUx9ltVFKeP7QmYpo",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NzAzMTU2MDEsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NzA0MDIwMDEsImlhdCI6MTY3MDMxNTYwMSwidXNlcm5hbWUiOiJhZG1pblBDIn0.yh8SkHZVsoIXo_vtlTGNB-ZX92XayalGe_q7mNRVcdI",
 						"type": "string"
 					},
 					{
@@ -1539,6 +1658,27 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Set Media Highest",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/jobs/{{job_id}}/media-highest",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"jobs",
+								"{{job_id}}",
+								"media-highest"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -1585,16 +1725,25 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"action\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{base_url}}{{control_version}}/devices/4TADK7E000000H/jobs/debug_mode_close",
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/alarm_state_switch",
 							"host": [
 								"{{base_url}}{{control_version}}"
 							],
 							"path": [
 								"devices",
-								"4TADK7E000000H",
+								"{{device_sn}}",
 								"jobs",
-								"debug_mode_close"
+								"alarm_state_switch"
 							]
 						}
 					},
@@ -1606,7 +1755,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njg0MzE5MzQsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njg1MTgzMzQsImlhdCI6MTY2ODQzMTkzNCwidXNlcm5hbWUiOiJhZG1pblBDIn0.QU9xHBeQPHJ2V1vXQcGGWRQ-gYEOWDpaTTXIQga85BU",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njk2MzMzMzQsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njk3MTk3MzQsImlhdCI6MTY2OTYzMzMzNCwidXNlcm5hbWUiOiJhZG1pblBDIn0.OoIfdpyI5eL6bFm8akq8_stzClQU41YpIJkx6_kxVHU",
 						"type": "string"
 					},
 					{

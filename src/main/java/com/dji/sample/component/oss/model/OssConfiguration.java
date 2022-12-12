@@ -1,6 +1,5 @@
 package com.dji.sample.component.oss.model;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -11,82 +10,81 @@ import org.springframework.stereotype.Component;
  */
 @ConfigurationProperties(prefix = "oss")
 @Component
-@Data
 public class OssConfiguration {
 
     /**
      * @see com.dji.sample.component.oss.model.enums.OssTypeEnum
      */
-    private String provider;
+    public static String provider;
 
     /**
      * Whether to use the object storage service.
      */
-    private boolean enable;
+    public static boolean enable;
 
     /**
      * The protocol needs to be included at the beginning of the address.
      */
-    private String endpoint;
+    public static String endpoint;
 
-    private String accessKey;
+    public static String accessKey;
 
-    private String secretKey;
+    public static String secretKey;
 
-    private String region;
+    public static String region;
 
-    private Long expire;
+    public static Long expire;
 
-    private String roleSessionName;
+    public static String roleSessionName;
 
-    private String roleArn;
+    public static String roleArn;
 
-    private String bucket;
+    public static String bucket;
 
-    private String objectDirPrefix;
+    public static String objectDirPrefix;
 
     public void setProvider(String provider) {
-        this.provider = provider;
+        OssConfiguration.provider = provider;
     }
 
     public void setEnable(boolean enable) {
-        this.enable = enable;
+        OssConfiguration.enable = enable;
     }
 
     public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
+        OssConfiguration.endpoint = endpoint;
     }
 
     public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
+        OssConfiguration.accessKey = accessKey;
     }
 
     public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
+        OssConfiguration.secretKey = secretKey;
     }
 
     public void setRegion(String region) {
-        this.region = region;
+        OssConfiguration.region = region;
     }
 
     public void setExpire(Long expire) {
-        this.expire = expire;
+        OssConfiguration.expire = expire;
     }
 
     public void setRoleSessionName(String roleSessionName) {
-        this.roleSessionName = roleSessionName;
+        OssConfiguration.roleSessionName = roleSessionName;
     }
 
     public void setRoleArn(String roleArn) {
-        this.roleArn = roleArn;
+        OssConfiguration.roleArn = roleArn;
     }
 
     public void setBucket(String bucket) {
-        this.bucket = bucket;
+        OssConfiguration.bucket = bucket;
     }
 
     public void setObjectDirPrefix(String objectDirPrefix) {
-        this.objectDirPrefix = objectDirPrefix;
+        OssConfiguration.objectDirPrefix = objectDirPrefix;
     }
 }
 

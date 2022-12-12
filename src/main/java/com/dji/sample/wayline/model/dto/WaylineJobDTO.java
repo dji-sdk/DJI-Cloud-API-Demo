@@ -53,4 +53,8 @@ public class WaylineJobDTO {
     private Integer outOfControlAction;
 
     private Integer mediaCount;
+
+    private Integer uploadedCount;
+
+    private Boolean uploading;
 }

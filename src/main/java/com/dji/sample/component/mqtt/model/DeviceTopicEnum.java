@@ -29,7 +29,7 @@ public enum DeviceTopicEnum {
 
     PROPERTY_SET_REPLY(Pattern.compile("^" + THING_MODEL_PRE + PRODUCT + REGEX_SN + PROPERTY_SUF + SET_SUF + _REPLY_SUF + "$"), ChannelName.INBOUND_PROPERTY_SET_REPLY),
 
-    UNKNOWN(null, ChannelName.DEFAULT);
+    UNKNOWN(Pattern.compile("^.*$"), ChannelName.DEFAULT);
 
     Pattern pattern;
 

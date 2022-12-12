@@ -80,4 +80,11 @@ public interface IWaylineJobService {
      * @param headers
      */
     void flightTaskResourceGet(CommonTopicReceiver receiver, MessageHeaders headers);
+
+    /**
+     * Set the media files for this job to upload immediately.
+     * @param workspaceId
+     * @param jobId
+     */
+    void uploadMediaHighestPriority(String workspaceId, String jobId);
 }

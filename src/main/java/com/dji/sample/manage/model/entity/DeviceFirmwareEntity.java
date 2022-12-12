@@ -34,8 +34,8 @@ public class DeviceFirmwareEntity implements Serializable {
     @TableField("firmware_version")
     private String firmwareVersion;
 
-    @TableField("file_url")
-    private String fileUrl;
+    @TableField("object_key")
+    private String objectKey;
 
     @TableField("file_size")
     private Long fileSize;
@@ -54,6 +54,12 @@ public class DeviceFirmwareEntity implements Serializable {
 
     @TableField("status")
     private Boolean status;
+
+    @TableField("workspace_id")
+    private String workspaceId;
+
+    @TableField("user_name")
+    private String username;
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Long createTime;

@@ -1,7 +1,8 @@
 package com.dji.sample.control.model.dto;
 
-import com.dji.sample.control.model.enums.BatteryStoreModeEnum;
+import com.dji.sample.control.model.enums.LinkWorkModeEnum;
 import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,18 +13,19 @@ import java.util.Objects;
 /**
  * @author sean
  * @version 1.3
- * @date 2022/11/14
+ * @date 2022/11/25
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BatteryStoreMode extends BasicDeviceProperty {
+public class LinkWorkMode extends BasicDeviceProperty {
 
-    private Integer action;
+    @JsonProperty("link_workmode")
+    private Integer linkWorkMode;
 
     @Override
     public boolean valid() {
-        return Objects.nonNull(action) && BatteryStoreModeEnum.find(action).isPresent();
+        return Objects.nonNull(linkWorkMode) && LinkWorkModeEnum.find(linkWorkMode).isPresent();
     }
 }

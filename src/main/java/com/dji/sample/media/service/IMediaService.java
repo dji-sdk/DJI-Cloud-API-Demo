@@ -2,6 +2,7 @@ package com.dji.sample.media.service;
 
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.media.model.FileUploadDTO;
+import org.springframework.messaging.MessageHeaders;
 
 import java.util.List;
 
@@ -49,4 +50,11 @@ public interface IMediaService {
      * @return
      */
     void handleFileUploadCallBack(CommonTopicReceiver receiver);
+
+    /**
+     * Handles the highest priority message about media uploads.
+     * @param receiver
+     * @param headers
+     */
+    void handleHighestPriorityUploadFlightTaskMedia(CommonTopicReceiver receiver, MessageHeaders headers);
 }

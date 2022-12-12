@@ -1,21 +1,26 @@
 package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.dji.sample.common.model.Pagination;
+import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.*;
 import com.dji.sample.component.mqtt.service.impl.MessageSenderServiceImpl;
+import com.dji.sample.component.oss.model.OssConfiguration;
+import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.component.websocket.service.impl.SendMessageServiceImpl;
 import com.dji.sample.manage.dao.IDeviceFirmwareMapper;
-import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.dto.DeviceFirmwareDTO;
-import com.dji.sample.manage.model.dto.DeviceFirmwareNoteDTO;
-import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
+import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceFirmwareEntity;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.model.param.DeviceFirmwareQueryParam;
+import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
 import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
 import com.dji.sample.manage.service.IDeviceService;
@@ -27,13 +32,22 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author sean
@@ -46,9 +60,6 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
 
     @Autowired
     private IDeviceFirmwareMapper mapper;
-
-    @Autowired
-    private RedisOpsUtils redisOps;
 
     @Autowired
     private MessageSenderServiceImpl messageSenderService;
@@ -65,6 +76,9 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
     @Autowired
     private IDeviceService deviceService;
 
+    @Autowired
+    private OssServiceContext ossServiceContext;
+
     @Override
     public Optional<DeviceFirmwareDTO> getFirmware(String deviceName, String version) {
         return Optional.ofNullable(entity2Dto(mapper.selectOne(
@@ -79,7 +93,7 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                 new LambdaQueryWrapper<DeviceFirmwareEntity>()
                         .eq(DeviceFirmwareEntity::getDeviceName, deviceName)
                         .eq(DeviceFirmwareEntity::getStatus, true)
-                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate)
+                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate, DeviceFirmwareEntity::getFirmwareVersion)
                         .last(" limit 1 "))));
     }
 
@@ -127,30 +141,30 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
             log.error("SN: {}, {} ===> Error code: {}", sn, receiver.getMethod(), eventsReceiver.getResult());
         }
 
-        DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
         String childDeviceSn = device.getChildDeviceSn();
-        boolean upgrade = redisOps.getExpire(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn) > 0;
-        boolean childUpgrade = redisOps.getExpire(RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn) > 0;
+        boolean upgrade = RedisOpsUtils.getExpire(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn) > 0;
+        boolean childUpgrade = RedisOpsUtils.getExpire(RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn) > 0;
 
         // Determine whether it is the ending state, delete the update state key in redis after the job ends.
         EventsResultStatusEnum statusEnum = EventsResultStatusEnum.find(output.getStatus());
         if (upgrade) {
             if (statusEnum.getEnd()) {
                 // Delete the cache after the update is complete.
-                redisOps.del(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn);
+                RedisOpsUtils.del(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn);
             } else {
                 // Update the update progress of the dock in redis.
-                redisOps.setWithExpire(
+                RedisOpsUtils.setWithExpire(
                         RedisConst.FIRMWARE_UPGRADING_PREFIX + sn, output.getProgress().getPercent(),
                         RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
             }
         }
         if (childUpgrade) {
             if (statusEnum.getEnd()) {
-                redisOps.del(RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn);
+                RedisOpsUtils.del(RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn);
             } else {
                 // Update the update progress of the drone in redis.
-                redisOps.setWithExpire(
+                RedisOpsUtils.setWithExpire(
                         RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn, output.getProgress().getPercent(),
                         RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
             }
@@ -178,6 +192,137 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
         }
     }
 
+    @Override
+    public Boolean checkFileExist(String workspaceId, String fileMd5) {
+        return mapper.selectCount(new LambdaQueryWrapper<DeviceFirmwareEntity>()
+                    .eq(DeviceFirmwareEntity::getWorkspaceId, workspaceId)
+                    .eq(DeviceFirmwareEntity::getFileMd5, fileMd5))
+                > 0;
+    }
+
+    @Override
+    public PaginationData<DeviceFirmwareDTO> getAllFirmwarePagination(String workspaceId, DeviceFirmwareQueryParam param) {
+        Page<DeviceFirmwareEntity> page = mapper.selectPage(new Page<>(param.getPage(), param.getPageSize()),
+                new LambdaQueryWrapper<DeviceFirmwareEntity>()
+                        .eq(DeviceFirmwareEntity::getWorkspaceId, workspaceId)
+                        .eq(Objects.nonNull(param.getStatus()), DeviceFirmwareEntity::getStatus, param.getStatus())
+                        .eq(StringUtils.hasText(param.getDeviceName()), DeviceFirmwareEntity::getDeviceName, param.getDeviceName())
+                        .like(StringUtils.hasText(param.getProductVersion()), DeviceFirmwareEntity::getFirmwareVersion, param.getProductVersion())
+                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate));
+
+        List<DeviceFirmwareDTO> data = page.getRecords().stream().map(this::entity2Dto).collect(Collectors.toList());
+        return new PaginationData<DeviceFirmwareDTO>(data, new Pagination(page));
+    }
+
+
+    @Override
+    public void importFirmwareFile(String workspaceId, String creator, DeviceFirmwareUploadParam param, MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            long size = is.available();
+            String md5 = DigestUtils.md5DigestAsHex(is);
+            boolean exist = checkFileExist(workspaceId, md5);
+            if (exist) {
+                throw new RuntimeException("The file already exists.");
+            }
+
+            Optional<DeviceFirmwareDTO> firmwareOpt = verifyFirmwareFile(file);
+            if (firmwareOpt.isEmpty()) {
+                throw new RuntimeException("The file format is incorrect.");
+            }
+
+            String firmwareId = UUID.randomUUID().toString();
+            String objectKey = OssConfiguration.objectDirPrefix + File.separator + firmwareId + FirmwareFileProperties.FIRMWARE_FILE_SUFFIX;
+
+            ossServiceContext.putObject(OssConfiguration.bucket, objectKey, file.getInputStream());
+            log.info("upload success");
+            DeviceFirmwareDTO firmware = DeviceFirmwareDTO.builder()
+                    .deviceName(param.getDeviceName())
+                    .releaseNote(param.getReleaseNote())
+                    .firmwareStatus(param.getStatus())
+                    .fileMd5(md5)
+                    .objectKey(objectKey)
+                    .fileName(file.getOriginalFilename())
+                    .workspaceId(workspaceId)
+                    .username(creator)
+                    .fileSize(size)
+                    .productVersion(firmwareOpt.get().getProductVersion())
+                    .releasedTime(firmwareOpt.get().getReleasedTime())
+                    .firmwareId(firmwareId)
+                    .build();
+
+            saveFirmwareInfo(firmware);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void saveFirmwareInfo(DeviceFirmwareDTO firmware) {
+         mapper.insert(dto2Entity(firmware));
+    }
+
+    @Override
+    public void updateFirmwareInfo(DeviceFirmwareDTO firmware) {
+        mapper.update(dto2Entity(firmware),
+                new LambdaUpdateWrapper<DeviceFirmwareEntity>()
+                        .eq(DeviceFirmwareEntity::getFirmwareId, firmware.getFirmwareId()));
+    }
+
+    /**
+     * Parse firmware file information.
+     * @param file
+     * @return
+     */
+    private Optional<DeviceFirmwareDTO> verifyFirmwareFile(MultipartFile file) {
+        try (ZipInputStream unzipFile = new ZipInputStream(file.getInputStream(), StandardCharsets.UTF_8)) {
+            ZipEntry nextEntry = unzipFile.getNextEntry();
+            while (Objects.nonNull(nextEntry)) {
+                String configName = nextEntry.getName();
+                if (!configName.contains(File.separator) && configName.endsWith(FirmwareFileProperties.FIRMWARE_CONFIG_FILE_SUFFIX + FirmwareFileProperties.FIRMWARE_SIG_FILE_SUFFIX)) {
+                    String[] filenameArr = configName.split(FirmwareFileProperties.FIRMWARE_FILE_DELIMITER);
+                    String date = filenameArr[FirmwareFileProperties.FILENAME_RELEASE_DATE_INDEX];
+                    int index = date.indexOf(".");
+                    if (index != -1) {
+                        date = date.substring(0, index);
+                    }
+                    return Optional.of(DeviceFirmwareDTO.builder()
+                            .releasedTime(LocalDate.parse(
+                                    date,
+                                    DateTimeFormatter.ofPattern(FirmwareFileProperties.FILENAME_RELEASE_DATE_FORMAT)))
+                            // delete the string v.
+                            .productVersion(filenameArr[FirmwareFileProperties.FILENAME_VERSION_INDEX].substring(1))
+                            .build());
+                }
+                nextEntry = unzipFile.getNextEntry();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private DeviceFirmwareEntity dto2Entity(DeviceFirmwareDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return DeviceFirmwareEntity.builder()
+                .fileName(dto.getFileName())
+                .deviceName(dto.getDeviceName())
+                .fileMd5(dto.getFileMd5())
+                .fileSize(dto.getFileSize())
+                .firmwareId(dto.getFirmwareId())
+                .firmwareVersion(dto.getProductVersion())
+                .objectKey(dto.getObjectKey())
+                .releaseDate(Objects.nonNull(dto.getReleasedTime()) ?
+                        dto.getReleasedTime().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() : null)
+                .releaseNote(dto.getReleaseNote())
+                .status(dto.getFirmwareStatus())
+                .workspaceId(dto.getWorkspaceId())
+                .username(dto.getUsername())
+                .build();
+    }
+
     private DeviceFirmwareNoteDTO entity2NoteDto (DeviceFirmwareEntity entity) {
         if (entity == null) {
             return null;
@@ -198,12 +343,15 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                 .deviceName(entity.getDeviceName())
                 .fileMd5(entity.getFileMd5())
                 .fileSize(entity.getFileSize())
-                .fileUrl(entity.getFileUrl())
+                .objectKey(entity.getObjectKey())
                 .firmwareId(entity.getFirmwareId())
                 .fileName(entity.getFileName())
                 .productVersion(entity.getFirmwareVersion())
                 .releasedTime(LocalDate.ofInstant(Instant.ofEpochMilli(entity.getReleaseDate()), ZoneId.systemDefault()))
+                .releaseNote(entity.getReleaseNote())
                 .firmwareStatus(entity.getStatus())
+                .workspaceId(entity.getWorkspaceId())
+                .username(entity.getUsername())
                 .build();
     }
 
@@ -213,7 +361,7 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
         }
         return DeviceOtaCreateParam.builder()
                 .fileSize(dto.getFileSize())
-                .fileUrl(dto.getFileUrl())
+                .fileUrl(ossServiceContext.getObjectUrl(OssConfiguration.bucket, dto.getObjectKey()).toString())
                 .fileName(dto.getFileName())
                 .md5(dto.getFileMd5())
                 .productVersion(dto.getProductVersion())

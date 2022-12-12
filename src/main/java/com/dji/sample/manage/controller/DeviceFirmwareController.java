@@ -1,17 +1,28 @@
 package com.dji.sample.manage.controller;
 
+import com.dji.sample.common.model.CustomClaim;
+import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
+import com.dji.sample.manage.model.dto.DeviceFirmwareDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareNoteDTO;
+import com.dji.sample.manage.model.dto.FirmwareFileProperties;
+import com.dji.sample.manage.model.param.DeviceFirmwareQueryParam;
+import com.dji.sample.manage.model.param.DeviceFirmwareUpdateParam;
+import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
 /**
  * @author sean
@@ -20,6 +31,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("${url.manage.prefix}${url.manage.version}/workspaces")
+@Validated
 public class DeviceFirmwareController {
 
     @Autowired
@@ -39,5 +51,61 @@ public class DeviceFirmwareController {
         });
         return ResponseResult.success(releaseNotes);
     }
+
+    /**
+     * Query firmware information based on parameters.
+     * @param workspaceId
+     * @param param
+     * @return
+     */
+    @GetMapping("/{workspace_id}/firmwares")
+    public ResponseResult<PaginationData<DeviceFirmwareDTO>> getAllFirmwarePagination(
+            @PathVariable("workspace_id") String workspaceId, @Valid DeviceFirmwareQueryParam param) {
+
+        PaginationData<DeviceFirmwareDTO> data = service.getAllFirmwarePagination(workspaceId, param);
+        return ResponseResult.success(data);
+    }
+
+    /**
+     * Import firmware file for device upgrades.
+     * @param request
+     * @param workspaceId
+     * @param file
+     * @param param
+     * @return
+     */
+    @PostMapping("/{workspace_id}/firmwares/file/upload")
+    public ResponseResult importFirmwareFile(HttpServletRequest request, @PathVariable("workspace_id") String workspaceId,
+                                             @NotNull(message = "No file received.") MultipartFile file,
+                                             @Valid DeviceFirmwareUploadParam param) {
+
+        if (!file.getOriginalFilename().endsWith(FirmwareFileProperties.FIRMWARE_FILE_SUFFIX)) {
+            return ResponseResult.error("The file format is incorrect.");
+        }
+
+        CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
+        String creator = customClaim.getUsername();
+
+        service.importFirmwareFile(workspaceId, creator, param, file);
+        return ResponseResult.success();
+    }
+
+    /**
+     * Change the firmware availability status.
+     * @param workspaceId
+     * @param firmwareId
+     * @param param
+     * @return
+     */
+    @PutMapping("/{workspace_id}/firmwares/{firmware_id}")
+    public ResponseResult importFirmwareFile(@PathVariable("workspace_id") String workspaceId,
+                                             @PathVariable("firmware_id") String firmwareId,
+                                             @Valid @RequestBody DeviceFirmwareUpdateParam param) {
+
+        service.updateFirmwareInfo(DeviceFirmwareDTO.builder()
+                .firmwareId(firmwareId).firmwareStatus(param.getStatus()).build());
+        return ResponseResult.success();
+    }
+
 
 }

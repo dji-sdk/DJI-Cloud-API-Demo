@@ -44,9 +44,6 @@ public class LogsFileServiceImpl implements ILogsFileService {
     private OssServiceContext ossService;
 
     @Autowired
-    private OssConfiguration configuration;
-
-    @Autowired
     private OssServiceContext ossServiceContext;
 
     @Override
@@ -114,7 +111,7 @@ public class LogsFileServiceImpl implements ILogsFileService {
         List<String> fileIds = new ArrayList<>();
         logsFiles.forEach(file -> {
             if (file.getStatus()) {
-                ossService.deleteObject(configuration.getBucket(), file.getObjectKey());
+                ossService.deleteObject(OssConfiguration.bucket, file.getObjectKey());
             }
             fileIds.add(file.getFileId());
         });
@@ -146,7 +143,7 @@ public class LogsFileServiceImpl implements ILogsFileService {
         if (Objects.isNull(logsFile)) {
             return null;
         }
-        return ossService.getObjectUrl(configuration.getBucket(), logsFile.getObjectKey());
+        return ossService.getObjectUrl(OssConfiguration.bucket, logsFile.getObjectKey());
     }
 
     private LogsFileEntity receiver2Entity(LogsExtFileReceiver receiver) {

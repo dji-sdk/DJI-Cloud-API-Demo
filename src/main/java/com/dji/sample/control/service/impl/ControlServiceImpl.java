@@ -38,9 +38,6 @@ import java.util.UUID;
 public class ControlServiceImpl implements IControlService {
 
     @Autowired
-    private RedisOpsUtils redisOps;
-
-    @Autowired
     private IMessageSenderService messageSenderService;
 
     @Autowired
@@ -62,6 +59,7 @@ public class ControlServiceImpl implements IControlService {
             return ResponseResult.error("The " + serviceIdentifier + " method does not exist.");
         }
 
+        Object data = "";
         // Add parameter validation.
         if (Objects.nonNull(controlMethodEnum.getClazz())) {
             if (Objects.isNull(param)) {
@@ -71,6 +69,7 @@ public class ControlServiceImpl implements IControlService {
             if (!basicDeviceProperty.valid()) {
                 return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
             }
+            data = basicDeviceProperty;
         }
 
         boolean isExist = deviceService.checkDeviceOnline(sn);
@@ -85,16 +84,17 @@ public class ControlServiceImpl implements IControlService {
                         .bid(bid)
                         .method(serviceIdentifier)
                         .timestamp(System.currentTimeMillis())
-                        .data(Objects.requireNonNullElse(param, ""))
+                        .data(data)
                         .build());
 
         ServiceReply<EventsOutputReceiver> serviceReply = mapper.convertValue(
                 serviceReplyOpt, new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
         if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
-            return ResponseResult.error(serviceReply.getResult(), serviceReply.getOutput().getStatus());
+            return ResponseResult.error(serviceReply.getResult(),
+                    Objects.nonNull(serviceReply.getOutput()) ? serviceReply.getOutput().getStatus() : "error: " + serviceIdentifier);
         }
         if (controlMethodEnum.getProgress()) {
-            redisOps.setWithExpire(serviceIdentifier + RedisConst.DELIMITER +  bid, sn,
+            RedisOpsUtils.setWithExpire(serviceIdentifier + RedisConst.DELIMITER +  bid, sn,
                     RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
         }
         return ResponseResult.success();
@@ -104,10 +104,10 @@ public class ControlServiceImpl implements IControlService {
     @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_CONTROL_PROGRESS, outputChannel = ChannelName.OUTBOUND)
     public void handleControlProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
         String key = receiver.getMethod() + RedisConst.DELIMITER + receiver.getBid();
-        if (redisOps.getExpire(key) <= 0) {
+        if (RedisOpsUtils.getExpire(key) <= 0) {
             return;
         }
-        String sn = redisOps.get(key).toString();
+        String sn = RedisOpsUtils.get(key).toString();
 
         EventsReceiver<EventsOutputReceiver> eventsReceiver = mapper.convertValue(receiver.getData(),
                 new TypeReference<EventsReceiver<EventsOutputReceiver>>(){});
@@ -123,10 +123,10 @@ public class ControlServiceImpl implements IControlService {
 
         if (eventsReceiver.getOutput().getProgress().getPercent() == 100 ||
                 EventsResultStatusEnum.find(eventsReceiver.getOutput().getStatus()).getEnd()) {
-            redisOps.del(key);
+            RedisOpsUtils.del(key);
         }
 
-        DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + sn);
         webSocketMessageService.sendBatch(
                 webSocketManageService.getValueWithWorkspaceAndUserType(
                         device.getWorkspaceId(), UserTypeEnum.WEB.getVal()),

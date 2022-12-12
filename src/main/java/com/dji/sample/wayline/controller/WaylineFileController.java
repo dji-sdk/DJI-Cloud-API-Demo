@@ -75,6 +75,7 @@ public class WaylineFileController {
         try {
             URL url = waylineFileService.getObjectUrl(workspaceId, waylineId);
             response.sendRedirect(url.toString());
+
         } catch (IOException | SQLException e) {
             e.printStackTrace();
         }

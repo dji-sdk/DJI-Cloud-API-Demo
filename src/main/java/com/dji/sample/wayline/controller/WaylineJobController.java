@@ -73,4 +73,17 @@ public class WaylineJobController {
         waylineJobService.cancelFlightTask(workspaceId, jobIds);
         return ResponseResult.success();
     }
+
+    /**
+     * Set the media files for this job to upload immediately.
+     * @param workspaceId
+     * @param jobId
+     * @return
+     */
+    @PostMapping("/{workspace_id}/jobs/{job_id}/media-highest")
+    public ResponseResult uploadMediaHighestPriority(@PathVariable(name = "workspace_id") String workspaceId,
+                                             @PathVariable(name = "job_id") String jobId) {
+        waylineJobService.uploadMediaHighestPriority(workspaceId, jobId);
+        return ResponseResult.success();
+    }
 }

@@ -53,9 +53,6 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     @Autowired
     private IMessageSenderService messageSender;
 
-    @Autowired
-    private RedisOpsUtils redisOps;
-
     @Override
     public List<CapacityDeviceDTO> getLiveCapacity(String workspaceId) {
 
@@ -68,7 +65,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
 
         // Query the live capability of each drone.
         return devicesList.stream()
-                .filter(device -> redisOps.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
+                .filter(device -> RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
                 .map(device -> CapacityDeviceDTO.builder()
                         .name(Objects.requireNonNullElse(device.getNickname(), device.getDeviceName()))
                         .sn(device.getDeviceSn())
@@ -82,7 +79,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         // Solve timing problems
         for (CapacityDeviceReceiver capacityDeviceReceiver : liveCapacityReceiver.getDeviceList()) {
             long last = (long) Objects.requireNonNullElse(
-                    redisOps.get(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + capacityDeviceReceiver.getSn()), 0L);
+                    RedisOpsUtils.get(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + capacityDeviceReceiver.getSn()), 0L);
             if (last > timestamp) {
                 return;
             }
@@ -172,7 +169,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
 
         ServiceReply receiveReply = this.publishLiveSetQuality(respTopic, liveParam);
-        if (ResponseResult.CODE_SUCCESS == receiveReply.getResult()) {
+        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
             return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
         }
 

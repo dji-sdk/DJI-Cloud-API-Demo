@@ -6,6 +6,7 @@ import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -22,16 +23,13 @@ public class OssServiceContext {
 
     private IOssService ossService;
 
-    private OssConfiguration configuration;
-
     @Autowired
     public OssServiceContext(List<IOssService> ossServices, OssConfiguration configuration) {
-        this.configuration = configuration;
-        if (!configuration.isEnable()) {
+        if (!OssConfiguration.enable) {
             return;
         }
         this.ossService = ossServices.stream()
-                .filter(ossService -> ossService.getOssType().equals(configuration.getProvider()))
+                .filter(ossService -> ossService.getOssType().equals(OssConfiguration.provider))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Oss provider is illegal. Optional: " +
                         Arrays.toString(Arrays.stream(OssTypeEnum.values()).map(OssTypeEnum::getType).toArray())));
@@ -46,6 +44,9 @@ public class OssServiceContext {
     }
 
     public URL getObjectUrl(String bucket, String objectKey) {
+        if (!StringUtils.hasText(bucket) || !StringUtils.hasText(objectKey)) {
+            throw new IllegalArgumentException();
+        }
         return this.ossService.getObjectUrl(bucket, objectKey);
     }
 
@@ -59,5 +60,9 @@ public class OssServiceContext {
 
     public void putObject(String bucket, String objectKey, InputStream stream) {
         this.ossService.putObject(bucket, objectKey, stream);
+    }
+
+    void createClient() {
+        this.ossService.createClient();
     }
 }

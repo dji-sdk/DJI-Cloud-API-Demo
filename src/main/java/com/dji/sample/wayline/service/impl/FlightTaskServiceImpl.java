@@ -11,6 +11,7 @@ import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.media.model.MediaFileCountDTO;
 import com.dji.sample.wayline.model.dto.FlightTaskProgressReceiver;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.model.enums.WaylineJobStatusEnum;
@@ -53,9 +54,6 @@ public class FlightTaskServiceImpl implements IFlightTaskService {
     private IWebSocketManageService webSocketManageService;
 
     @Autowired
-    private RedisOpsUtils redisOps;
-
-    @Autowired
     private IWaylineJobService waylineJobService;
 
     @Override
@@ -83,17 +81,23 @@ public class FlightTaskServiceImpl implements IFlightTaskService {
                     .mediaCount(output.getExt().getMediaCount())
                     .build();
 
+            // record the update of the media count.
+            if (Objects.nonNull(job.getMediaCount())) {
+                RedisOpsUtils.hashSet(RedisConst.MEDIA_FILE_PREFIX + receiver.getGateway(), job.getJobId(),
+                        MediaFileCountDTO.builder().jobId(receiver.getBid()).mediaCount(job.getMediaCount()).uploadedCount(0).build());
+            }
+
             if (EventsResultStatusEnum.OK != statusEnum) {
                 job.setCode(eventsReceiver.getResult());
                 job.setStatus(WaylineJobStatusEnum.FAILED.getVal());
             }
 
             waylineJobService.updateJob(job);
-            redisOps.del(receiver.getBid());
+            RedisOpsUtils.del(receiver.getBid());
         }
-        redisOps.setWithExpire(receiver.getBid(), eventsReceiver, RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
+        RedisOpsUtils.setWithExpire(receiver.getBid(), eventsReceiver, RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
 
-        DeviceDTO device = (DeviceDTO) redisOps.get(RedisConst.DEVICE_ONLINE_PREFIX + receiver.getGateway());
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + receiver.getGateway());
         websocketMessageService.sendBatch(
                 webSocketManageService.getValueWithWorkspaceAndUserType(
                         device.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
@@ -118,19 +122,19 @@ public class FlightTaskServiceImpl implements IFlightTaskService {
 
     @Scheduled(initialDelay = 10, fixedRate = 5, timeUnit = TimeUnit.SECONDS)
     private void checkScheduledJob() {
-        Object jobIdValue = redisOps.zGetMin(RedisConst.WAYLINE_JOB);
+        Object jobIdValue = RedisOpsUtils.zGetMin(RedisConst.WAYLINE_JOB);
         log.info("Check the timed jobs of the wayline. {}", jobIdValue);
         if (Objects.isNull(jobIdValue)) {
             return;
         }
         String jobId = String.valueOf(jobIdValue);
-        double time = redisOps.zScore(RedisConst.WAYLINE_JOB, jobIdValue);
+        double time = RedisOpsUtils.zScore(RedisConst.WAYLINE_JOB, jobIdValue);
         long now = System.currentTimeMillis();
         int offset = 30_000;
 
         // Expired tasks are deleted directly.
         if (time < now - offset) {
-            redisOps.zRemove(RedisConst.WAYLINE_JOB, jobId);
+            RedisOpsUtils.zRemove(RedisConst.WAYLINE_JOB, jobId);
             waylineJobService.updateJob(WaylineJobDTO.builder()
                     .jobId(jobId)
                     .status(WaylineJobStatusEnum.FAILED.getVal())
@@ -150,7 +154,7 @@ public class FlightTaskServiceImpl implements IFlightTaskService {
                         .endTime(LocalDateTime.now())
                         .code(HttpStatus.SC_INTERNAL_SERVER_ERROR).build());
             } finally {
-                redisOps.zRemove(RedisConst.WAYLINE_JOB, jobId);
+                RedisOpsUtils.zRemove(RedisConst.WAYLINE_JOB, jobId);
             }
         }
     }

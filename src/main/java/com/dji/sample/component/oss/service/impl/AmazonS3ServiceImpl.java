@@ -17,16 +17,15 @@ import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sample.media.model.CredentialsDTO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author sean
@@ -37,9 +36,8 @@ import java.util.List;
 @Service
 public class AmazonS3ServiceImpl implements IOssService {
 
-    @Autowired
-    private OssConfiguration configuration;
-
+    private AmazonS3 client;
+    
     @Override
     public String getOssType() {
         return OssTypeEnum.AWS.getType();
@@ -49,71 +47,55 @@ public class AmazonS3ServiceImpl implements IOssService {
     public CredentialsDTO getCredentials() {
         AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(
-                        new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey())))
-                .withRegion(configuration.getRegion()).build();
+                        new BasicAWSCredentials(OssConfiguration.accessKey, OssConfiguration.secretKey)))
+                .withRegion(OssConfiguration.region).build();
 
         AssumeRoleRequest request = new AssumeRoleRequest()
-                .withRoleArn(configuration.getRoleArn())
-                .withRoleSessionName(configuration.getRoleSessionName())
-                .withDurationSeconds(Math.toIntExact(configuration.getExpire()));
+                .withRoleArn(OssConfiguration.roleArn)
+                .withRoleSessionName(OssConfiguration.roleSessionName)
+                .withDurationSeconds(Math.toIntExact(OssConfiguration.expire));
         AssumeRoleResult result = stsClient.assumeRole(request);
         Credentials credentials = result.getCredentials();
-        stsClient.shutdown();
         return new CredentialsDTO(credentials);
     }
 
     @Override
     public URL getObjectUrl(String bucket, String objectKey) {
-        AmazonS3 client = this.createClient();
-        URL url = client.generatePresignedUrl(bucket, objectKey,
-                new Date(System.currentTimeMillis() + configuration.getExpire() * 1000), HttpMethod.GET);
-        client.shutdown();
-        return url;
+        return client.generatePresignedUrl(bucket, objectKey,
+                new Date(System.currentTimeMillis() + OssConfiguration.expire * 1000), HttpMethod.GET);
     }
 
     @Override
     public Boolean deleteObject(String bucket, String objectKey) {
-        AmazonS3 client = this.createClient();
         if (!client.doesObjectExist(bucket, objectKey)) {
-            client.shutdown();
             return true;
         }
         client.deleteObject(bucket, objectKey);
-        client.shutdown();
         return true;
     }
 
     public InputStream getObject(String bucket, String objectKey) {
-        AmazonS3 client = this.createClient();
-        S3Object object = client.getObject(bucket, objectKey);
-        try (InputStream input = object.getObjectContent().getDelegateStream()) {
-            return input;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            client.shutdown();
-        }
-        return InputStream.nullInputStream();
+        return client.getObject(bucket, objectKey).getObjectContent().getDelegateStream();
     }
 
     @Override
     public void putObject(String bucket, String objectKey, InputStream input) {
-        AmazonS3 client = this.createClient();
         if (client.doesObjectExist(bucket, objectKey)) {
-            client.shutdown();
             throw new RuntimeException("The filename already exists.");
         }
         PutObjectResult objectResult = client.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
-        client.shutdown();
         log.info("Upload File: {}", objectResult.toString());
     }
 
-    private AmazonS3 createClient() {
-        return AmazonS3ClientBuilder.standard()
+    public void createClient() {
+        if (Objects.nonNull(this.client)) {
+            return;
+        }
+        this.client = AmazonS3ClientBuilder.standard()
                 .withCredentials(
                         new AWSStaticCredentialsProvider(
-                                new BasicAWSCredentials(configuration.getAccessKey(), configuration.getSecretKey())))
-                .withRegion(configuration.getRegion())
+                                new BasicAWSCredentials(OssConfiguration.accessKey, OssConfiguration.secretKey)))
+                .withRegion(OssConfiguration.region)
                 .build();
     }
 
@@ -122,7 +104,7 @@ public class AmazonS3ServiceImpl implements IOssService {
      */
     @PostConstruct
     private void configCORS() {
-        if (!configuration.isEnable() || !OssTypeEnum.AWS.getType().equals(configuration.getProvider())) {
+        if (!OssConfiguration.enable || !OssTypeEnum.AWS.getType().equals(OssConfiguration.provider)) {
             return;
         }
         List<CORSRule.AllowedMethods> allowedMethods = new ArrayList<>();
@@ -136,10 +118,8 @@ public class AmazonS3ServiceImpl implements IOssService {
                 .withAllowedHeaders(List.of(AuthInterceptor.PARAM_TOKEN))
                 .withAllowedMethods(allowedMethods);
 
-        AmazonS3 client = this.createClient();
-
-        client.setBucketCrossOriginConfiguration(this.configuration.getBucket(),
+        client.setBucketCrossOriginConfiguration(OssConfiguration.bucket,
                 new BucketCrossOriginConfiguration().withRules(rule));
-        client.shutdown();
+        
     }
 }

@@ -167,4 +167,9 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA)
+    public MessageChannel eventsHighestPriorityUploadFlightTaskMedia() {
+        return new DirectChannel();
+    }
+
 }

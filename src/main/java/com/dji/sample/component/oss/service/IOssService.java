@@ -45,4 +45,6 @@ public interface IOssService {
     InputStream getObject(String bucket, String objectKey);
 
     void putObject(String bucket, String objectKey, InputStream input);
+
+    void createClient();
 }

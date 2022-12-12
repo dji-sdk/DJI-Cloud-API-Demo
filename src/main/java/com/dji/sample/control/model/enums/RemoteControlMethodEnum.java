@@ -1,7 +1,8 @@
 package com.dji.sample.control.model.enums;
 
+import com.dji.sample.control.model.dto.AlarmState;
 import com.dji.sample.control.model.dto.BatteryStoreMode;
-import com.dji.sample.manage.model.enums.StateSwitchReceiver;
+import com.dji.sample.control.model.dto.LinkWorkMode;
 import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
 import lombok.Getter;
 
@@ -24,8 +25,6 @@ public enum RemoteControlMethodEnum {
     SUPPLEMENT_LIGHT_CLOSE("supplement_light_close", false, null),
 
     RETURN_HOME("return_home", false, null),
-
-    SDR_WORKMODE_SWITCH("sdr_workmode_switch", false, null),
 
     DEVICE_REBOOT("device_reboot", true, null),
 
@@ -51,11 +50,13 @@ public enum RemoteControlMethodEnum {
 
     CHARGE_CLOSE("charge_close", true, null),
 
-    BATTERY_MAINTENANCE_SWITCH("battery_maintenance_switch", true, StateSwitchReceiver.class),
+    BATTERY_MAINTENANCE_SWITCH("battery_maintenance_switch", true, AlarmState.class),
     
-    ALARM_STATE_SWITCH("alarm_state_switch", true, StateSwitchReceiver.class),
+    ALARM_STATE_SWITCH("alarm_state_switch", true, AlarmState.class),
     
     BATTERY_STORE_MODE_SWITCH("battery_store_mode_switch", true, BatteryStoreMode.class),
+
+    SDR_WORK_MODE_SWITCH("sdr_workmode_switch", false, LinkWorkMode.class),
     
     UNKNOWN("unknown", false, null);
 

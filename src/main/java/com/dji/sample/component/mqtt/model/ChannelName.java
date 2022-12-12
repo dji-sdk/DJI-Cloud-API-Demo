@@ -74,4 +74,6 @@ public class ChannelName {
     public static final String INBOUND_PROPERTY_SET_REPLY = "inboundPropertySetReply";
 
     public static final String INBOUND_REQUESTS_CONFIG = "inboundRequestsConfig";
+
+    public static final String INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA = "inboundEventsHighestPriorityUploadFlightTaskMedia";
 }
