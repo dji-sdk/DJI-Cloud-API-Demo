@@ -902,7 +902,7 @@ public class DeviceServiceImpl implements IDeviceService {
         }
 
         String topic = THING_MODEL_PRE + PRODUCT + dockSn + PROPERTY_SUF + SET_SUF;
-//        OsdSubDeviceReceiver osd = (OsdSubDeviceReceiver) RedisOpsUtils.get(RedisConst.OSD_PREFIX + deviceDTO.getChildDeviceSn());
+        OsdSubDeviceReceiver osd = (OsdSubDeviceReceiver) RedisOpsUtils.get(RedisConst.OSD_PREFIX + deviceDTO.getChildDeviceSn());
         if (!param.isObject()) {
             this.deviceOnePropertySet(topic, propertyEnum, Map.entry(propertyEnum.getProperty(), param));
             return;
@@ -910,7 +910,7 @@ public class DeviceServiceImpl implements IDeviceService {
         // If there are multiple parameters, set them separately.
         for (Iterator<Map.Entry<String, JsonNode>> filed = param.fields(); filed.hasNext(); ) {
             Map.Entry<String, JsonNode> node = filed.next();
-            boolean isPublish = basicDeviceProperty.canPublish(node.getKey(), null);
+            boolean isPublish = basicDeviceProperty.canPublish(node.getKey(), osd);
             if (!isPublish) {
                 continue;
             }
