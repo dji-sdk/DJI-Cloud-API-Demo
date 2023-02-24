@@ -74,4 +74,12 @@ public class WaylineJobEntity implements Serializable {
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private Long updateTime;
 
+    @TableField("begin_time")
+    private Long beginTime;
+
+    @TableField("completed_time")
+    private Long completedTime;
+
+    @TableField("parent_id")
+    private String parentId;
 }

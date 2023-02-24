@@ -35,7 +35,7 @@ public class DockOSDServiceImpl extends AbstractTSAService {
                           Collection<ConcurrentWebSocketSession> webSessions,
                           CustomWebSocketMessage<TelemetryDTO> wsMessage) {
 
-        if (DeviceDomainEnum.DOCK.getDesc().equals(device.getDomain())) {
+        if (DeviceDomainEnum.DOCK.getVal() == device.getDomain()) {
             wsMessage.setBizCode(BizCodeEnum.DOCK_OSD.getCode());
             OsdDockReceiver data = mapper.convertValue(receiver.getData(), OsdDockReceiver.class);
             wsMessage.getData().setHost(data);

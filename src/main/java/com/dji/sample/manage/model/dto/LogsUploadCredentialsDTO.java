@@ -35,13 +35,16 @@ public class LogsUploadCredentialsDTO {
 
     private LogsFileUploadList params;
 
+    private String region;
+
     public LogsUploadCredentialsDTO(StsCredentialsDTO sts) {
         this.bucket = sts.getBucket();
-        Long expire = sts.getCredentials().getExpire();
+        long expire = sts.getCredentials().getExpire();
         sts.getCredentials().setExpire(System.currentTimeMillis() + (expire - 60) * 1000);
         this.credentials = sts.getCredentials();
         this.endpoint = sts.getEndpoint();
         this.objectKeyPrefix = sts.getObjectKeyPrefix();
         this.provider = sts.getProvider();
+        this.region = sts.getRegion();
     }
 }

@@ -8,9 +8,13 @@ import lombok.Data;
  * @date 2022/6/9
  */
 @Data
-public class FlightTaskProgressExt {
+public class WaylineTaskProgressExt {
 
     private Integer currentWaypointIndex;
 
     private Integer mediaCount;
+
+    private String flightId;
+
+    private String trackId;
 }

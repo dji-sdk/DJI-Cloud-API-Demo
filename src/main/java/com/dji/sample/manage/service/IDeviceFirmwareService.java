@@ -23,11 +23,13 @@ public interface IDeviceFirmwareService {
 
     /**
      * Query specific firmware information based on the device model and firmware version.
+     *
+     * @param workspaceId
      * @param deviceName
      * @param version
      * @return
      */
-    Optional<DeviceFirmwareDTO> getFirmware(String deviceName, String version);
+    Optional<DeviceFirmwareDTO> getFirmware(String workspaceId, String deviceName, String version);
 
     /**
      * Get the latest firmware release note for this device model.
@@ -38,10 +40,12 @@ public interface IDeviceFirmwareService {
 
     /**
      * Get the firmware information that the device needs to update.
+     *
+     * @param workspaceId
      * @param upgradeDTOS
      * @return
      */
-    List<DeviceOtaCreateParam> getDeviceOtaFirmware(List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
+    List<DeviceOtaCreateParam> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
 
     /**
      * Interface to handle device firmware update progress.
@@ -80,8 +84,9 @@ public interface IDeviceFirmwareService {
     /**
      * Save the file information of the firmware.
      * @param firmware
+     * @param deviceNames
      */
-    void saveFirmwareInfo(DeviceFirmwareDTO firmware);
+    void saveFirmwareInfo(DeviceFirmwareDTO firmware, List<String> deviceNames);
 
     /**
      * Update the file information of the firmware.

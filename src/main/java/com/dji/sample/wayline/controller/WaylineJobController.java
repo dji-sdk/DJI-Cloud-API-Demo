@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Set;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
@@ -68,7 +68,7 @@ public class WaylineJobController {
      * @throws SQLException
      */
     @DeleteMapping("/{workspace_id}/jobs")
-    public ResponseResult publishCancelJob(@RequestParam(name = "job_id") List<String> jobIds,
+    public ResponseResult publishCancelJob(@RequestParam(name = "job_id") Set<String> jobIds,
                                      @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
         waylineJobService.cancelFlightTask(workspaceId, jobIds);
         return ResponseResult.success();

@@ -2,6 +2,7 @@ package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dji.sample.common.model.Pagination;
 import com.dji.sample.common.model.PaginationData;
@@ -12,6 +13,7 @@ import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
+import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.component.websocket.service.impl.SendMessageServiceImpl;
@@ -24,6 +26,7 @@ import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
 import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
 import com.dji.sample.manage.service.IDeviceService;
+import com.dji.sample.manage.service.IFirmwareModelService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -79,26 +82,30 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
     @Autowired
     private OssServiceContext ossServiceContext;
 
+    @Autowired
+    private IFirmwareModelService firmwareModelService;
+
     @Override
-    public Optional<DeviceFirmwareDTO> getFirmware(String deviceName, String version) {
+    public Optional<DeviceFirmwareDTO> getFirmware(String workspaceId, String deviceName, String version) {
         return Optional.ofNullable(entity2Dto(mapper.selectOne(
                 new LambdaQueryWrapper<DeviceFirmwareEntity>()
-                        .eq(DeviceFirmwareEntity::getDeviceName, deviceName)
-                        .eq(DeviceFirmwareEntity::getFirmwareVersion, version))));
+                        .eq(DeviceFirmwareEntity::getWorkspaceId, workspaceId)
+                        .eq(DeviceFirmwareEntity::getFirmwareVersion, version)
+                        .eq(DeviceFirmwareEntity::getStatus, true),
+                deviceName)));
     }
 
     @Override
     public Optional<DeviceFirmwareNoteDTO> getLatestFirmwareReleaseNote(String deviceName) {
         return Optional.ofNullable(entity2NoteDto(mapper.selectOne(
-                new LambdaQueryWrapper<DeviceFirmwareEntity>()
-                        .eq(DeviceFirmwareEntity::getDeviceName, deviceName)
+                Wrappers.lambdaQuery(DeviceFirmwareEntity.class)
                         .eq(DeviceFirmwareEntity::getStatus, true)
-                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate, DeviceFirmwareEntity::getFirmwareVersion)
-                        .last(" limit 1 "))));
+                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate, DeviceFirmwareEntity::getFirmwareVersion),
+                deviceName)));
     }
 
     @Override
-    public List<DeviceOtaCreateParam> getDeviceOtaFirmware(List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
+    public List<DeviceOtaCreateParam> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
         List<DeviceOtaCreateParam> deviceOtaList = new ArrayList<>();
         upgradeDTOS.forEach(upgradeDevice -> {
             boolean exist = deviceService.checkDeviceOnline(upgradeDevice.getSn());
@@ -106,12 +113,9 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                 throw new IllegalArgumentException("Device is offline.");
             }
             Optional<DeviceFirmwareDTO> firmwareOpt = this.getFirmware(
-                    upgradeDevice.getDeviceName(), upgradeDevice.getProductVersion());
+                    workspaceId, upgradeDevice.getDeviceName(), upgradeDevice.getProductVersion());
             if (firmwareOpt.isEmpty()) {
-                throw new IllegalArgumentException("This firmware version does not exist.");
-            }
-            if (!firmwareOpt.get().getFirmwareStatus()) {
-                throw new IllegalArgumentException("This firmware version is not available.");
+                throw new IllegalArgumentException("This firmware version does not exist or is not available.");
             }
             DeviceOtaCreateParam ota = dto2OtaCreateDto(firmwareOpt.get());
             ota.setSn(upgradeDevice.getSn());
@@ -131,7 +135,6 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
         EventsReceiver<EventsOutputReceiver> eventsReceiver = objectMapper.convertValue(receiver.getData(),
                 new TypeReference<EventsReceiver<EventsOutputReceiver>>(){});
         eventsReceiver.setBid(receiver.getBid());
-        eventsReceiver.setSn(sn);
 
         EventsOutputReceiver output = eventsReceiver.getOutput();
         log.info("SN: {}, {} ===> Upgrading progress: {}",
@@ -148,6 +151,13 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
 
         // Determine whether it is the ending state, delete the update state key in redis after the job ends.
         EventsResultStatusEnum statusEnum = EventsResultStatusEnum.find(output.getStatus());
+        Collection<ConcurrentWebSocketSession> sessions = webSocketManageService.getValueWithWorkspaceAndUserType(
+                device.getWorkspaceId(), UserTypeEnum.WEB.getVal());
+        CustomWebSocketMessage<Object> build = CustomWebSocketMessage.builder()
+                .data(eventsReceiver)
+                .timestamp(System.currentTimeMillis())
+                .bizCode(receiver.getMethod())
+                .build();
         if (upgrade) {
             if (statusEnum.getEnd()) {
                 // Delete the cache after the update is complete.
@@ -158,8 +168,14 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                         RedisConst.FIRMWARE_UPGRADING_PREFIX + sn, output.getProgress().getPercent(),
                         RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
             }
+            eventsReceiver.setSn(sn);
+            webSocketMessageService.sendBatch(sessions, build);
         }
         if (childUpgrade) {
+            if (!StringUtils.hasText(eventsReceiver.getSn())) {
+                eventsReceiver.setSn(childDeviceSn);
+                webSocketMessageService.sendBatch(sessions, build);
+            }
             if (statusEnum.getEnd()) {
                 RedisOpsUtils.del(RedisConst.FIRMWARE_UPGRADING_PREFIX + childDeviceSn);
             } else {
@@ -169,15 +185,6 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                         RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
             }
         }
-
-        webSocketMessageService.sendBatch(
-                webSocketManageService.getValueWithWorkspaceAndUserType(
-                        device.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
-                CustomWebSocketMessage.builder()
-                        .data(eventsReceiver)
-                        .timestamp(System.currentTimeMillis())
-                        .bizCode(receiver.getMethod())
-                        .build());
 
         if (receiver.getNeedReply() != null && receiver.getNeedReply() == 1) {
             String replyTopic = headers.get(MqttHeaders.RECEIVED_TOPIC) + TopicConst._REPLY_SUF;
@@ -194,7 +201,8 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
 
     @Override
     public Boolean checkFileExist(String workspaceId, String fileMd5) {
-        return mapper.selectCount(new LambdaQueryWrapper<DeviceFirmwareEntity>()
+        return RedisOpsUtils.checkExist(RedisConst.FILE_UPLOADING_PREFIX + workspaceId + fileMd5) ||
+                mapper.selectCount(new LambdaQueryWrapper<DeviceFirmwareEntity>()
                     .eq(DeviceFirmwareEntity::getWorkspaceId, workspaceId)
                     .eq(DeviceFirmwareEntity::getFileMd5, fileMd5))
                 > 0;
@@ -206,9 +214,8 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                 new LambdaQueryWrapper<DeviceFirmwareEntity>()
                         .eq(DeviceFirmwareEntity::getWorkspaceId, workspaceId)
                         .eq(Objects.nonNull(param.getStatus()), DeviceFirmwareEntity::getStatus, param.getStatus())
-                        .eq(StringUtils.hasText(param.getDeviceName()), DeviceFirmwareEntity::getDeviceName, param.getDeviceName())
                         .like(StringUtils.hasText(param.getProductVersion()), DeviceFirmwareEntity::getFirmwareVersion, param.getProductVersion())
-                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate));
+                        .orderByDesc(DeviceFirmwareEntity::getReleaseDate), param.getDeviceName());
 
         List<DeviceFirmwareDTO> data = page.getRecords().stream().map(this::entity2Dto).collect(Collectors.toList());
         return new PaginationData<DeviceFirmwareDTO>(data, new Pagination(page));
@@ -217,14 +224,21 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
 
     @Override
     public void importFirmwareFile(String workspaceId, String creator, DeviceFirmwareUploadParam param, MultipartFile file) {
+        String key = RedisConst.FILE_UPLOADING_PREFIX + workspaceId;
+        String existKey = key + file.getOriginalFilename();
+        if (RedisOpsUtils.getExpire(existKey) > 0) {
+            throw new RuntimeException("Please try again later.");
+        }
+        RedisOpsUtils.setWithExpire(existKey, true, RedisConst.DEVICE_ALIVE_SECOND);
         try (InputStream is = file.getInputStream()) {
             long size = is.available();
             String md5 = DigestUtils.md5DigestAsHex(is);
+            key += md5;
             boolean exist = checkFileExist(workspaceId, md5);
             if (exist) {
                 throw new RuntimeException("The file already exists.");
             }
-
+            RedisOpsUtils.set(key, System.currentTimeMillis());
             Optional<DeviceFirmwareDTO> firmwareOpt = verifyFirmwareFile(file);
             if (firmwareOpt.isEmpty()) {
                 throw new RuntimeException("The file format is incorrect.");
@@ -234,9 +248,8 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
             String objectKey = OssConfiguration.objectDirPrefix + File.separator + firmwareId + FirmwareFileProperties.FIRMWARE_FILE_SUFFIX;
 
             ossServiceContext.putObject(OssConfiguration.bucket, objectKey, file.getInputStream());
-            log.info("upload success");
+            log.info("upload success. {}", file.getOriginalFilename());
             DeviceFirmwareDTO firmware = DeviceFirmwareDTO.builder()
-                    .deviceName(param.getDeviceName())
                     .releaseNote(param.getReleaseNote())
                     .firmwareStatus(param.getStatus())
                     .fileMd5(md5)
@@ -250,15 +263,20 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                     .firmwareId(firmwareId)
                     .build();
 
-            saveFirmwareInfo(firmware);
+            saveFirmwareInfo(firmware, param.getDeviceName());
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            RedisOpsUtils.del(key);
         }
     }
 
     @Override
-    public void saveFirmwareInfo(DeviceFirmwareDTO firmware) {
-         mapper.insert(dto2Entity(firmware));
+    public void saveFirmwareInfo(DeviceFirmwareDTO firmware, List<String> deviceNames) {
+        DeviceFirmwareEntity entity = dto2Entity(firmware);
+        mapper.insert(entity);
+        firmwareModelService.saveFirmwareDeviceName(
+                FirmwareModelDTO.builder().firmwareId(entity.getFirmwareId()).deviceNames(deviceNames).build());
     }
 
     @Override
@@ -308,7 +326,6 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
         }
         return DeviceFirmwareEntity.builder()
                 .fileName(dto.getFileName())
-                .deviceName(dto.getDeviceName())
                 .fileMd5(dto.getFileMd5())
                 .fileSize(dto.getFileSize())
                 .firmwareId(dto.getFirmwareId())
@@ -340,7 +357,7 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
             return null;
         }
         return DeviceFirmwareDTO.builder()
-                .deviceName(entity.getDeviceName())
+                .deviceName(Arrays.asList(entity.getDeviceName().split(",")))
                 .fileMd5(entity.getFileMd5())
                 .fileSize(entity.getFileSize())
                 .objectKey(entity.getObjectKey())

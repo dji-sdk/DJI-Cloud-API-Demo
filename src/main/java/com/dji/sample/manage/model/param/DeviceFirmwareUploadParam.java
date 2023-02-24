@@ -3,6 +3,7 @@ package com.dji.sample.manage.model.param;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * @author sean
@@ -19,5 +20,5 @@ public class DeviceFirmwareUploadParam {
     private Boolean status;
 
     @NotNull
-    private String deviceName;
+    private List<String> deviceName;
 }

@@ -12,7 +12,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class NtpServerDTO {
+public class ProductConfigDTO {
 
     private String ntpServerHost;
+
+    private String appId;
+
+    private String appKey;
+
+    private String appLicense;
 }

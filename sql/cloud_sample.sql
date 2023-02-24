@@ -46,7 +46,7 @@ CREATE TABLE `logs_file_index` (
   `file_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The file_id in the logs_file table.',
   `start_time` bigint NOT NULL COMMENT 'The file start time reported by the dock.',
   `end_time` bigint NOT NULL COMMENT 'The file end time reported by the dock.',
-  `size` int NOT NULL COMMENT 'The file size reported by the dock.',
+  `size` bigint NOT NULL COMMENT 'The file size reported by the dock.',
   `device_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The sn of the device.',
   `domain` int NOT NULL COMMENT 'This parameter corresponds to the domain in the device dictionary table.',
   `create_time` bigint NOT NULL,
@@ -132,7 +132,9 @@ VALUES
 	(20,0,77,1,'Mavic 3T',NULL),
 	(21,1,66,0,'Mavic 3E Camera',NULL),
 	(22,1,67,0,'Mavic 3T Camera',NULL),
-	(23,2,144,0,'DJI RC Pro','Remote control for Mavic 3E/T');
+	(23,2,144,0,'DJI RC Pro','Remote control for Mavic 3E/T and Mavic 3M'),
+	(24,0,77,2,'Mavic 3M',NULL),
+	(25,1,68,0,'Mavic 3M Camera',NULL);
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -151,7 +153,6 @@ CREATE TABLE `manage_device_firmware` (
   `object_key` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'The object key of the firmware package in the bucket.',
   `file_size` int NOT NULL COMMENT 'The size of the firmware package.',
   `file_md5` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The md5 of the firmware package.',
-  `device_name` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'model of the device. This parameter corresponds to the device name in the device dictionary table.',
   `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `release_note` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The release note of the firmware package.',
   `release_date` bigint NOT NULL COMMENT 'The release date of the firmware package.',
@@ -230,6 +231,22 @@ CREATE TABLE `manage_device_payload` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `payload_sn_UNIQUE` (`payload_sn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='The payload information of the device.';
+
+
+
+# manage_firmware_model
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `manage_firmware_model`;
+
+CREATE TABLE `manage_firmware_model` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `firmware_id` varchar(64) NOT NULL,
+  `device_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'model of the device. This parameter corresponds to the device name in the device dictionary table.',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 
 
@@ -431,9 +448,11 @@ CREATE TABLE `wayline_job` (
   `workspace_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'Which workspace the current job belongs to.',
   `task_type` int NOT NULL,
   `wayline_type` int NOT NULL COMMENT 'The template type of the wayline.',
-  `execute_time` bigint NOT NULL,
+  `execute_time` bigint DEFAULT NULL COMMENT 'actual begin time',
+  `completed_time` bigint DEFAULT NULL COMMENT 'actual end time',
   `username` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT 'The name of the creator.',
-  `end_time` bigint DEFAULT NULL COMMENT 'end time of the job.',
+  `begin_time` bigint NOT NULL COMMENT 'planned begin time',
+  `end_time` bigint NOT NULL COMMENT 'planned end time',
   `error_code` int DEFAULT NULL,
   `status` int NOT NULL COMMENT '1: pending; 2: in progress; 3: success; 4: cancel; 5: failed',
   `rth_altitude` int NOT NULL COMMENT 'return to home altitude. min: 20m; max: 500m',
@@ -441,6 +460,7 @@ CREATE TABLE `wayline_job` (
   `media_count` int NOT NULL DEFAULT '0',
   `create_time` bigint NOT NULL,
   `update_time` bigint NOT NULL,
+  `parent_id` varchar(45) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `job_id_UNIQUE` (`job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Wayline mission information of the dock.';

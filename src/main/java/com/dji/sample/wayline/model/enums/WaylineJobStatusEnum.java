@@ -22,7 +22,9 @@ public enum WaylineJobStatusEnum {
 
     FAILED(5, true),
 
-    UNKNOWN(6, true);
+    PAUSED(6, false),
+
+    UNKNOWN(-1, true);
 
     int val;
 

@@ -44,11 +44,13 @@ public class GlobalScheduleService {
             long expire = RedisOpsUtils.getExpire(key);
             if (expire <= 30) {
                 DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(key);
-                if (device.getDomain().equals(DeviceDomainEnum.SUB_DEVICE.getDesc())) {
+                if (DeviceDomainEnum.SUB_DEVICE.getVal() == device.getDomain()) {
                     deviceService.subDeviceOffline(key.substring(start));
                 } else {
                     deviceService.unsubscribeTopicOffline(key.substring(start));
                     deviceService.pushDeviceOfflineTopo(device.getWorkspaceId(), device.getDeviceSn());
+                    RedisOpsUtils.hashDel(RedisConst.LIVE_CAPACITY, new String[]{key});
+                    RedisOpsUtils.del(RedisConst.HMS_PREFIX + key);
                 }
                 RedisOpsUtils.del(key);
             }

@@ -43,7 +43,7 @@ public class DeviceFirmwareEntity implements Serializable {
     @TableField("file_md5")
     private String fileMd5;
 
-    @TableField("device_name")
+    @TableField(exist = false)
     private String deviceName;
 
     @TableField("release_note")

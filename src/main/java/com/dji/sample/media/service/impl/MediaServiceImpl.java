@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -116,12 +115,12 @@ public class MediaServiceImpl implements IMediaService {
         MediaFileCountDTO mediaFileCount = (MediaFileCountDTO) RedisOpsUtils.hashGet(RedisConst.MEDIA_FILE_PREFIX + receiver.getGateway(), jobId);
         // duplicate data
         if (receiver.getBid().equals(mediaFileCount.getBid()) && receiver.getTid().equals(mediaFileCount.getTid())) {
-            System.out.println("相同" + receiver.getBid() + "\t tid:" + receiver.getTid());
             messageSenderService.publish(topic, data);
             return;
         }
 
-        Optional<WaylineJobDTO> jobOpt = waylineJobService.getJobByJobId(jobId);
+        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + receiver.getGateway());
+        Optional<WaylineJobDTO> jobOpt = waylineJobService.getJobByJobId(device.getWorkspaceId(), jobId);
         if (jobOpt.isPresent()) {
             boolean isSave = parseMediaFile(callback, jobOpt.get());
             if (!isSave) {
@@ -152,7 +151,8 @@ public class MediaServiceImpl implements IMediaService {
 
             // After uploading, delete the key with the highest priority.
             String highestKey = RedisConst.MEDIA_HIGHEST_PRIORITY_PREFIX + receiver.getGateway();
-            if (jobId.equals(Objects.requireNonNullElse(RedisOpsUtils.get(highestKey), ""))) {
+            if (RedisOpsUtils.checkExist(highestKey) &&
+                    jobId.equals(((MediaFileCountDTO) RedisOpsUtils.get(highestKey)).getJobId())) {
                 RedisOpsUtils.del(highestKey);
             }
 
@@ -192,25 +192,6 @@ public class MediaServiceImpl implements IMediaService {
             return;
         }
 
-        String dockSn = receiver.getGateway();
-        String jobId = map.get(MapKeyConst.FLIGHT_ID).toString();
-        String key = RedisConst.MEDIA_HIGHEST_PRIORITY_PREFIX + dockSn;
-        Object preJobId = RedisOpsUtils.get(key);
-
-        RedisOpsUtils.setWithExpire(key, jobId,
-                RedisConst.DEVICE_ALIVE_SECOND * 5);
-
-        DeviceDTO dock = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
-
-        sendMessageService.sendBatch(webSocketManageService.getValueWithWorkspaceAndUserType(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
-                CustomWebSocketMessage.builder()
-                        .timestamp(System.currentTimeMillis())
-                        .bizCode(BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode())
-                        .data(MediaFileCountDTO.builder()
-                                .preJobId(Objects.nonNull(preJobId) ? preJobId.toString() : null)
-                                .jobId(jobId).build())
-                        .build());
-
         messageSenderService.publish(headers.get(MqttHeaders.RECEIVED_TOPIC) + TopicConst._REPLY_SUF,
                 CommonTopicResponse.builder()
                         .data(RequestsReply.success())
@@ -219,5 +200,31 @@ public class MediaServiceImpl implements IMediaService {
                         .bid(receiver.getBid())
                         .tid(receiver.getTid())
                         .build());
+
+        String dockSn = receiver.getGateway();
+        String jobId = map.get(MapKeyConst.FLIGHT_ID).toString();
+        String key = RedisConst.MEDIA_HIGHEST_PRIORITY_PREFIX + dockSn;
+        MediaFileCountDTO countDTO = new MediaFileCountDTO();
+        if (RedisOpsUtils.checkExist(key)) {
+            countDTO = (MediaFileCountDTO) RedisOpsUtils.get(key);
+            if (jobId.equals(countDTO.getJobId())) {
+                RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
+                return;
+            }
+
+            countDTO.setPreJobId(countDTO.getJobId());
+        }
+        countDTO.setJobId(jobId);
+
+        RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
+
+        DeviceDTO dock = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
+        sendMessageService.sendBatch(webSocketManageService.getValueWithWorkspaceAndUserType(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
+                CustomWebSocketMessage.builder()
+                        .timestamp(System.currentTimeMillis())
+                        .bizCode(BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode())
+                        .data(countDTO)
+                        .build());
+
     }
 }

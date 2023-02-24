@@ -120,7 +120,7 @@ public class DeviceController {
      */
     @GetMapping("/{workspace_id}/devices/bound")
     public ResponseResult<PaginationData<DeviceDTO>> getBoundDevicesWithDomain(
-            @PathVariable("workspace_id") String workspaceId, String domain,
+            @PathVariable("workspace_id") String workspaceId, Integer domain,
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(value = "page_size", defaultValue = "50") Long pageSize) {
         PaginationData<DeviceDTO> devices = deviceService.getBoundDevicesWithDomain(workspaceId, page, pageSize, domain);

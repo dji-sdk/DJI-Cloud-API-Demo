@@ -38,7 +38,11 @@ public class WaylineJobDTO {
 
     private LocalDateTime executeTime;
 
+    private LocalDateTime beginTime;
+
     private LocalDateTime endTime;
+
+    private LocalDateTime completedTime;
 
     private Integer status;
 
@@ -57,4 +61,6 @@ public class WaylineJobDTO {
     private Integer uploadedCount;
 
     private Boolean uploading;
+
+    private String parentId;
 }

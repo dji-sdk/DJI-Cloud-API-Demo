@@ -18,9 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
@@ -44,11 +44,13 @@ public class DeviceFirmwareController {
      */
     @GetMapping("/firmware-release-notes/latest")
     public ResponseResult<List<DeviceFirmwareNoteDTO>> getLatestFirmwareNote(@RequestParam("device_name") List<String> deviceNames) {
-        List<DeviceFirmwareNoteDTO> releaseNotes = new ArrayList<>();
-        deviceNames.forEach(deviceName -> {
-            Optional<DeviceFirmwareNoteDTO> latestFirmware = service.getLatestFirmwareReleaseNote(deviceName);
-            latestFirmware.ifPresent(releaseNotes::add);
-        });
+
+        List<DeviceFirmwareNoteDTO> releaseNotes = deviceNames.stream()
+                .map(deviceName -> service.getLatestFirmwareReleaseNote(deviceName))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+
         return ResponseResult.success(releaseNotes);
     }
 
@@ -98,7 +100,7 @@ public class DeviceFirmwareController {
      * @return
      */
     @PutMapping("/{workspace_id}/firmwares/{firmware_id}")
-    public ResponseResult importFirmwareFile(@PathVariable("workspace_id") String workspaceId,
+    public ResponseResult changeFirmwareStatus(@PathVariable("workspace_id") String workspaceId,
                                              @PathVariable("firmware_id") String firmwareId,
                                              @Valid @RequestBody DeviceFirmwareUpdateParam param) {
 

@@ -9,10 +9,9 @@ import com.dji.sample.common.model.CustomClaim;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -26,7 +25,7 @@ public class JwtUtil {
 
     private static String secret;
 
-    private static Algorithm algorithm;
+    public static Algorithm algorithm;
 
     @Value("${jwt.issuer: DJI}")
     private void setIssuer(String issuer) {
@@ -62,15 +61,55 @@ public class JwtUtil {
      * @param claims custom information
      * @return token
      */
-    public static String createToken(Map<String, String> claims) {
+    public static String createToken(Map<String, ?> claims) {
+        return JwtUtil.createToken(claims, age, algorithm, subject, issuer);
+    }
+
+    /**
+     *
+     * @param claims
+     * @param age       unit: s
+     * @param algorithm
+     * @param subject
+     * @param issuer
+     * @return
+     */
+    public static String createToken(Map<String, ?> claims, Long age, Algorithm algorithm, String subject, String issuer) {
+        if (Objects.isNull(algorithm)) {
+            throw new IllegalArgumentException();
+        }
+
         Date now = new Date();
         JWTCreator.Builder builder = JWT.create();
         // Add custom information to the token's payload segment.
-        claims.forEach(builder::withClaim);
-        String token = builder.withIssuer(issuer)
-                .withSubject(subject)
+        claims.forEach((k, v) -> {
+            if (Objects.nonNull(v.getClass().getClassLoader())) {
+                log.error("claim can't be set to a custom object.");
+                return;
+            }
+            if (v instanceof Map) {
+                builder.withClaim(k, (Map) v);
+            } else if (v instanceof List) {
+                builder.withClaim(k, (List) v);
+            } else {
+                builder.withClaim(k, String.valueOf(v));
+            }
+        });
+
+        if (StringUtils.hasText(subject)) {
+            builder.withSubject(subject);
+        }
+
+        if (StringUtils.hasText(issuer)) {
+            builder.withIssuer(issuer);
+        }
+
+        if (Objects.nonNull(age)) {
+            builder.withExpiresAt(new Date(now.getTime() + age * 1000));
+        }
+
+        String token = builder
                 .withIssuedAt(now)
-                .withExpiresAt(new Date(now.getTime() + age))
                 .withNotBefore(now)
                 .sign(algorithm);
         log.debug("token created. " + token);

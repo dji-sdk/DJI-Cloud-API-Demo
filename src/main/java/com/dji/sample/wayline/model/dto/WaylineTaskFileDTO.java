@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FlightTaskFileDTO {
+public class WaylineTaskFileDTO {
 
     private String url;
 

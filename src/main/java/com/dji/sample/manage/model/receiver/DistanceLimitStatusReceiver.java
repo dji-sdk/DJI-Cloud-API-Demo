@@ -35,7 +35,7 @@ public class DistanceLimitStatusReceiver extends BasicDeviceProperty {
             valid = StateSwitchEnum.find(state).isPresent();
         }
         if (Objects.nonNull(distanceLimit)) {
-            valid &= StateSwitchEnum.find(distanceLimit).isPresent();
+            valid &= distanceLimit >= DISTANCE_MIN && distanceLimit <= DISTANCE_MAX;
         }
         return valid;
     }

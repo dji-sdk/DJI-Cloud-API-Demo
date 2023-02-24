@@ -9,6 +9,10 @@ public enum CommonErrorEnum implements IErrorInfo {
 
     ILLEGAL_ARGUMENT(200001, "illegal argument"),
 
+    REDIS_DATA_NOT_FOUND(201404, "Redis data does not exist."),
+
+    DEVICE_OFFLINE(212015, "Device is offline."),
+
     GET_ORGANIZATION_FAILED(210230, "Failed to get organization."),
 
     DEVICE_BINDING_FAILED(210231, "Failed to bind device."),
@@ -21,7 +25,7 @@ public enum CommonErrorEnum implements IErrorInfo {
 
     SECRET_INVALID(600100, "secret invalid"),
 
-    NO_TOKEN(600101, "accss_token is null"),
+    NO_TOKEN(600101, "token is null"),
 
     TOKEN_EXPIRED(600102, "token is expired"),
 

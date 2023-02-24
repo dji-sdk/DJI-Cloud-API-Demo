@@ -47,7 +47,7 @@ public class GatewayOSDServiceImpl extends AbstractTSAService {
     public void handleOSD(CommonTopicReceiver receiver, DeviceDTO device,
                           Collection<ConcurrentWebSocketSession> webSessions,
                           CustomWebSocketMessage<TelemetryDTO> wsMessage) {
-        if (DeviceDomainEnum.GATEWAY.getDesc().equals(device.getDomain())) {
+        if (DeviceDomainEnum.GATEWAY.getVal() == device.getDomain()) {
 
             wsMessage.setBizCode(BizCodeEnum.GATEWAY_OSD.getCode());
             OsdGatewayReceiver data = mapper.convertValue(receiver.getData(), OsdGatewayReceiver.class);

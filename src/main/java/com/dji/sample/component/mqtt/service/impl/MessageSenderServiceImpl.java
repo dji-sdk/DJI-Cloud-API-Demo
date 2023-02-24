@@ -31,7 +31,7 @@ public class MessageSenderServiceImpl implements IMessageSenderService {
 
     public void publish(String topic, CommonTopicResponse response) {
         try {
-
+            log.info("send topic: {}, payload: {}", topic, response.toString());
             messageGateway.publish(topic, mapper.writeValueAsBytes(response));
         } catch (JsonProcessingException e) {
             log.info("Failed to publish the message. {}", response.toString());
@@ -53,6 +53,7 @@ public class MessageSenderServiceImpl implements IMessageSenderService {
     }
 
     public <T> T publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response, int retryTime) {
+        log.info("send topic: {}, payload: {}", topic, response.toString());
         AtomicInteger time = new AtomicInteger(0);
         // Retry three times
         while (time.getAndIncrement() <= retryTime) {

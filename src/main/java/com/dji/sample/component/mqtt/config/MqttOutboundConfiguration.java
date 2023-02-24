@@ -33,7 +33,7 @@ public class MqttOutboundConfiguration {
     @ServiceActivator(inputChannel = ChannelName.OUTBOUND)
     public MessageHandler mqttOutbound() {
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(
-                mqttConfiguration.getClientId() + "_producer_" + System.currentTimeMillis(),
+                MqttConfiguration.getBasicClientOptions().getClientId() + "_producer_" + System.currentTimeMillis(),
                 mqttClientFactory);
         DefaultPahoMessageConverter converter = new DefaultPahoMessageConverter();
         // use byte types uniformly

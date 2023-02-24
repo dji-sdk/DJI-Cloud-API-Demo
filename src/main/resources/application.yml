@@ -39,14 +39,19 @@ jwt:
   age: 86400
 
 mqtt:
-  protocol: tcp
-  host: Please enter your ip. # 192.168.1.1
-  port: 1883
-  username: JavaServer
-  password: 123456
-  client-id: 123456
-  # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
-  inbound-topic: sys/product/+/status,thing/product/+/requests
+  # @see com.dji.sample.component.mqtt.model.MqttUseEnum
+  # BASIC parameters are required.
+  BASIC:
+    protocol: MQTT # @see com.dji.sample.component.mqtt.model.MqttProtocolEnum
+    host: Please enter your ip.
+    port: 1883
+    username: JavaServer
+    password: 123456
+    client-id: 123456
+    # If the protocol is ws/wss, this value is required.
+    path:
+    # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
+    inbound-topic: sys/product/+/status,thing/product/+/requests
 
 url:
   manage:
@@ -68,7 +73,7 @@ url:
     prefix: /control
     version: /api/v1
 
-# Tutorial: https://help.aliyun.com/document_detail/100624.htm?spm=a2c4g.11186623.0.0.74075e34eIhK7T#concept-xzh-nzk-2gb
+# Tutorial: https://www.alibabacloud.com/help/en/object-storage-service/latest/use-a-temporary-credential-provided-by-sts-to-access-oss
 oss:
   enable: true
   provider: ali # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
@@ -115,3 +120,10 @@ logging:
 ntp:
   server:
     host: Google.mzr.me
+
+# To create a license for an application: https://developer.dji.com/user/apps/#all
+cloud-api:
+  app:
+    id: Please enter the app id.
+    key: Please enter the app key.
+    license: Please enter the app license.

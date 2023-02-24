@@ -4,7 +4,6 @@ import com.dji.sample.common.error.LiveErrorEnum;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.mqtt.model.ServiceReply;
-import com.dji.sample.component.mqtt.model.StateDataEnum;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
@@ -79,7 +78,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         // Solve timing problems
         for (CapacityDeviceReceiver capacityDeviceReceiver : liveCapacityReceiver.getDeviceList()) {
             long last = (long) Objects.requireNonNullElse(
-                    RedisOpsUtils.get(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + capacityDeviceReceiver.getSn()), 0L);
+                    RedisOpsUtils.get(RedisConst.LIVE_CAPACITY + capacityDeviceReceiver.getSn()), 0L);
             if (last > timestamp) {
                 return;
             }
@@ -126,8 +125,8 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
                         .toString());
                 break;
             case RTSP:
-                String url = receiveReply.getInfo().toString();
-                this.resolveUrlUser(url, live);
+                Object url = Objects.requireNonNullElse(receiveReply.getOutput(), receiveReply.getInfo());
+                this.resolveUrlUser(String.valueOf(url), live);
                 break;
             case UNKNOWN:
                 return ResponseResult.error(LiveErrorEnum.URL_TYPE_NOT_SUPPORTED);
@@ -186,7 +185,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         if (ResponseResult.CODE_SUCCESS != responseResult.getCode()) {
             return responseResult;
         }
-        if (DeviceDomainEnum.GATEWAY.getDesc().equals(responseResult.getData().getDomain())) {
+        if (DeviceDomainEnum.GATEWAY.getVal() == responseResult.getData().getDomain()) {
             return ResponseResult.error(LiveErrorEnum.FUNCTION_NOT_SUPPORT);
         }
 
@@ -232,7 +231,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
             return ResponseResult.error(LiveErrorEnum.NO_AIRCRAFT);
         }
 
-        if (deviceOpt.get().getDomain().equals(DeviceDomainEnum.DOCK.getDesc())) {
+        if (DeviceDomainEnum.DOCK.getVal() == deviceOpt.get().getDomain()) {
             return ResponseResult.success(deviceOpt.get());
         }
         List<DeviceDTO> gatewayList = deviceService.getDevicesByParams(

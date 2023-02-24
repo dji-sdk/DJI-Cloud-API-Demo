@@ -8,11 +8,11 @@ import lombok.Data;
  * @date 2022/6/9
  */
 @Data
-public class FlightTaskProgressReceiver {
+public class WaylineTaskProgressReceiver {
 
-    private FlightTaskProgressExt ext;
+    private WaylineTaskProgressExt ext;
 
-    private FLightTaskProgress progress;
+    private WaylineTaskProgress progress;
 
     private String status;
 

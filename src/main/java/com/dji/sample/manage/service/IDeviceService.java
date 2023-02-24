@@ -180,7 +180,7 @@ public interface IDeviceService {
      * @param domain
      * @return
      */
-    PaginationData<DeviceDTO> getBoundDevicesWithDomain(String workspaceId, Long page, Long pageSize, String domain);
+    PaginationData<DeviceDTO> getBoundDevicesWithDomain(String workspaceId, Long page, Long pageSize, Integer domain);
 
     /**
      * Unbind device base on device's sn.

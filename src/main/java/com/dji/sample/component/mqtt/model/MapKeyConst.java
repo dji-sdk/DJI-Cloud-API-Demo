@@ -33,4 +33,6 @@ public final class MapKeyConst {
 
     public static final String FLIGHT_IDS = "flight_ids";
 
+    public static final String ACL = "acl";
+
 }

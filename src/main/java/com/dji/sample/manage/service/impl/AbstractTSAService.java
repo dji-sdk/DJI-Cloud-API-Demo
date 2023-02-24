@@ -1,7 +1,6 @@
 package com.dji.sample.manage.service.impl;
 
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
@@ -27,9 +26,6 @@ public abstract class AbstractTSAService implements ITSAService {
 
     @Autowired
     protected ObjectMapper mapper;
-
-    @Autowired
-    protected RedisOpsUtils redisOps;
 
     @Autowired
     private IWebSocketManageService webSocketManageService;

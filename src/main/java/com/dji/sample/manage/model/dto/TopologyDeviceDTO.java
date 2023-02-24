@@ -38,5 +38,5 @@ public class TopologyDeviceDTO {
 
     private String gatewaySn;
 
-    private String domain;
+    private Integer domain;
 }

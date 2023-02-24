@@ -91,7 +91,8 @@ public class ControlServiceImpl implements IControlService {
                 serviceReplyOpt, new TypeReference<ServiceReply<EventsOutputReceiver>>() {});
         if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
             return ResponseResult.error(serviceReply.getResult(),
-                    Objects.nonNull(serviceReply.getOutput()) ? serviceReply.getOutput().getStatus() : "error: " + serviceIdentifier);
+                    Objects.nonNull(serviceReply.getOutput()) ? serviceReply.getOutput().getStatus()
+                            : "error: " + serviceIdentifier + serviceReply.getResult());
         }
         if (controlMethodEnum.getProgress()) {
             RedisOpsUtils.setWithExpire(serviceIdentifier + RedisConst.DELIMITER +  bid, sn,

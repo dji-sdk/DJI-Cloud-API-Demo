@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * @author sean
@@ -30,7 +31,7 @@ public class DeviceFirmwareDTO {
 
     private String fileMd5;
 
-    private String deviceName;
+    private List<String> deviceName;
 
     private String releaseNote;
 

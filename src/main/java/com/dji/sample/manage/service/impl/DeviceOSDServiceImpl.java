@@ -2,6 +2,7 @@ package com.dji.sample.manage.service.impl;
 
 import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.redis.RedisConst;
+import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
@@ -58,7 +59,7 @@ public class DeviceOSDServiceImpl extends AbstractTSAService {
     public void handleOSD(CommonTopicReceiver receiver, DeviceDTO device,
                           Collection<ConcurrentWebSocketSession> webSessions,
                           CustomWebSocketMessage<TelemetryDTO> wsMessage) {
-        if (DeviceDomainEnum.SUB_DEVICE.getDesc().equals(device.getDomain())) {
+        if (DeviceDomainEnum.SUB_DEVICE.getVal() == device.getDomain()) {
             wsMessage.setBizCode(BizCodeEnum.DEVICE_OSD.getCode());
 
             OsdSubDeviceReceiver data = mapper.convertValue(receiver.getData(), OsdSubDeviceReceiver.class);
@@ -75,7 +76,7 @@ public class DeviceOSDServiceImpl extends AbstractTSAService {
                 log.warn("Please remount the payload, or restart the drone. Otherwise the data of the payload will not be received.");
             }
 
-            redisOps.setWithExpire(RedisConst.OSD_PREFIX + device.getDeviceSn(), data, RedisConst.DEVICE_ALIVE_SECOND);
+            RedisOpsUtils.setWithExpire(RedisConst.OSD_PREFIX + device.getDeviceSn(), data, RedisConst.DEVICE_ALIVE_SECOND);
             wsMessage.getData().setHost(data);
 
             sendMessageService.sendBatch(webSessions, wsMessage);

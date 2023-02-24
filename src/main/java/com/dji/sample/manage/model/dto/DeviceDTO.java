@@ -31,13 +31,11 @@ public class DeviceDTO {
 
     private String childDeviceSn;
 
-    private String domain;
+    private Integer domain;
 
     private Integer type;
 
     private Integer subType;
-
-    private List<DeviceDTO> gatewaysList;
 
     private List<DevicePayloadDTO> payloadsList;
 

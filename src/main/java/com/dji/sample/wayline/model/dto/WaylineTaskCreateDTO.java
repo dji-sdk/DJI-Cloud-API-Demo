@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class FlightTaskCreateDTO {
+public class WaylineTaskCreateDTO {
 
     private String flightId;
 
@@ -24,9 +24,10 @@ public class FlightTaskCreateDTO {
 
     private Long executeTime;
 
-    private FlightTaskFileDTO file;
+    private WaylineTaskFileDTO file;
 
     private Integer rthAltitude;
 
     private Integer outOfControlAction;
+
 }

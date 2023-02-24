@@ -9,6 +9,8 @@ import com.dji.sample.manage.model.enums.DeviceDomainEnum;
  */
 public final class RedisConst {
 
+    public static final int WAYLINE_JOB_BLOCK_TIME = 600;
+
     private RedisConst() {
 
     }
@@ -35,11 +37,23 @@ public final class RedisConst {
 
     public static final String LOGS_FILE_PREFIX = "logs_file" + DELIMITER;
 
-    public static final String WAYLINE_JOB = "wayline_job";
+    public static final String WAYLINE_JOB_TIMED_EXECUTE = "wayline_job_timed_execute";
+
+    public static final String WAYLINE_JOB_BLOCK_PREFIX = "wayline_job_block" + DELIMITER;
+
+    public static final String WAYLINE_JOB_RUNNING_PREFIX = "wayline_job_running" + DELIMITER;
+
+    public static final String WAYLINE_JOB_PAUSED_PREFIX = "wayline_job_paused" + DELIMITER;
 
     public static final String OSD_PREFIX = "osd" + DELIMITER;
 
     public static final String MEDIA_FILE_PREFIX = "media_file" + DELIMITER;
 
     public static final String MEDIA_HIGHEST_PRIORITY_PREFIX = "media_highest_priority" + DELIMITER;
+
+    public static final String LIVE_CAPACITY = "live_capacity";
+
+    public static final String MQTT_ACL_PREFIX = "mqtt_acl" + DELIMITER;
+
+    public static final String FILE_UPLOADING_PREFIX = "file_uploading" + DELIMITER;
 }

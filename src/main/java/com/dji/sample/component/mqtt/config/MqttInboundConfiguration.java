@@ -1,6 +1,7 @@
 package com.dji.sample.component.mqtt.config;
 
 import com.dji.sample.component.mqtt.model.ChannelName;
+import com.dji.sample.component.mqtt.model.MqttClientOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -29,9 +30,6 @@ import javax.annotation.Resource;
 public class MqttInboundConfiguration {
 
     @Autowired
-    private MqttConfiguration mqttConfiguration;
-
-    @Autowired
     private MqttPahoClientFactory mqttClientFactory;
 
     @Resource(name = ChannelName.INBOUND)
@@ -43,9 +41,10 @@ public class MqttInboundConfiguration {
      */
     @Bean(name = "adapter")
     public MessageProducerSupport mqttInbound() {
+        MqttClientOptions options = MqttConfiguration.getBasicClientOptions();
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                mqttConfiguration.getClientId() + "_consumer_" + System.currentTimeMillis(),
-                mqttClientFactory, mqttConfiguration.getInboundTopic().split(","));
+                options.getClientId() + "_consumer_" + System.currentTimeMillis(),
+                mqttClientFactory, options.getInboundTopic().split(","));
         DefaultPahoMessageConverter converter = new DefaultPahoMessageConverter();
         // use byte types uniformly
         converter.setPayloadAsBytes(true);

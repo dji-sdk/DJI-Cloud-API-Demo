@@ -187,7 +187,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
 
             ZipEntry nextEntry = unzipFile.getNextEntry();
             while (Objects.nonNull(nextEntry)) {
-                boolean isWaylines = (KmzFileProperties.FILE_DIR_FIRST + File.separator + KmzFileProperties.FILE_DIR_SECOND_WAYLINES).equals(nextEntry.getName());
+                boolean isWaylines = (KmzFileProperties.FILE_DIR_FIRST + "/" + KmzFileProperties.FILE_DIR_SECOND_WAYLINES).equals(nextEntry.getName());
                 if (!isWaylines) {
                     nextEntry = unzipFile.getNextEntry();
                     continue;

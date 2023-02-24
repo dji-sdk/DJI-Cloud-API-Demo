@@ -251,4 +251,13 @@ public class RedisOpsUtils {
         return redisTemplate.opsForZSet().score(key, value);
     }
 
+    /**
+     * ZINCRBY
+     * @param key
+     * @param value
+     * @param delta
+     */
+    public static Double zIncrement(String key, Object value, double delta) {
+        return redisTemplate.opsForZSet().incrementScore(key, value, delta);
+    }
 }
