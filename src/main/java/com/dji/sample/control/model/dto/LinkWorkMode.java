@@ -1,7 +1,7 @@
 package com.dji.sample.control.model.dto;
 
 import com.dji.sample.control.model.enums.LinkWorkModeEnum;
-import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
+import com.dji.sample.control.service.impl.RemoteDebugHandler;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,7 +19,7 @@ import java.util.Objects;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LinkWorkMode extends BasicDeviceProperty {
+public class LinkWorkMode extends RemoteDebugHandler {
 
     @JsonProperty("link_workmode")
     private Integer linkWorkMode;

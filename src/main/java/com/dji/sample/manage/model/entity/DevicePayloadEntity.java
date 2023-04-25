@@ -53,4 +53,7 @@ public class DevicePayloadEntity implements Serializable {
     @TableField(value = "payload_desc")
     private String payloadDesc;
 
+    @TableField(value = "control_source")
+    private String controlSource;
+
 }

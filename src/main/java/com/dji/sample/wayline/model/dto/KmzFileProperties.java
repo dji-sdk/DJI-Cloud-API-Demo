@@ -35,5 +35,5 @@ public class KmzFileProperties {
 
     public static final String TAG_PAYLOAD_SUB_ENUM_VALUE = "payloadSubEnumValue";
 
-    public static final String TAG_TEMPLATE_ID = "templateId";
+    public static final String TAG_TEMPLATE_TYPE = "templateType";
 }

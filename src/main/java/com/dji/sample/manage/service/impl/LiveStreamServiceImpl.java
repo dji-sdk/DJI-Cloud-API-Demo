@@ -15,10 +15,7 @@ import com.dji.sample.manage.model.enums.LiveVideoQualityEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.model.receiver.CapacityDeviceReceiver;
 import com.dji.sample.manage.model.receiver.LiveCapacityReceiver;
-import com.dji.sample.manage.service.ICapacityCameraService;
-import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.manage.service.ILiveStreamService;
-import com.dji.sample.manage.service.IWorkspaceService;
+import com.dji.sample.manage.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +49,9 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     @Autowired
     private IMessageSenderService messageSender;
 
+    @Autowired
+    private IDeviceRedisService deviceRedisService;
+
     @Override
     public List<CapacityDeviceDTO> getLiveCapacity(String workspaceId) {
 
@@ -64,7 +64,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
 
         // Query the live capability of each drone.
         return devicesList.stream()
-                .filter(device -> RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
+                .filter(device -> deviceRedisService.checkDeviceOnline(device.getDeviceSn()))
                 .map(device -> CapacityDeviceDTO.builder()
                         .name(Objects.requireNonNullElse(device.getNickname(), device.getDeviceName()))
                         .sn(device.getDeviceSn())
@@ -125,8 +125,8 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
                         .toString());
                 break;
             case RTSP:
-                Object url = Objects.requireNonNullElse(receiveReply.getOutput(), receiveReply.getInfo());
-                this.resolveUrlUser(String.valueOf(url), live);
+                String url = receiveReply.getOutput().toString();
+                this.resolveUrlUser(url, live);
                 break;
             case UNKNOWN:
                 return ResponseResult.error(LiveErrorEnum.URL_TYPE_NOT_SUPPORTED);
@@ -207,7 +207,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         response.setMethod(LiveStreamMethodEnum.LIVE_LENS_CHANGE.getMethod());
         response.setData(liveParam);
 
-        return messageSender.publishWithReply(respTopic, response);
+        return messageSender.publishWithReply(ServiceReply.class, respTopic, response);
     }
 
     /**
@@ -304,7 +304,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         response.setData(liveParam);
         response.setMethod(LiveStreamMethodEnum.LIVE_START_PUSH.getMethod());
 
-        return messageSender.publishWithReply(topic, response);
+        return messageSender.publishWithReply(ServiceReply.class, topic, response);
     }
 
     /**
@@ -323,7 +323,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         response.setMethod(LiveStreamMethodEnum.LIVE_SET_QUALITY.getMethod());
         response.setData(data);
 
-        return messageSender.publishWithReply(respTopic, response);
+        return messageSender.publishWithReply(ServiceReply.class, respTopic, response);
     }
 
     /**
@@ -340,7 +340,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         response.setData(data);
         response.setMethod(LiveStreamMethodEnum.LIVE_STOP_PUSH.getMethod());
 
-        return messageSender.publishWithReply(topic, response);
+        return messageSender.publishWithReply(ServiceReply.class, topic, response);
     }
 
 }

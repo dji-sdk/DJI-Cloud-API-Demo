@@ -25,4 +25,8 @@ public interface ISendMessageService {
      * @param message   message
      */
     void sendBatch(Collection<ConcurrentWebSocketSession> sessions, CustomWebSocketMessage message);
+
+    void sendBatch(String workspaceId, Integer userType, String bizCode, Object data);
+
+    void sendBatch(String workspaceId, String bizCode, Object data);
 }

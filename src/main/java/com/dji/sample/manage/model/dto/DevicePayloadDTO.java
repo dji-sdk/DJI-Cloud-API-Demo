@@ -23,7 +23,11 @@ public class DevicePayloadDTO {
 
     private String payloadName;
 
-    private Integer payloadIndex;
+    private Integer index;
 
     private String payloadDesc;
+
+    private String controlSource;
+
+    private String payloadIndex;
 }

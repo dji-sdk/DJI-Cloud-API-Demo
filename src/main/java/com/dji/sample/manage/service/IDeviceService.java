@@ -2,19 +2,18 @@ package com.dji.sample.manage.service;
 
 import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
+import com.dji.sample.manage.model.enums.DeviceModeCodeEnum;
 import com.dji.sample.manage.model.enums.DeviceSetPropertyEnum;
+import com.dji.sample.manage.model.enums.DockModeCodeEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
-import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 
 import java.util.Collection;
 import java.util.List;
@@ -155,24 +154,6 @@ public interface IDeviceService {
     Boolean bindDevice(DeviceDTO device);
 
     /**
-     * Handle dock binding status requests.
-     * Note: If your business does not need to bind the dock to the organization,
-     *       you can directly reply to the successful message without implementing business logic.
-     * @param receiver
-     * @param headers
-     */
-    void bindStatus(CommonTopicReceiver receiver, MessageHeaders headers);
-
-    /**
-     * Handle dock binding requests.
-     * Note: If your business does not need to bind the dock to the organization,
-     *       you can directly reply to the successful message without implementing business logic.
-     * @param receiver
-     * @param headers
-     */
-    void bindDevice(CommonTopicReceiver receiver, MessageHeaders headers);
-
-    /**
      * Get the binding devices list in one workspace.
      * @param workspaceId
      * @param page
@@ -194,12 +175,6 @@ public interface IDeviceService {
      * @return device
      */
     Optional<DeviceDTO> getDeviceBySn(String sn);
-
-    /**
-     * Update the firmware version information of the device or payload.
-     * @param receiver
-     */
-    void updateFirmwareVersion(FirmwareVersionReceiver receiver);
 
     /**
      * Create job for device firmware updates.
@@ -227,9 +202,31 @@ public interface IDeviceService {
     void deviceOnePropertySet(String topic, DeviceSetPropertyEnum propertyEnum, Map.Entry<String, Object> value);
 
     /**
-     * Determine if the device is online.
-     * @param sn
+     * Check the working status of the dock.
+     * @param dockSn
      * @return
      */
-    Boolean checkDeviceOnline(String sn);
+    DockModeCodeEnum getDockMode(String dockSn);
+
+    /**
+     * Query the working status of the aircraft.
+     * @param deviceSn
+     * @return
+     */
+    DeviceModeCodeEnum getDeviceMode(String deviceSn);
+
+    /**
+     * Check if the dock is in drc mode.
+     * @param dockSn
+     * @return
+     */
+    Boolean checkDockDrcMode(String dockSn);
+
+    /**
+     * Check if the device has flight control.
+     * @param gatewaySn
+     * @return
+     */
+    Boolean checkAuthorityFlight(String gatewaySn);
+
 }

@@ -7,6 +7,7 @@ import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.model.enums.WaylineJobStatusEnum;
 import com.dji.sample.wayline.model.param.CreateJobParam;
+import com.dji.sample.wayline.model.param.UpdateJobParam;
 import org.springframework.messaging.MessageHeaders;
 
 import java.sql.SQLException;
@@ -47,6 +48,14 @@ public interface IWaylineJobService {
      * @return
      */
     ResponseResult publishFlightTask(CreateJobParam param, CustomClaim customClaim) throws SQLException;
+
+    /**
+     * Issue wayline mission to the dock.
+     * @param waylineJob
+     * @return
+     * @throws SQLException
+     */
+    ResponseResult publishOneFlightTask(WaylineJobDTO waylineJob) throws SQLException;
 
     /**
      * Execute the task immediately.
@@ -118,4 +127,19 @@ public interface IWaylineJobService {
      * @param jobId
      */
     void uploadMediaHighestPriority(String workspaceId, String jobId);
+
+    /**
+     * Manually control the execution status of wayline job.
+     * @param workspaceId
+     * @param jobId
+     * @param param
+     */
+    void updateJobStatus(String workspaceId, String jobId, UpdateJobParam param);
+
+    /**
+     * Query the wayline execution status of the dock.
+     * @param dockSn
+     * @return
+     */
+    WaylineJobStatusEnum getWaylineState(String dockSn);
 }

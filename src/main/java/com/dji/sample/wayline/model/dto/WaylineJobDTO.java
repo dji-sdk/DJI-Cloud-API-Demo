@@ -62,5 +62,7 @@ public class WaylineJobDTO {
 
     private Boolean uploading;
 
+    private WaylineTaskConditionDTO conditions;
+
     private String parentId;
 }

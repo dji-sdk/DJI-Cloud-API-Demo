@@ -3,9 +3,7 @@ package com.dji.sample.map.controller;
 import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.ISendMessageService;
-import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.map.model.dto.*;
 import com.dji.sample.map.service.IWorkspaceElementService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,9 +31,6 @@ public class WorkspaceElementController {
 
     @Autowired
     private ISendMessageService sendMessageService;
-
-    @Autowired
-    private IWebSocketManageService webSocketManageService;
 
     /**
      * In the first connection, pilot will send out this http request to obtain the group element list.
@@ -79,14 +74,8 @@ public class WorkspaceElementController {
 
         // Notify all WebSocket connections in this workspace to be updated when an element is created.
         elementService.getElementByElementId(elementCreate.getId())
-                .ifPresent(groupElement ->
-                        sendMessageService.sendBatch(
-                                webSocketManageService.getValueWithWorkspace(workspaceId),
-                                CustomWebSocketMessage.<GroupElementDTO>builder()
-                                        .timestamp(System.currentTimeMillis())
-                                        .bizCode(BizCodeEnum.MAP_ELEMENT_CREATE.getCode())
-                                        .data(groupElement)
-                                        .build()));
+                .ifPresent(groupElement -> sendMessageService.sendBatch(
+                        workspaceId, BizCodeEnum.MAP_ELEMENT_CREATE.getCode(), groupElement));
 
         return ResponseResult.success(new ConcurrentHashMap<>(Map.of("id", elementCreate.getId())));
     }
@@ -115,14 +104,8 @@ public class WorkspaceElementController {
 
         // Notify all WebSocket connections in this workspace to update when there is an element update.
         elementService.getElementByElementId(elementId)
-                .ifPresent(groupElement ->
-                        sendMessageService.sendBatch(
-                                webSocketManageService.getValueWithWorkspace(workspaceId),
-                                CustomWebSocketMessage.<GroupElementDTO>builder()
-                                        .timestamp(System.currentTimeMillis())
-                                        .bizCode(BizCodeEnum.MAP_ELEMENT_UPDATE.getCode())
-                                        .data(groupElement)
-                                        .build()));
+                .ifPresent(groupElement -> sendMessageService.sendBatch(
+                        workspaceId, BizCodeEnum.MAP_ELEMENT_UPDATE.getCode(), groupElement));
         return response;
     }
 
@@ -144,16 +127,11 @@ public class WorkspaceElementController {
         // Notify all WebSocket connections in this workspace to update when an element is deleted.
         if (ResponseResult.CODE_SUCCESS == response.getCode()) {
             elementOpt.ifPresent(element ->
-                    sendMessageService.sendBatch(
-                    webSocketManageService.getValueWithWorkspace(workspaceId),
-                            CustomWebSocketMessage.<WebSocketElementDelDTO>builder()
-                                    .timestamp(System.currentTimeMillis())
-                                    .bizCode(BizCodeEnum.MAP_ELEMENT_DELETE.getCode())
-                                    .data(WebSocketElementDelDTO.builder()
+                    sendMessageService.sendBatch(workspaceId, BizCodeEnum.MAP_ELEMENT_DELETE.getCode(),
+                                    WebSocketElementDelDTO.builder()
                                             .elementId(elementId)
                                             .groupId(element.getGroupId())
-                                            .build())
-                                    .build()));
+                                            .build()));
         }
         return response;
     }
@@ -173,14 +151,9 @@ public class WorkspaceElementController {
         // Notify all WebSocket connections in this workspace to update when elements are deleted.
         if (ResponseResult.CODE_SUCCESS == response.getCode()) {
 
-            sendMessageService.sendBatch(
-                    webSocketManageService.getValueWithWorkspace(workspaceId),
-                    CustomWebSocketMessage.builder()
-                            .timestamp(System.currentTimeMillis())
-                            .bizCode(BizCodeEnum.MAP_GROUP_REFRESH.getCode())
+            sendMessageService.sendBatch(workspaceId, BizCodeEnum.MAP_GROUP_REFRESH.getCode(),
                             // Group ids that need to re-request data
-                            .data(new ConcurrentHashMap<String, String[]>(Map.of("ids", new String[]{groupId})))
-                            .build());
+                            new ConcurrentHashMap<String, String[]>(Map.of("ids", new String[]{groupId})));
         }
         return response;
     }

@@ -20,8 +20,11 @@ public enum DeviceSetPropertyEnum {
 
     DISTANCE_LIMIT_STATUS("distance_limit_status", DistanceLimitStatusReceiver.class),
 
-    OBSTACLE_AVOIDANCE("obstacle_avoidance", ObstacleAvoidanceReceiver.class);
+    OBSTACLE_AVOIDANCE("obstacle_avoidance", ObstacleAvoidanceReceiver.class),
 
+    RTH_ALTITUDE("rth_altitude", RthAltitudeReceiver.class),
+
+    OUT_OF_CONTROL_ACTION("out_of_control_action", OutOfControlActionReceiver.class);
 
     String property;
 

@@ -25,7 +25,7 @@ public class DeviceDTO {
 
     private String workspaceId;
 
-    private String deviceIndex;
+    private String controlSource;
 
     private String deviceDesc;
 
@@ -62,4 +62,6 @@ public class DeviceDTO {
     private Integer firmwareStatus;
 
     private Integer firmwareProgress;
+
+    private String parentSn;
 }

@@ -51,6 +51,8 @@ public class ChannelName {
 
     public static final String INBOUND_EVENTS = "inboundEvents";
 
+    public static final String OUTBOUND_EVENTS = "outboundEvents";
+
     public static final String INBOUND_EVENTS_FLIGHT_TASK_PROGRESS = "inboundEventsFlightTaskProgress";
 
     public static final String INBOUND_EVENTS_FILE_UPLOAD_CALLBACK = "inboundEventsFileUploadCallback";
@@ -76,4 +78,14 @@ public class ChannelName {
     public static final String INBOUND_REQUESTS_CONFIG = "inboundRequestsConfig";
 
     public static final String INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA = "inboundEventsHighestPriorityUploadFlightTaskMedia";
+
+    public static final String INBOUND_EVENTS_FLIGHT_TASK_READY = "inboundEventsFlightTaskReady";
+
+    public static final String INBOUND_EVENTS_FLY_TO_POINT_PROGRESS = "inboundFlyToPointProgress";
+
+    public static final String INBOUND_EVENTS_TAKE_OFF_TO_POINT_PROGRESS = "inboundTakeoffToPointProgress";
+
+    public static final String INBOUND_EVENTS_DRC_STATUS_NOTIFY = "inboundDrcStatusNotify";
+
+    public static final String INBOUND_EVENTS_DRC_MODE_EXIT_NOTIFY = "inboundDrcModeExitNotify";
 }

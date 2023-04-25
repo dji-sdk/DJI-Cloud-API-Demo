@@ -68,7 +68,7 @@ public class DeviceOSDServiceImpl extends AbstractTSAService {
                 Map<String, Object> receiverData = (Map<String, Object>) receiver.getData();
                 data.setPayloads(payloadsList.stream()
                         .map(payload -> mapper.convertValue(
-                                receiverData.getOrDefault(payload.getPayloadName(), Map.of()),
+                                receiverData.getOrDefault(payload.getPayloadIndex(), Map.of()),
                                 OsdPayloadReceiver.class))
                         .collect(Collectors.toList()));
 

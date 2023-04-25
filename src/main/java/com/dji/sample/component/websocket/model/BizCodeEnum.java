@@ -57,7 +57,22 @@ public enum BizCodeEnum {
 
     FILE_UPLOAD_CALLBACK("file_upload_callback"),
 
-    HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA("HIGHEST_PRIORITY_UPLOAD_FLIGHTTASK_MEDIA");
+    FILE_UPLOAD_PROGRESS("fileupload_progress"),
+
+    OTA_PROGRESS("ota_progress"),
+
+    HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA("highest_priority_upload_flighttask_media"),
+
+    CONTROL_SOURCE_CHANGE("control_source_change"),
+
+    FLY_TO_POINT_PROGRESS("fly_to_point_progress"),
+
+    TAKE_OFF_TO_POINT_PROGRESS("takeoff_to_point_progress"),
+
+    DRC_STATUS_NOTIFY("drc_status_notify"),
+
+    JOYSTICK_INVALID_NOTIFY("joystick_invalid_notify")
+    ;
 
     private String code;
 

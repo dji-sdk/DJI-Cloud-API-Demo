@@ -1,5 +1,7 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sample.manage.model.enums.DockDrcStateEnum;
+import com.dji.sample.manage.model.enums.DockModeCodeEnum;
 import lombok.Data;
 
 /**
@@ -40,13 +42,13 @@ public class OsdDockReceiver {
 
     private StorageReceiver storage;
 
-    private Integer modeCode;
+    private DockModeCodeEnum modeCode;
 
     private Integer coverState;
 
     private Integer supplementLightState;
 
-    private Integer emergencyStopState;
+    private Boolean emergencyStopState;
 
     private Integer airConditionerMode;
 
@@ -85,4 +87,6 @@ public class OsdDockReceiver {
     private DockSdrReceiver sdr;
 
     private DockWirelessLinkReceiver wirelessLink;
+
+    private DockDrcStateEnum drcState;
 }

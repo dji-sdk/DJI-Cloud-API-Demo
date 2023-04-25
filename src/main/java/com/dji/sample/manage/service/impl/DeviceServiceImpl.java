@@ -17,6 +17,7 @@ import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.ISendMessageService;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
+import com.dji.sample.control.model.enums.DroneAuthorityEnum;
 import com.dji.sample.manage.dao.IDeviceMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceEntity;
@@ -92,6 +93,12 @@ public class DeviceServiceImpl implements IDeviceService {
     private IDeviceFirmwareService deviceFirmwareService;
 
     @Autowired
+    private ICapacityCameraService capacityCameraService;
+
+    @Autowired
+    private IDeviceRedisService deviceRedisService;
+
+    @Autowired
     @Qualifier("gatewayOSDServiceImpl")
     private ITSAService tsaService;
 
@@ -104,24 +111,23 @@ public class DeviceServiceImpl implements IDeviceService {
         this.subscribeTopicOnline(gatewaySn);
 
         // Only the remote controller is logged in and the aircraft is not connected.
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + gatewaySn;
-
-        boolean exist = RedisOpsUtils.checkExist(key);
-        if (!exist) {
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(gatewaySn);
+        if (deviceOpt.isEmpty()) {
             Optional<DeviceDTO> gatewayOpt = this.getDeviceBySn(gatewaySn);
             if (gatewayOpt.isPresent()) {
                 DeviceDTO value = gatewayOpt.get();
-                RedisOpsUtils.setWithExpire(key, value, RedisConst.DEVICE_ALIVE_SECOND);
+                value.setChildDeviceSn(null);
+                deviceRedisService.setDeviceOnline(value);
                 this.pushDeviceOnlineTopo(value.getWorkspaceId(), gatewaySn, gatewaySn);
                 return true;
             }
 
             // When connecting for the first time
             DeviceEntity gatewayDevice = deviceGatewayConvertToDeviceEntity(gateway);
-            return onlineSaveDevice(gatewayDevice, null).isPresent();
+            return onlineSaveDevice(gatewayDevice, null, null).isPresent();
         }
 
-        DeviceDTO deviceDTO = (DeviceDTO) (RedisOpsUtils.get(key));
+        DeviceDTO deviceDTO = deviceOpt.get();
         String deviceSn = deviceDTO.getChildDeviceSn();
         if (!StringUtils.hasText(deviceSn)) {
             return true;
@@ -134,22 +140,22 @@ public class DeviceServiceImpl implements IDeviceService {
     public Boolean subDeviceOffline(String deviceSn) {
 
         // If no information about this device exists in the cache, the drone is considered to be offline.
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
-        if (!RedisOpsUtils.checkExist(key) || RedisOpsUtils.getExpire(key) <= 0) {
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceSn);
+        if (deviceOpt.isEmpty()) {
             log.debug("The drone is already offline.");
             return true;
         }
-        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(key);
+        DeviceDTO device = deviceOpt.get();
         // Cancel drone-related subscriptions.
         this.unsubscribeTopicOffline(deviceSn);
 
-        payloadService.deletePayloadsByDeviceSn(new ArrayList<>(List.of(deviceSn)));
+        capacityCameraService.deleteCapacityCameraByDeviceSn(deviceSn);
+        deviceRedisService.delDeviceOnline(deviceSn);
+        RedisOpsUtils.del(RedisConst.OSD_PREFIX + deviceSn);
+        deviceRedisService.delHmsKeysBySn(deviceSn);
         // Publish the latest device topology information in the current workspace.
         this.pushDeviceOfflineTopo(device.getWorkspaceId(), deviceSn);
 
-        RedisOpsUtils.del(key);
-        RedisOpsUtils.del(RedisConst.OSD_PREFIX + device.getDeviceSn());
-        RedisOpsUtils.del(RedisConst.HMS_PREFIX + device.getDeviceSn());
         log.debug("{} offline.", deviceSn);
         return true;
     }
@@ -157,13 +163,11 @@ public class DeviceServiceImpl implements IDeviceService {
     @Override
     public Boolean deviceOnline(StatusGatewayReceiver deviceGateway) {
         String deviceSn = deviceGateway.getSubDevices().get(0).getSn();
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
-        // change log:  Use redis instead of
-        long time = RedisOpsUtils.getExpire(key);
-        long gatewayTime = RedisOpsUtils.getExpire(RedisConst.DEVICE_ONLINE_PREFIX + deviceGateway.getSn());
 
-        if (time > 0 && gatewayTime > 0) {
-            RedisOpsUtils.expireKey(key, RedisConst.DEVICE_ALIVE_SECOND);
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceSn);
+        Optional<DeviceDTO> gatewayOpt = deviceRedisService.getDeviceOnline(deviceGateway.getSn());
+
+        if (deviceOpt.isPresent() && gatewayOpt.isPresent()) {
             DeviceDTO device = DeviceDTO.builder().loginTime(LocalDateTime.now()).deviceSn(deviceSn).build();
             DeviceDTO gateway = DeviceDTO.builder()
                     .loginTime(LocalDateTime.now())
@@ -171,7 +175,7 @@ public class DeviceServiceImpl implements IDeviceService {
                     .childDeviceSn(deviceSn).build();
             this.updateDevice(gateway);
             this.updateDevice(device);
-            String workspaceId = ((DeviceDTO)(RedisOpsUtils.get(key))).getWorkspaceId();
+            String workspaceId = deviceOpt.get().getWorkspaceId();
             if (StringUtils.hasText(workspaceId)) {
                 this.subscribeTopicOnline(deviceSn);
                 this.subscribeTopicOnline(deviceGateway.getSn());
@@ -193,14 +197,14 @@ public class DeviceServiceImpl implements IDeviceService {
                 });
 
         DeviceEntity gateway = deviceGatewayConvertToDeviceEntity(deviceGateway);
-        Optional<DeviceEntity> gatewayEntityOpt = onlineSaveDevice(gateway, deviceSn);
+        Optional<DeviceEntity> gatewayEntityOpt = onlineSaveDevice(gateway, deviceSn, null);
         if (gatewayEntityOpt.isEmpty()) {
             log.error("Failed to go online, please check the status data or code logic.");
             return false;
         }
 
         DeviceEntity subDevice = subDeviceConvertToDeviceEntity(deviceGateway.getSubDevices().get(0));
-        Optional<DeviceEntity> subDeviceEntityOpt = onlineSaveDevice(subDevice, null);
+        Optional<DeviceEntity> subDeviceEntityOpt = onlineSaveDevice(subDevice, null, gateway.getDeviceSn());
         if (subDeviceEntityOpt.isEmpty()) {
             log.error("Failed to go online, please check the status data or code logic.");
             return false;
@@ -308,7 +312,7 @@ public class DeviceServiceImpl implements IDeviceService {
 
         devicesList.stream()
                 .filter(gateway -> DeviceDomainEnum.DOCK.getVal() == gateway.getDomain() ||
-                        RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + gateway.getDeviceSn()))
+                        deviceRedisService.checkDeviceOnline(gateway.getDeviceSn()))
                 .forEach(this::spliceDeviceTopo);
 
         return devicesList;
@@ -317,7 +321,7 @@ public class DeviceServiceImpl implements IDeviceService {
     @Override
     public void spliceDeviceTopo(DeviceDTO gateway) {
 
-        gateway.setStatus(RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + gateway.getDeviceSn()));
+        gateway.setStatus(deviceRedisService.checkDeviceOnline(gateway.getDeviceSn()));
 
         // sub device
         if (!StringUtils.hasText(gateway.getChildDeviceSn())) {
@@ -325,7 +329,7 @@ public class DeviceServiceImpl implements IDeviceService {
         }
 
         DeviceDTO subDevice = getDevicesByParams(DeviceQueryParam.builder().deviceSn(gateway.getChildDeviceSn()).build()).get(0);
-        subDevice.setStatus(RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + subDevice.getDeviceSn()));
+        subDevice.setStatus(deviceRedisService.checkDeviceOnline(subDevice.getDeviceSn()));
         gateway.setChildren(subDevice);
 
         // payloads
@@ -362,8 +366,7 @@ public class DeviceServiceImpl implements IDeviceService {
 
         this.getDeviceTopoForPilot(sn)
                 .ifPresent(pilotMessage::setData);
-        boolean exist = RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + sn);
-        pilotMessage.getData().setOnlineStatus(exist);
+        pilotMessage.getData().setOnlineStatus(deviceRedisService.checkDeviceOnline(sn));
         pilotMessage.getData().setGatewaySn(gatewaySn.equals(sn) ? "" : gatewaySn);
 
         sendMessageService.sendBatch(sessions, pilotMessage);
@@ -383,7 +386,7 @@ public class DeviceServiceImpl implements IDeviceService {
                             .key(device.getDomain() + "-" + device.getType() + "-" + device.getSubType())
                             .build())
                     .iconUrls(device.getIconUrl())
-                    .onlineStatus(RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()))
+                    .onlineStatus(deviceRedisService.checkDeviceOnline(device.getDeviceSn()))
                     .boundStatus(device.getBoundStatus())
                     .model(device.getDeviceName())
                     .userId(device.getUserId())
@@ -427,25 +430,24 @@ public class DeviceServiceImpl implements IDeviceService {
             String from = topic.substring((THING_MODEL_PRE + PRODUCT).length(),
                     topic.indexOf(OSD_SUF));
 
-            // Real-time update of device status in memory
-            RedisOpsUtils.expireKey(RedisConst.DEVICE_ONLINE_PREFIX + from, RedisConst.DEVICE_ALIVE_SECOND);
+            Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(from);
 
-            DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + from);
-
-            if (device == null) {
-                Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(from);
+            if (deviceOpt.isEmpty()) {
+                deviceOpt = this.getDeviceBySn(from);
                 if (deviceOpt.isEmpty()) {
+                    log.error("Please restart the drone.");
                     return;
                 }
-                device = deviceOpt.get();
-                if (!StringUtils.hasText(device.getWorkspaceId())) {
+
+                if (!StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
                     this.unsubscribeTopicOffline(from);
                     return;
                 }
-                RedisOpsUtils.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + from, device,
-                        RedisConst.DEVICE_ALIVE_SECOND);
+                deviceRedisService.setDeviceOnline(deviceOpt.get());
                 this.subscribeTopicOnline(from);
             }
+            DeviceDTO device = deviceOpt.get();
+            deviceRedisService.setDeviceOnline(device);
 
             receiver = objectMapper.readValue(payload, CommonTopicReceiver.class);
 
@@ -550,6 +552,7 @@ public class DeviceServiceImpl implements IDeviceService {
                 .version(gateway.getVersion())
                 .domain(gateway.getDomain() != null ?
                         gateway.getDomain() : DeviceDomainEnum.GATEWAY.getVal())
+                .deviceIndex(gateway.getSubDevices().isEmpty() ? null : gateway.getSubDevices().get(0).getIndex())
                 .build();
     }
 
@@ -578,7 +581,6 @@ public class DeviceServiceImpl implements IDeviceService {
                 .deviceType(device.getType())
                 .subType(device.getSubType())
                 .version(device.getVersion())
-                .deviceIndex(device.getIndex())
                 .domain(DeviceDomainEnum.SUB_DEVICE.getVal())
                 .build();
     }
@@ -592,12 +594,12 @@ public class DeviceServiceImpl implements IDeviceService {
         if (entity == null) {
             return null;
         }
-        DeviceDTO.DeviceDTOBuilder deviceDTOBuilder = DeviceDTO.builder()
+        DeviceDTO deviceDTO = DeviceDTO.builder()
                 .deviceSn(entity.getDeviceSn())
                 .childDeviceSn(entity.getChildSn())
                 .deviceName(entity.getDeviceName())
                 .deviceDesc(entity.getDeviceDesc())
-                .deviceIndex(entity.getDeviceIndex())
+                .controlSource(entity.getDeviceIndex())
                 .workspaceId(entity.getWorkspaceId())
                 .type(entity.getDeviceType())
                 .subType(entity.getSubType())
@@ -617,31 +619,43 @@ public class DeviceServiceImpl implements IDeviceService {
                 .firmwareVersion(entity.getFirmwareVersion())
                 .workspaceName(entity.getWorkspaceId() != null ?
                         workspaceService.getWorkspaceByWorkspaceId(entity.getWorkspaceId())
-                                .map(WorkspaceDTO::getWorkspaceName).orElse("") : "");
+                                .map(WorkspaceDTO::getWorkspaceName).orElse("") : "")
+                .firmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal()).build();
 
+        addFirmwareStatus(deviceDTO, entity);
+        return deviceDTO;
+    }
+
+    private void addFirmwareStatus(DeviceDTO deviceDTO, DeviceEntity entity) {
         if (!StringUtils.hasText(entity.getFirmwareVersion())) {
-            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal()).build();
+            return;
         }
         // Query whether the device is updating firmware.
-        Object progress = RedisOpsUtils.get(RedisConst.FIRMWARE_UPGRADING_PREFIX + entity.getDeviceSn());
-        if (Objects.nonNull(progress)) {
-            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.UPGRADING.getVal()).firmwareProgress((int)progress).build();
+        Optional<EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>> progressOpt =
+                deviceRedisService.getFirmwareUpgradingProgress(entity.getDeviceSn());
+        if (progressOpt.isPresent()) {
+            deviceDTO.setFirmwareStatus(DeviceFirmwareStatusEnum.UPGRADING.getVal());
+            deviceDTO.setFirmwareProgress(progressOpt.map(EventsReceiver::getOutput)
+                            .map(EventsOutputProgressReceiver::getProgress)
+                            .map(OutputProgressReceiver::getPercent)
+                            .orElse(0));
+            return;
         }
 
         // First query the latest firmware version of the device model and compare it with the current firmware version
         // to see if it needs to be upgraded.
         Optional<DeviceFirmwareNoteDTO> firmwareReleaseNoteOpt = deviceFirmwareService.getLatestFirmwareReleaseNote(entity.getDeviceName());
-        if (firmwareReleaseNoteOpt.isPresent()) {
-            DeviceFirmwareNoteDTO firmwareNoteDTO = firmwareReleaseNoteOpt.get();
-            if (firmwareNoteDTO.getProductVersion().equals(entity.getFirmwareVersion())) {
-                return deviceDTOBuilder.firmwareStatus(entity.getCompatibleStatus() ?
-                        DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal() :
-                        DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE.getVal()).build();
-            }
-
-            return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NORMAL_UPGRADE.getVal()).build();
+        if (firmwareReleaseNoteOpt.isEmpty()) {
+            deviceDTO.setFirmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal());
+            return;
         }
-        return deviceDTOBuilder.firmwareStatus(DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal()).build();
+        if (entity.getFirmwareVersion().equals(firmwareReleaseNoteOpt.get().getProductVersion())) {
+            deviceDTO.setFirmwareStatus(entity.getCompatibleStatus() ?
+                    DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal() :
+                    DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE.getVal());
+            return;
+        }
+        deviceDTO.setFirmwareStatus(DeviceFirmwareStatusEnum.NORMAL_UPGRADE.getVal());
     }
 
     @Override
@@ -661,14 +675,14 @@ public class DeviceServiceImpl implements IDeviceService {
             return false;
         }
 
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn();
-        if (!RedisOpsUtils.checkExist(key)) {
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(device.getDeviceSn());
+        if (deviceOpt.isEmpty()) {
             return false;
         }
 
-        DeviceDTO redisDevice = (DeviceDTO)RedisOpsUtils.get(key);
+        DeviceDTO redisDevice = deviceOpt.get();
         redisDevice.setWorkspaceId(device.getWorkspaceId());
-        RedisOpsUtils.setWithExpire(key, redisDevice, RedisConst.DEVICE_ALIVE_SECOND);
+        deviceRedisService.setDeviceOnline(redisDevice);
 
         if (DeviceDomainEnum.GATEWAY.getVal() == redisDevice.getDomain()) {
             this.pushDeviceOnlineTopo(webSocketManageService.getValueWithWorkspace(device.getWorkspaceId()),
@@ -686,7 +700,11 @@ public class DeviceServiceImpl implements IDeviceService {
         return true;
     }
 
-    @Override
+    /**
+     * Handle dock binding status requests.
+     * @param receiver
+     * @param headers
+     */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS, outputChannel = ChannelName.OUTBOUND)
     public void bindStatus(CommonTopicReceiver receiver, MessageHeaders headers) {
         List<Map<String, String>> data = ((Map<String, List<Map<String, String>>>) receiver.getData()).get(MapKeyConst.DEVICES);
@@ -715,7 +733,11 @@ public class DeviceServiceImpl implements IDeviceService {
 
     }
 
-    @Override
+    /**
+     * Handle dock binding requests.
+     * @param receiver
+     * @param headers
+     */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND)
     public void bindDevice(CommonTopicReceiver receiver, MessageHeaders headers) {
         Map<String, List<BindDeviceReceiver>> data = objectMapper.convertValue(receiver.getData(),
@@ -732,8 +754,6 @@ public class DeviceServiceImpl implements IDeviceService {
                 drone = device;
             }
         }
-
-        assert dock != null;
 
         Optional<DeviceEntity> dockEntityOpt = this.bindDevice2Entity(DeviceDomainEnum.DOCK.getVal(), dock);
         Optional<DeviceEntity> droneEntityOpt = this.bindDevice2Entity(DeviceDomainEnum.SUB_DEVICE.getVal(), drone);
@@ -780,12 +800,11 @@ public class DeviceServiceImpl implements IDeviceService {
                         .eq(DeviceEntity::getBoundStatus, true));
         List<DeviceDTO> devicesList = pagination.getRecords().stream().map(this::deviceEntityConvertToDTO)
                 .peek(device -> {
-                    device.setStatus(RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn()));
+                    device.setStatus(deviceRedisService.checkDeviceOnline(device.getDeviceSn()));
                     if (StringUtils.hasText(device.getChildDeviceSn())) {
                         Optional<DeviceDTO> childOpt = this.getDeviceBySn(device.getChildDeviceSn());
                         childOpt.ifPresent(child -> {
-                            child.setStatus(
-                                    RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + child.getDeviceSn()));
+                            child.setStatus(deviceRedisService.checkDeviceOnline(child.getDeviceSn()));
                             child.setWorkspaceName(device.getWorkspaceName());
                             device.setChildren(child);
                         });
@@ -797,11 +816,16 @@ public class DeviceServiceImpl implements IDeviceService {
 
     @Override
     public void unbindDevice(String deviceSn) {
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + deviceSn;
-        DeviceDTO redisDevice = (DeviceDTO) RedisOpsUtils.get(key);
-        redisDevice.setWorkspaceId("");
-        RedisOpsUtils.setWithExpire(key, redisDevice, RedisConst.DEVICE_ALIVE_SECOND);
 
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceSn);
+        if (deviceOpt.isPresent()) {
+            subDeviceOffline(deviceSn);
+        } else {
+            deviceOpt = getDeviceBySn(deviceSn);
+        }
+        if (deviceOpt.isEmpty()) {
+            return;
+        }
         DeviceDTO device = DeviceDTO.builder()
                 .deviceSn(deviceSn)
                 .workspaceId("")
@@ -818,11 +842,14 @@ public class DeviceServiceImpl implements IDeviceService {
             return Optional.empty();
         }
         DeviceDTO device = devicesList.get(0);
-        device.setStatus(RedisOpsUtils.checkExist(RedisConst.DEVICE_ONLINE_PREFIX + sn));
+        device.setStatus(deviceRedisService.checkDeviceOnline(sn));
         return Optional.of(device);
     }
 
-    @Override
+    /**
+     * Update the firmware version information of the device or payload.
+     * @param receiver
+     */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
     public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
         // If the reported version is empty, it will not be processed to prevent misleading page.
@@ -851,43 +878,59 @@ public class DeviceServiceImpl implements IDeviceService {
             return ResponseResult.error();
         }
 
-        DeviceOtaCreateParam deviceOtaFirmware = deviceOtaFirmwares.get(0);
-        List<DeviceDTO> devices = getDevicesByParams(DeviceQueryParam.builder().childSn(deviceOtaFirmware.getSn()).build());
-        String gatewaySn = devices.isEmpty() ? deviceOtaFirmware.getSn() : devices.get(0).getDeviceSn();
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceOtaFirmwares.get(0).getSn());
+        if (deviceOpt.isEmpty()) {
+            throw new RuntimeException("Device is offline.");
+        }
+        DeviceDTO device = deviceOpt.get();
+        String gatewaySn = DeviceDomainEnum.DOCK.getVal() == device.getDomain() ? device.getDeviceSn() : device.getParentSn();
 
-        String topic = THING_MODEL_PRE + PRODUCT + gatewaySn + SERVICES_SUF;
+        checkOtaConditions(gatewaySn);
 
-        // The bids in the progress messages reported subsequently are the same.
         String bid = UUID.randomUUID().toString();
-        ServiceReply serviceReply = messageSender.publishWithReply(
-                topic, CommonTopicResponse.<Map<String, List<DeviceOtaCreateParam>>>builder()
-                        .tid(UUID.randomUUID().toString())
-                        .bid(bid)
-                        .timestamp(System.currentTimeMillis())
-                        .method(FirmwareMethodEnum.OTA_CREATE.getMethod())
-                        .data(Map.of(MapKeyConst.DEVICES, deviceOtaFirmwares))
-                        .build());
+        ServiceReply serviceReply = messageSender.publishServicesTopic(
+                gatewaySn, FirmwareMethodEnum.OTA_CREATE.getMethod(), Map.of(MapKeyConst.DEVICES, deviceOtaFirmwares), bid);
         if (serviceReply.getResult() != ResponseResult.CODE_SUCCESS) {
             return ResponseResult.error(serviceReply.getResult(), "Firmware Error Code: " + serviceReply.getResult());
         }
 
         // Record the device state that needs to be updated.
-        deviceOtaFirmwares.forEach(deviceOta -> RedisOpsUtils.setWithExpire(
-                RedisConst.FIRMWARE_UPGRADING_PREFIX + deviceOta.getSn(),
-                bid,
-                RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND));
+        deviceOtaFirmwares.forEach(deviceOta -> deviceRedisService.setFirmwareUpgrading(deviceOta.getSn(),
+                EventsReceiver.<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>builder()
+                        .bid(bid).sn(deviceOta.getSn()).build()));
         return ResponseResult.success();
+    }
+
+    /**
+     * Determine whether the firmware can be upgraded.
+     * @param dockSn
+     */
+    private void checkOtaConditions(String dockSn) {
+        Optional<OsdDockReceiver> deviceOpt = deviceRedisService.getDeviceOsd(dockSn, OsdDockReceiver.class);
+        if (deviceOpt.isEmpty()) {
+            throw new RuntimeException("Dock is offline.");
+        }
+        boolean emergencyStopState = deviceOpt.get().getEmergencyStopState();
+        if (emergencyStopState) {
+            throw new RuntimeException("The emergency stop button of the dock is pressed and can't be upgraded.");
+        }
+
+        DockModeCodeEnum dockMode = this.getDockMode(dockSn);
+        if (DockModeCodeEnum.IDLE != dockMode) {
+            throw new RuntimeException("The current status of the dock can't be upgraded.");
+        }
     }
 
     @Override
     public void devicePropertySet(String workspaceId, String dockSn, DeviceSetPropertyEnum propertyEnum, JsonNode param) {
-        boolean dockOnline = this.checkDeviceOnline(dockSn);
-        if (!dockOnline) {
+        Optional<DeviceDTO> dockOpt = deviceRedisService.getDeviceOnline(dockSn);
+        if (dockOpt.isEmpty()) {
             throw new RuntimeException("Dock is offline.");
         }
-        DeviceDTO deviceDTO = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
-        boolean deviceOnline = this.checkDeviceOnline(deviceDTO.getChildDeviceSn());
-        if (!deviceOnline) {
+        String childSn = dockOpt.get().getChildDeviceSn();
+        boolean deviceOnline = deviceRedisService.checkDeviceOnline(childSn);
+        Optional<OsdSubDeviceReceiver> osdOpt = deviceRedisService.getDeviceOsd(childSn, OsdSubDeviceReceiver.class);
+        if (!deviceOnline || osdOpt.isEmpty()) {
             throw new RuntimeException("Device is offline.");
         }
 
@@ -899,7 +942,6 @@ public class DeviceServiceImpl implements IDeviceService {
         }
 
         String topic = THING_MODEL_PRE + PRODUCT + dockSn + PROPERTY_SUF + SET_SUF;
-        OsdSubDeviceReceiver osd = (OsdSubDeviceReceiver) RedisOpsUtils.get(RedisConst.OSD_PREFIX + deviceDTO.getChildDeviceSn());
         if (!param.isObject()) {
             this.deviceOnePropertySet(topic, propertyEnum, Map.entry(propertyEnum.getProperty(), param));
             return;
@@ -907,7 +949,7 @@ public class DeviceServiceImpl implements IDeviceService {
         // If there are multiple parameters, set them separately.
         for (Iterator<Map.Entry<String, JsonNode>> filed = param.fields(); filed.hasNext(); ) {
             Map.Entry<String, JsonNode> node = filed.next();
-            boolean isPublish = basicDeviceProperty.canPublish(node.getKey(), osd);
+            boolean isPublish = basicDeviceProperty.canPublish(node.getKey(), osdOpt.get());
             if (!isPublish) {
                 continue;
             }
@@ -929,8 +971,7 @@ public class DeviceServiceImpl implements IDeviceService {
                         .tid(UUID.randomUUID().toString())
                         .timestamp(System.currentTimeMillis())
                         .data(value)
-                        .build(),
-                2);
+                        .build());
 
         while (true) {
             reply = (Map<String, Object>) reply.get(value.getKey());
@@ -947,9 +988,32 @@ public class DeviceServiceImpl implements IDeviceService {
 
     }
 
-    public Boolean checkDeviceOnline(String sn) {
-        String key = RedisConst.DEVICE_ONLINE_PREFIX + sn;
-        return RedisOpsUtils.checkExist(key) && RedisOpsUtils.getExpire(key) > 0;
+    @Override
+    public DockModeCodeEnum getDockMode(String dockSn) {
+        return deviceRedisService.getDeviceOsd(dockSn, OsdDockReceiver.class)
+                .map(OsdDockReceiver::getModeCode).orElse(DockModeCodeEnum.DISCONNECTED);
+    }
+
+    @Override
+    public DeviceModeCodeEnum getDeviceMode(String deviceSn) {
+        return deviceRedisService.getDeviceOsd(deviceSn, OsdSubDeviceReceiver.class)
+                .map(OsdSubDeviceReceiver::getModeCode).orElse(DeviceModeCodeEnum.DISCONNECTED);
+    }
+
+    @Override
+    public Boolean checkDockDrcMode(String dockSn) {
+        return deviceRedisService.getDeviceOsd(dockSn, OsdDockReceiver.class)
+                .map(OsdDockReceiver::getDrcState)
+                .orElse(DockDrcStateEnum.DISCONNECTED) != DockDrcStateEnum.DISCONNECTED;
+    }
+
+    @Override
+    public Boolean checkAuthorityFlight(String gatewaySn) {
+        return deviceRedisService.getDeviceOnline(gatewaySn).flatMap(gateway ->
+                Optional.of((DeviceDomainEnum.DOCK.getVal() == gateway.getDomain()
+                        || DeviceDomainEnum.GATEWAY.getVal() == gateway.getDomain())
+                    && ControlSourceEnum.A.getControlSource().equals(gateway.getControlSource())))
+                .orElse(true);
     }
 
     /**
@@ -1038,7 +1102,7 @@ public class DeviceServiceImpl implements IDeviceService {
                 .build();
     }
 
-    private Optional<DeviceEntity> onlineSaveDevice(DeviceEntity device, String childSn) {
+    private Optional<DeviceEntity> onlineSaveDevice(DeviceEntity device, String childSn, String parentSn) {
 
         Optional<DeviceDTO> deviceOpt = this.getDeviceBySn(device.getDeviceSn());
         if (deviceOpt.isEmpty()) {
@@ -1060,19 +1124,46 @@ public class DeviceServiceImpl implements IDeviceService {
         if (saveDeviceOpt.isEmpty()) {
             return saveDeviceOpt;
         }
-        device.setWorkspaceId(saveDeviceOpt.get().getWorkspaceId());
 
-        RedisOpsUtils.setWithExpire(RedisConst.DEVICE_ONLINE_PREFIX + device.getDeviceSn(),
-                DeviceDTO.builder()
-                        .deviceSn(device.getDeviceSn())
-                        .workspaceId(device.getWorkspaceId())
-                        .childDeviceSn(childSn)
-                        .domain(device.getDomain())
-                        .type(device.getDeviceType())
-                        .subType(device.getSubType())
-                        .build(),
-                RedisConst.DEVICE_ALIVE_SECOND);
+        DeviceDTO redisDevice = this.deviceEntityConvertToDTO(saveDeviceOpt.get());
+        redisDevice.setParentSn(parentSn);
+
+        deviceRedisService.setDeviceOnline(redisDevice);
 
         return saveDeviceOpt;
+    }
+
+    /**
+     * Handles messages in the state topic about basic drone data.
+     *
+     * Note: Only the data of the drone payload is handled here. You can handle other data from the drone
+     * according to your business needs.
+     * @param deviceBasic   basic drone data
+     */
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_BASIC, outputChannel = ChannelName.INBOUND_STATE_PAYLOAD)
+    public List<DevicePayloadReceiver> stateBasic(DeviceBasicReceiver deviceBasic) {
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceBasic.getDeviceSn());
+        if (deviceOpt.isEmpty()) {
+            return deviceBasic.getPayloads();
+        }
+        Optional<DeviceDTO> dockOpt = deviceRedisService.getDeviceOnline(deviceOpt.get().getParentSn());
+        if (dockOpt.isEmpty()) {
+            return deviceBasic.getPayloads();
+        }
+        DeviceDTO dock = dockOpt.get();
+        if (!deviceBasic.getControlSource().equals(dock.getControlSource())) {
+            dock.setControlSource(deviceBasic.getControlSource());
+            deviceRedisService.setDeviceOnline(dock);
+
+            sendMessageService.sendBatch(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
+                    BizCodeEnum.CONTROL_SOURCE_CHANGE.getCode(),
+                    DeviceAuthorityDTO.builder()
+                            .controlSource(dock.getControlSource())
+                            .sn(dock.getDeviceSn())
+                            .type(DroneAuthorityEnum.FLIGHT)
+                            .build());
+
+        }
+        return deviceBasic.getPayloads();
     }
 }

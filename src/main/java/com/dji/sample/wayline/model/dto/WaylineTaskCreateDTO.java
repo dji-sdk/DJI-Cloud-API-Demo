@@ -30,4 +30,7 @@ public class WaylineTaskCreateDTO {
 
     private Integer outOfControlAction;
 
+    private WaylineTaskReadyConditionDTO readyConditions;
+
+    private WaylineTaskExecutableConditionDTO executableConditions;
 }

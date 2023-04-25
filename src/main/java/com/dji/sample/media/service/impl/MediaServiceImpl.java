@@ -1,17 +1,17 @@
 package com.dji.sample.media.service.impl;
 
-import com.dji.sample.common.error.CommonErrorEnum;
 import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.*;
+import com.dji.sample.component.mqtt.model.ChannelName;
+import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
+import com.dji.sample.component.mqtt.model.MapKeyConst;
 import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.model.CustomWebSocketMessage;
 import com.dji.sample.component.websocket.service.ISendMessageService;
-import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
+import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sample.media.model.FileUploadCallback;
 import com.dji.sample.media.model.FileUploadDTO;
@@ -22,14 +22,15 @@ import com.dji.sample.media.service.IMediaService;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.service.IWaylineJobService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
  * @date 2021/12/9
  */
 @Service
+@Slf4j
 public class MediaServiceImpl implements IMediaService {
 
     @Autowired
@@ -60,7 +62,7 @@ public class MediaServiceImpl implements IMediaService {
     private ISendMessageService sendMessageService;
 
     @Autowired
-    private IWebSocketManageService webSocketManageService;
+    private IDeviceRedisService deviceRedisService;
 
     @Override
     public Boolean fastUpload(String workspaceId, String fingerprint) {
@@ -90,47 +92,44 @@ public class MediaServiceImpl implements IMediaService {
 
     }
 
-    @Override
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK, outputChannel = ChannelName.OUTBOUND)
-    public void handleFileUploadCallBack(CommonTopicReceiver receiver) {
+    /**
+     * Handle media files messages reported by dock.
+     * @param receiver
+     * @return
+     */
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public CommonTopicReceiver handleFileUploadCallBack(CommonTopicReceiver receiver) {
         FileUploadCallback callback = objectMapper.convertValue(receiver.getData(), FileUploadCallback.class);
 
-        String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + receiver.getGateway()
-                + TopicConst.EVENTS_SUF + TopicConst._REPLY_SUF;
-        CommonTopicResponse<RequestsReply> data = CommonTopicResponse.<RequestsReply>builder()
-                .timestamp(System.currentTimeMillis())
-                .method(EventsMethodEnum.FILE_UPLOAD_CALLBACK.getMethod())
-                .data(RequestsReply.success())
-                .tid(receiver.getTid())
-                .bid(receiver.getBid())
-                .build();
-
         if (callback.getResult() != ResponseResult.CODE_SUCCESS) {
-            messageSenderService.publish(topic, data);
-            return;
+            log.error("Media file upload failed!");
+            return null;
         }
 
         String jobId = callback.getFile().getExt().getFlightId();
 
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(receiver.getGateway());
         MediaFileCountDTO mediaFileCount = (MediaFileCountDTO) RedisOpsUtils.hashGet(RedisConst.MEDIA_FILE_PREFIX + receiver.getGateway(), jobId);
         // duplicate data
-        if (receiver.getBid().equals(mediaFileCount.getBid()) && receiver.getTid().equals(mediaFileCount.getTid())) {
-            messageSenderService.publish(topic, data);
-            return;
+        if (deviceOpt.isEmpty()
+                || (Objects.nonNull(mediaFileCount) && receiver.getBid().equals(mediaFileCount.getBid())
+                && receiver.getTid().equals(mediaFileCount.getTid()))) {
+            return receiver;
         }
 
-        DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + receiver.getGateway());
+
+        DeviceDTO device = deviceOpt.get();
         Optional<WaylineJobDTO> jobOpt = waylineJobService.getJobByJobId(device.getWorkspaceId(), jobId);
         if (jobOpt.isPresent()) {
             boolean isSave = parseMediaFile(callback, jobOpt.get());
             if (!isSave) {
-                data.setData(RequestsReply.error(CommonErrorEnum.ILLEGAL_ARGUMENT));
+                log.error("Failed to save the file to the database, please check the data manually.");
+                return null;
             }
         }
 
-        messageSenderService.publish(topic, data);
-
-        notifyUploadedCount(mediaFileCount, receiver, jobId);
+        notifyUploadedCount(mediaFileCount, receiver, jobId, device);
+        return receiver;
     }
 
     /**
@@ -139,7 +138,11 @@ public class MediaServiceImpl implements IMediaService {
      * @param receiver
      * @param jobId
      */
-    private void notifyUploadedCount(MediaFileCountDTO mediaFileCount, CommonTopicReceiver receiver, String jobId) {
+    private void notifyUploadedCount(MediaFileCountDTO mediaFileCount, CommonTopicReceiver receiver, String jobId, DeviceDTO dock) {
+        // Do not notify when files that do not belong to the route are uploaded.
+        if (Objects.isNull(mediaFileCount)) {
+            return;
+        }
         mediaFileCount.setBid(receiver.getBid());
         mediaFileCount.setTid(receiver.getTid());
         mediaFileCount.setUploadedCount(mediaFileCount.getUploadedCount() + 1);
@@ -163,13 +166,8 @@ public class MediaServiceImpl implements IMediaService {
             RedisOpsUtils.hashSet(key, jobId, mediaFileCount);
         }
 
-        DeviceDTO dock = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + receiver.getGateway());
-        sendMessageService.sendBatch(webSocketManageService.getValueWithWorkspaceAndUserType(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
-                CustomWebSocketMessage.builder()
-                        .bizCode(BizCodeEnum.FILE_UPLOAD_CALLBACK.getCode())
-                        .timestamp(System.currentTimeMillis())
-                        .data(mediaFileCount)
-                        .build());
+        sendMessageService.sendBatch(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
+                        BizCodeEnum.FILE_UPLOAD_CALLBACK.getCode(), mediaFileCount);
     }
 
     private Boolean parseMediaFile(FileUploadCallback callback, WaylineJobDTO job) {
@@ -184,22 +182,18 @@ public class MediaServiceImpl implements IMediaService {
         return fileService.saveFile(job.getWorkspaceId(), callback.getFile()) > 0;
     }
 
-    @Override
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA, outputChannel = ChannelName.OUTBOUND)
-    public void handleHighestPriorityUploadFlightTaskMedia(CommonTopicReceiver receiver, MessageHeaders headers) {
+    /**
+     * Handles the highest priority message about media uploads.
+     * @param receiver
+     * @param headers
+     * @return
+     */
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public CommonTopicReceiver handleHighestPriorityUploadFlightTaskMedia(CommonTopicReceiver receiver, MessageHeaders headers) {
         Map map = objectMapper.convertValue(receiver.getData(), Map.class);
         if (map.isEmpty() || !map.containsKey(MapKeyConst.FLIGHT_ID)) {
-            return;
+            return null;
         }
-
-        messageSenderService.publish(headers.get(MqttHeaders.RECEIVED_TOPIC) + TopicConst._REPLY_SUF,
-                CommonTopicResponse.builder()
-                        .data(RequestsReply.success())
-                        .method(receiver.getMethod())
-                        .timestamp(System.currentTimeMillis())
-                        .bid(receiver.getBid())
-                        .tid(receiver.getTid())
-                        .build());
 
         String dockSn = receiver.getGateway();
         String jobId = map.get(MapKeyConst.FLIGHT_ID).toString();
@@ -209,7 +203,7 @@ public class MediaServiceImpl implements IMediaService {
             countDTO = (MediaFileCountDTO) RedisOpsUtils.get(key);
             if (jobId.equals(countDTO.getJobId())) {
                 RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
-                return;
+                return null;
             }
 
             countDTO.setPreJobId(countDTO.getJobId());
@@ -218,13 +212,13 @@ public class MediaServiceImpl implements IMediaService {
 
         RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
 
-        DeviceDTO dock = (DeviceDTO) RedisOpsUtils.get(RedisConst.DEVICE_ONLINE_PREFIX + dockSn);
-        sendMessageService.sendBatch(webSocketManageService.getValueWithWorkspaceAndUserType(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal()),
-                CustomWebSocketMessage.builder()
-                        .timestamp(System.currentTimeMillis())
-                        .bizCode(BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode())
-                        .data(countDTO)
-                        .build());
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(receiver.getGateway());
+        if (deviceOpt.isEmpty()) {
+            return null;
+        }
+        sendMessageService.sendBatch(deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(),
+                        BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode(), countDTO);
 
+        return receiver;
     }
 }

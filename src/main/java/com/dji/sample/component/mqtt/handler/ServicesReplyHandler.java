@@ -36,13 +36,16 @@ public class ServicesReplyHandler {
         byte[] payload = (byte[])message.getPayload();
 
         CommonTopicReceiver receiver = mapper.readValue(payload, new TypeReference<CommonTopicReceiver>() {});
+        ServiceReply reply;
         if (LogsFileMethodEnum.FILE_UPLOAD_LIST.getMethod().equals(receiver.getMethod())) {
             LogsFileUploadList list = mapper.convertValue(receiver.getData(), new TypeReference<LogsFileUploadList>() {});
-            receiver.setData(list);
+            reply = new ServiceReply();
+            reply.setResult(list.getResult());
+            reply.setOutput(list.getFiles());
         } else {
-            ServiceReply reply = mapper.convertValue(receiver.getData(), new TypeReference<ServiceReply>() {});
-            receiver.setData(reply);
+            reply = mapper.convertValue(receiver.getData(), new TypeReference<ServiceReply>() {});
         }
+        receiver.setData(reply);
         Chan<CommonTopicReceiver<?>> chan = Chan.getInstance();
         // Put the message to the chan object.
         chan.put(receiver);

@@ -12,6 +12,7 @@ import com.dji.sample.wayline.dao.IWaylineFileMapper;
 import com.dji.sample.wayline.model.dto.KmzFileProperties;
 import com.dji.sample.wayline.model.dto.WaylineFileDTO;
 import com.dji.sample.wayline.model.entity.WaylineFileEntity;
+import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
 import com.dji.sample.wayline.model.param.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
 import org.dom4j.Document;
@@ -187,7 +188,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
 
             ZipEntry nextEntry = unzipFile.getNextEntry();
             while (Objects.nonNull(nextEntry)) {
-                boolean isWaylines = (KmzFileProperties.FILE_DIR_FIRST + "/" + KmzFileProperties.FILE_DIR_SECOND_WAYLINES).equals(nextEntry.getName());
+                boolean isWaylines = (KmzFileProperties.FILE_DIR_FIRST + "/" + KmzFileProperties.FILE_DIR_SECOND_TEMPLATE).equals(nextEntry.getName());
                 if (!isWaylines) {
                     nextEntry = unzipFile.getNextEntry();
                     continue;
@@ -208,11 +209,11 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                 String subType = droneNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_SUB_ENUM_VALUE);
                 String payloadType = payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_ENUM_VALUE);
                 String payloadSubType = payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_SUB_ENUM_VALUE);
-                String templateId = document.valueOf("//" + KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_TEMPLATE_ID);
+                String templateType = document.valueOf("//" + KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_TEMPLATE_TYPE);
 
                 if (!StringUtils.hasText(type) || !StringUtils.hasText(subType) ||
                         !StringUtils.hasText(payloadSubType) || !StringUtils.hasText(payloadType) ||
-                        !StringUtils.hasText(templateId)) {
+                        !StringUtils.hasText(templateType)) {
                     throw new RuntimeException("The file format is incorrect.");
                 }
 
@@ -222,7 +223,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                         .objectKey(OssConfiguration.objectDirPrefix + File.separator + filename)
                         .name(filename.substring(0, filename.lastIndexOf(WAYLINE_FILE_SUFFIX)))
                         .sign(DigestUtils.md5DigestAsHex(file.getInputStream()))
-                        .templateTypes(List.of(Integer.parseInt(templateId)))
+                        .templateTypes(List.of(WaylineTemplateTypeEnum.find(templateType).map(WaylineTemplateTypeEnum::getVal).orElse(-1)))
                         .build());
             }
 

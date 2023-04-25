@@ -25,8 +25,6 @@ public interface IWorkspaceService {
 
     /**
      * Handle the request for obtaining the organization information corresponding to the device binding.
-     * Note: If your business does not need to bind the dock to the organization,
-     *       you can directly reply to the successful message without implementing business logic.
      * @param receiver
      */
     void replyOrganizationGet(CommonTopicReceiver receiver, MessageHeaders headers);

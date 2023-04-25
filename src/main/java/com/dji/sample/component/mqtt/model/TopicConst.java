@@ -34,4 +34,9 @@ public class TopicConst {
 
     public static final String REGEX_SN = "[A-Za-z0-9]+";
 
+    public static final String DRC = "/drc";
+
+    public static final String UP = "/up";
+
+    public static final String DOWN = "/down";
 }

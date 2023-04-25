@@ -2,6 +2,8 @@ package com.dji.sample.manage.model.enums;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+
 /**
  *
  * @author sean.zhou
@@ -17,11 +19,17 @@ public enum DeviceDomainEnum {
 
     PAYLOAD(1),
 
-    DOCK (3);
+    DOCK (3),
+
+    UNKNOWN(-1);
 
     int val;
 
     DeviceDomainEnum(int val) {
         this.val = val;
+    }
+
+    public static DeviceDomainEnum find(int val) {
+        return Arrays.stream(values()).filter(domainEnum -> domainEnum.val == val).findAny().orElse(UNKNOWN);
     }
 }

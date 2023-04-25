@@ -38,20 +38,6 @@ public enum HmsEnum {
     }
 
     @Getter
-    public enum DomainType {
-        DRONE_NEST("drone_nest"),
-
-        DRONE("drone");
-
-        private String domain;
-
-        DomainType(String domain) {
-            this.domain = domain;
-        }
-
-    }
-
-    @Getter
     public enum HmsFaqIdEnum {
 
         DOCK_TIP("dock_tip_"),

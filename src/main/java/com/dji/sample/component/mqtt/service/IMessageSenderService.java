@@ -2,6 +2,7 @@ package com.dji.sample.component.mqtt.service;
 
 import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.component.mqtt.model.ServiceReply;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * @author sean.zhou
@@ -26,15 +27,16 @@ public interface IMessageSenderService {
     void publish(String topic, int qos, CommonTopicResponse response);
 
     /**
-     * Send live streaming start message and receive a response at the same time.
+     * Send message and receive a response at the same time.
+     * @param clazz
      * @param topic
      * @param response  notification of whether the start is successful.
      * @return
      */
-    ServiceReply publishWithReply(String topic, CommonTopicResponse response);
+    <T> T publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response);
 
     /**
-     * Send live streaming start message and receive a response at the same time.
+     * Send message and receive a response at the same time.
      * @param clazz
      * @param topic
      * @param response
@@ -43,4 +45,46 @@ public interface IMessageSenderService {
      * @return
      */
     <T> T publishWithReply(Class<T> clazz, String topic, CommonTopicResponse response, int retryTime);
+
+    /**
+     * Used exclusively for sending messages for services.
+     * @param clazz The generic class for ServiceReply.
+     * @param sn
+     * @param method
+     * @param data
+     * @param bid
+     * @param <T>
+     * @return
+     */
+    <T> ServiceReply<T> publishServicesTopic(TypeReference<T> clazz, String sn, String method, Object data, String bid);
+
+    /**
+     * Used exclusively for sending messages for services, and does not set the received subtype.
+     * @param sn
+     * @param method
+     * @param data
+     * @param bid
+     * @return
+     */
+    ServiceReply publishServicesTopic(String sn, String method, Object data, String bid);
+
+    /**
+     * Used exclusively for sending messages for services.
+     * @param clazz The generic class for ServiceReply.
+     * @param sn
+     * @param method
+     * @param data
+     * @param <T>
+     * @return
+     */
+    <T> ServiceReply<T> publishServicesTopic(TypeReference<T> clazz, String sn, String method, Object data);
+
+    /**
+     * Used exclusively for sending messages for services, and does not set the received subtype.
+     * @param sn
+     * @param method
+     * @param data
+     * @return
+     */
+    ServiceReply publishServicesTopic(String sn, String method, Object data);
 }

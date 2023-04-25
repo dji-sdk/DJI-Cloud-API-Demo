@@ -1,9 +1,7 @@
 package com.dji.sample.control.model.enums;
 
-import com.dji.sample.control.model.dto.AlarmState;
-import com.dji.sample.control.model.dto.BatteryStoreMode;
-import com.dji.sample.control.model.dto.LinkWorkMode;
-import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
+import com.dji.sample.control.model.dto.*;
+import com.dji.sample.control.service.impl.RemoteDebugHandler;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -14,9 +12,9 @@ import java.util.Arrays;
  * @date 2022/11/14
  */
 @Getter
-public enum RemoteControlMethodEnum {
+public enum RemoteDebugMethodEnum {
 
-    DEBUG_MODE_OPEN("debug_mode_open", false, null),
+    DEBUG_MODE_OPEN("debug_mode_open", false, RemoteDebugOpenState.class),
 
     DEBUG_MODE_CLOSE("debug_mode_close", false, null),
 
@@ -24,7 +22,7 @@ public enum RemoteControlMethodEnum {
 
     SUPPLEMENT_LIGHT_CLOSE("supplement_light_close", false, null),
 
-    RETURN_HOME("return_home", false, null),
+    RETURN_HOME("return_home", false, ReturnHomeState.class),
 
     DEVICE_REBOOT("device_reboot", true, null),
 
@@ -64,16 +62,16 @@ public enum RemoteControlMethodEnum {
 
     private Boolean progress;
     
-    private Class<? extends BasicDeviceProperty> clazz;
+    private Class<? extends RemoteDebugHandler> clazz;
 
-    RemoteControlMethodEnum(String method, Boolean progress, Class<? extends BasicDeviceProperty> clazz) {
+    RemoteDebugMethodEnum(String method, Boolean progress, Class<? extends RemoteDebugHandler> clazz) {
         this.method = method;
         this.progress = progress;
         this.clazz = clazz;
     }
 
-    public static RemoteControlMethodEnum find(String method) {
-        return Arrays.stream(RemoteControlMethodEnum.values())
+    public static RemoteDebugMethodEnum find(String method) {
+        return Arrays.stream(RemoteDebugMethodEnum.values())
                 .filter(methodEnum -> methodEnum.method.equals(method))
                 .findAny()
                 .orElse(UNKNOWN);

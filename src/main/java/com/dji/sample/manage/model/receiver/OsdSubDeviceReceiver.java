@@ -1,5 +1,8 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sample.manage.model.enums.DeviceModeCodeEnum;
+import com.dji.sample.manage.model.enums.DroneRcLostActionEnum;
+import com.dji.sample.manage.model.enums.WaylineRcLostActionEnum;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -41,7 +44,7 @@ public class OsdSubDeviceReceiver {
 
     private Double longitude;
 
-    private Integer modeCode;
+    private DeviceModeCodeEnum modeCode;
 
     private Double totalFlightDistance;
 
@@ -67,4 +70,15 @@ public class OsdSubDeviceReceiver {
 
     private ObstacleAvoidanceReceiver obstacleAvoidance;
 
+    private Long activationTime;
+
+    private List<OsdCameraReceiver> cameras;
+
+    private DroneRcLostActionEnum rcLostAction;
+
+    private Integer rthAltitude;
+
+    private Integer totalFlightSorties;
+
+    private WaylineRcLostActionEnum exitWaylineWhenRcLost;
 }

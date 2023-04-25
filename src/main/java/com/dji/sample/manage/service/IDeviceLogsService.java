@@ -74,8 +74,9 @@ public interface IDeviceLogsService {
      * Handle logs file upload progress.
      * @param receiver
      * @param headers
+     * @return
      */
-    void handleFileUploadProgress(CommonTopicReceiver receiver, MessageHeaders headers);
+    CommonTopicReceiver handleFileUploadProgress(CommonTopicReceiver receiver, MessageHeaders headers);
 
     /**
      * Update status, which is updated when the logs upload succeeds or fails.

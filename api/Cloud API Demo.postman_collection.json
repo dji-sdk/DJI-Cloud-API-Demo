@@ -887,7 +887,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2NzAzMTU2MDEsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2NzA0MDIwMDEsImlhdCI6MTY3MDMxNTYwMSwidXNlcm5hbWUiOiJhZG1pblBDIn0.yh8SkHZVsoIXo_vtlTGNB-ZX92XayalGe_q7mNRVcdI",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2ODIyMzI5MDYsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE3Njg2MzI5MDYsImlhdCI6MTY4MjIzMjkwNiwidXNlcm5hbWUiOiJhZG1pblBDIn0.ilO-3PcvWAX9r8z3AR4VAw3kVhavYjiTx_187ACBc1M",
 						"type": "string"
 					},
 					{
@@ -1537,7 +1537,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njg2NTk4MjYsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njg3NDYyMjYsImlhdCI6MTY2ODY1OTgyNiwidXNlcm5hbWUiOiJhZG1pblBDIn0.ykCpfJcReeb3etUzmNMQk1n0vaoDT6dl47J_aHRoTbU",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2ODAyNjAxNTYsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE3NjY2NjAxNTYsImlhdCI6MTY4MDI2MDE1NiwidXNlcm5hbWUiOiJhZG1pblBDIn0._QhvfhBxxfQN7xpFqZma1rCYbBtouo2pErtm8737L_8",
 						"type": "string"
 					},
 					{
@@ -1578,7 +1578,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"\",\r\n    \"file_id\": \"\",\r\n    \"dock_sn\": \"\",\r\n    \"wayline_type\": 0,\r\n    \"task_type\": 0,\r\n    \"execute_time\": 123456789123,\r\n    \"rth_altitude\": 20,\r\n    \"out_of_control_action\": 1\r\n}",
+							"raw": "{\r\n    \"name\": \"\",\r\n    \"file_id\": \"\",\r\n    \"dock_sn\": \"\",\r\n    \"wayline_type\": 0,\r\n    \"task_type\": 0,\r\n    \"task_days\": [1676029468],\r\n    \"task_periods\": [[1676029468]],\r\n    \"rth_altitude\": 20,\r\n    \"out_of_control_action\": 1\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1679,6 +1679,64 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Pause Job",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"jobs",
+								"{{job_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resume Job",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"status\": 1\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/jobs/{{job_id}}",
+							"host": [
+								"{{base_url}}{{wayline_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"jobs",
+								"{{job_id}}"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -1686,7 +1744,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njg2NTk4MjYsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njg3NDYyMjYsImlhdCI6MTY2ODY1OTgyNiwidXNlcm5hbWUiOiJhZG1pblBDIn0.ykCpfJcReeb3etUzmNMQk1n0vaoDT6dl47J_aHRoTbU",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Nzg4NjM0NzMsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE3NjUyNjM0NzMsImlhdCI6MTY3ODg2MzQ3MywidXNlcm5hbWUiOiJhZG1pblBDIn0.r3ODgJtAHxrBCzDnCwTDCdUq8hLyfIUiDYzasYAIUII",
 						"type": "string"
 					},
 					{
@@ -1727,7 +1785,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"action\": 0\r\n}",
+							"raw": "",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1735,7 +1793,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/alarm_state_switch",
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/return_home",
 							"host": [
 								"{{base_url}}{{control_version}}"
 							],
@@ -1743,7 +1801,250 @@
 								"devices",
 								"{{device_sn}}",
 								"jobs",
-								"alarm_state_switch"
+								"return_home"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Web Drc Connect",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"client_id\": \"xxx\",\r\n    \"expire_sec\": 1800\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/workspaces/{{workspace_id}}/drc/connect",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"drc",
+								"connect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Enter Drc Mode",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"client_id\": \"\",\r\n    \"dock_sn\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/workspaces/{{workspace_id}}/drc/enter",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"drc",
+								"enter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Drc Mode Exit",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"client_id\": \"\",\r\n    \"dock_sn\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/workspaces/{{workspace_id}}/drc/exit",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"drc",
+								"exit"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fly to Point",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"max_speed\": 15,\r\n    \"points\":[\r\n        {\r\n            \"latitude\": 22.5818,\r\n            \"longitude\": 113.9394,\r\n            \"height\": 20\r\n        }\r\n    ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/fly-to-point",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"jobs",
+								"fly-to-point"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Flying to Point",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/fly-to-point",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"jobs",
+								"fly-to-point"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Take off to Point",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"target_latitude\": 22.579,\r\n    \"target_longitude\": 113.9392,\r\n    \"target_height\": 20,\r\n    \"security_takeoff_height\": 20,\r\n    \"rth_altitude\": 20,\r\n    \"rc_lost_action\": 0,\r\n    \"exit_wayline_when_rc_lost\": 0,\r\n    \"max_speed\": 12\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/jobs/takeoff-to-point",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"jobs",
+								"takeoff-to-point"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Payload Commands",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"cmd\":\"camera_mode_switch\",\r\n    \"data\":{\r\n        \"payload_index\":\"53-0-0\",\r\n        \"camera_mode\": 1\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/payload/commands",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"payload",
+								"commands"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Flight Authority Grab",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/authority/flight",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"authority",
+								"flight"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Payload Authority Grab",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"payload_index\":\"53-0-0\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{control_version}}/devices/{{device_sn}}/authority/payload",
+							"host": [
+								"{{base_url}}{{control_version}}"
+							],
+							"path": [
+								"devices",
+								"{{device_sn}}",
+								"authority",
+								"payload"
 							]
 						}
 					},
@@ -1755,7 +2056,7 @@
 				"apikey": [
 					{
 						"key": "value",
-						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2Njk2MzMzMzQsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE2Njk3MTk3MzQsImlhdCI6MTY2OTYzMzMzNCwidXNlcm5hbWUiOiJhZG1pblBDIn0.OoIfdpyI5eL6bFm8akq8_stzClQU41YpIJkx6_kxVHU",
+						"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3b3Jrc3BhY2VfaWQiOiJlM2RlYTBmNS0zN2YyLTRkNzktYWU1OC00OTBhZjMyMjgwNjkiLCJzdWIiOiJDbG91ZEFwaVNhbXBsZSIsInVzZXJfdHlwZSI6IjEiLCJuYmYiOjE2ODIyMzI5MDYsImxvZyI6IkxvZ2dlcltjb20uZGppLnNhbXBsZS5jb21tb24ubW9kZWwuQ3VzdG9tQ2xhaW1dIiwiaXNzIjoiREpJIiwiaWQiOiJhMTU1OWU3Yy04ZGQ4LTQ3ODAtYjk1Mi0xMDBjYzQ3OTdkYTIiLCJleHAiOjE3Njg2MzI5MDYsImlhdCI6MTY4MjIzMjkwNiwidXNlcm5hbWUiOiJhZG1pblBDIn0.ilO-3PcvWAX9r8z3AR4VAw3kVhavYjiTx_187ACBc1M",
 						"type": "string"
 					},
 					{

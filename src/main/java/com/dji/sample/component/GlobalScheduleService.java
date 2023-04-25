@@ -7,6 +7,7 @@ import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sample.wayline.service.IWaylineJobService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,11 +33,12 @@ public class GlobalScheduleService {
 
     @Autowired
     private IWaylineJobService waylineJobService;
-
+    @Autowired
+    private ObjectMapper mapper;
     /**
      * Check the status of the devices every 30 seconds. It is recommended to use cache.
      */
-    @Scheduled(initialDelay = 30, fixedRate = 30, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(initialDelay = 10, fixedRate = 30, timeUnit = TimeUnit.SECONDS)
     private void deviceStatusListen() {
         int start = RedisConst.DEVICE_ONLINE_PREFIX.length();
 
@@ -49,8 +51,9 @@ public class GlobalScheduleService {
                 } else {
                     deviceService.unsubscribeTopicOffline(key.substring(start));
                     deviceService.pushDeviceOfflineTopo(device.getWorkspaceId(), device.getDeviceSn());
-                    RedisOpsUtils.hashDel(RedisConst.LIVE_CAPACITY, new String[]{key});
-                    RedisOpsUtils.del(RedisConst.HMS_PREFIX + key);
+                    RedisOpsUtils.hashDel(RedisConst.LIVE_CAPACITY, new String[]{device.getDeviceSn()});
+                    RedisOpsUtils.del(RedisConst.HMS_PREFIX + device.getDeviceSn());
+                    RedisOpsUtils.del(RedisConst.OSD_PREFIX + device.getDeviceSn());
                 }
                 RedisOpsUtils.del(key);
             }

@@ -1,6 +1,5 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.component.mqtt.model.StateDataEnum;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.CapacityCameraDTO;
@@ -36,20 +35,19 @@ public class CapacityCameraServiceImpl implements ICapacityCameraService {
 
     @Override
     public List<CapacityCameraDTO> getCapacityCameraByDeviceSn(String deviceSn) {
-        return (List<CapacityCameraDTO>) RedisOpsUtils.hashGet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn);
+        return (List<CapacityCameraDTO>) RedisOpsUtils.hashGet(RedisConst.LIVE_CAPACITY, deviceSn);
     }
 
     @Override
     public Boolean deleteCapacityCameraByDeviceSn(String deviceSn) {
-        return RedisOpsUtils.hashDel(StateDataEnum.LIVE_CAPACITY.getDesc(), new String[]{deviceSn});
+        return RedisOpsUtils.hashDel(RedisConst.LIVE_CAPACITY, new String[]{deviceSn});
     }
 
     @Override
     public void saveCapacityCameraReceiverList(List<CapacityCameraReceiver> capacityCameraReceivers, String deviceSn, Long timestamp) {
         List<CapacityCameraDTO> capacity = capacityCameraReceivers.stream()
                 .map(this::receiver2Dto).collect(Collectors.toList());
-        RedisOpsUtils.hashSet(StateDataEnum.LIVE_CAPACITY.getDesc(), deviceSn, capacity);
-        RedisOpsUtils.setWithExpire(StateDataEnum.LIVE_CAPACITY + RedisConst.DELIMITER + deviceSn, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
+        RedisOpsUtils.hashSet(RedisConst.LIVE_CAPACITY, deviceSn, capacity);
     }
 
     @Override

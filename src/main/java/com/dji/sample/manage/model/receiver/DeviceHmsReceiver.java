@@ -14,8 +14,6 @@ public class DeviceHmsReceiver {
 
     private String deviceType;
 
-    private String domainType;
-
     private Integer imminent;
 
     private Integer inTheSky;

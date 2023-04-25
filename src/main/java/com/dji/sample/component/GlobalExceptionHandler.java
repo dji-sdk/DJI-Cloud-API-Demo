@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public ResponseResult methodArgumentNotValidExceptionHandler(BindException e) {
         e.printStackTrace();
-        return ResponseResult.error(e.getBindingResult().getAllErrors().get(0).getDefaultMessage());
+        return ResponseResult.error(e.getFieldError().getField() + e.getFieldError().getDefaultMessage());
     }
 
 }

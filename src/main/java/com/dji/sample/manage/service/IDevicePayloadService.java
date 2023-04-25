@@ -55,15 +55,16 @@ public interface IDevicePayloadService {
     void updateFirmwareVersion(FirmwareVersionReceiver receiver);
 
     /**
-     * Handle the topic that contains the payloads field in the state, and save the payloads data.
-     * @param payloadReceiverList
-     * @param timestamp
-     */
-    void saveDeviceBasicPayload(List<DevicePayloadReceiver> payloadReceiverList, Long timestamp);
-
-    /**
      * Delete payload data based on payload sn.
      * @param payloadSns
      */
     void deletePayloadsByPayloadsSn(Collection<String> payloadSns);
+
+    /**
+     * Check if the device has payload control.
+     * @param deviceSn
+     * @param payloadIndex
+     * @return
+     */
+    Boolean checkAuthorityPayload(String deviceSn, String payloadIndex);
 }

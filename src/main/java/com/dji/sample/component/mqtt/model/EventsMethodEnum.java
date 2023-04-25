@@ -45,6 +45,16 @@ public enum EventsMethodEnum {
 
     HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA("highest_priority_upload_flighttask_media", ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA),
 
+    FLIGHT_TASK_READY("flighttask_ready", ChannelName.INBOUND_EVENTS_FLIGHT_TASK_READY),
+
+    FLY_TO_POINT_PROGRESS("fly_to_point_progress", ChannelName.INBOUND_EVENTS_FLY_TO_POINT_PROGRESS),
+
+    TAKE_OFF_TO_POINT_PROGRESS("takeoff_to_point_progress", ChannelName.INBOUND_EVENTS_TAKE_OFF_TO_POINT_PROGRESS),
+
+    DRC_STATUS_NOTIFY("drc_status_notify", ChannelName.INBOUND_EVENTS_DRC_STATUS_NOTIFY),
+
+    JOYSTICK_INVALID_NOTIFY("joystick_invalid_notify", ChannelName.INBOUND_EVENTS_DRC_MODE_EXIT_NOTIFY),
+
     UNKNOWN("Unknown", ChannelName.DEFAULT);
 
     private String method;

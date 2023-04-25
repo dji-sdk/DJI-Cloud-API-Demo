@@ -5,6 +5,7 @@ import com.dji.sample.common.util.JwtUtil;
 import com.dji.sample.component.mqtt.model.MqttClientOptions;
 import com.dji.sample.component.mqtt.model.MqttProtocolEnum;
 import com.dji.sample.component.mqtt.model.MqttUseEnum;
+import com.dji.sample.control.model.dto.MqttBrokerDTO;
 import lombok.Data;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -69,6 +70,32 @@ public class MqttConfiguration {
         }
         return addr.toString();
     }
+
+    /**
+     * Get the connection parameters of the mqtt client of the drc link.
+     * @param clientId
+     * @param username
+     * @param age   The validity period of the token. unit: s
+     * @param map   Custom data added in token.
+     * @return
+     */
+    public static MqttBrokerDTO getMqttBrokerWithDrc(String clientId, String username, Long age, Map<String, ?> map) {
+        if (!mqtt.containsKey(MqttUseEnum.DRC)) {
+            throw new RuntimeException("Please configure the drc link parameters of mqtt in the backend configuration file first.");
+        }
+        Algorithm algorithm = JwtUtil.algorithm;
+
+        String token = JwtUtil.createToken(map, age, algorithm, null, null);
+
+        return MqttBrokerDTO.builder()
+                .address(getMqttAddress(mqtt.get(MqttUseEnum.DRC)))
+                .username(username)
+                .clientId(clientId)
+                .expireTime(System.currentTimeMillis() / 1000 + age)
+                .password(token)
+                .build();
+    }
+
 
     @Bean
     public MqttConnectOptions mqttConnectOptions() {

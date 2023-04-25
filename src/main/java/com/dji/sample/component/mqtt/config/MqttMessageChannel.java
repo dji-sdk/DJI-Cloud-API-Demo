@@ -107,6 +107,11 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.OUTBOUND_EVENTS)
+    public MessageChannel eventsOutboundChannel() {
+        return new DirectChannel();
+    }
+
     @Bean(name = ChannelName.INBOUND_EVENTS_FLIGHT_TASK_PROGRESS)
     public MessageChannel eventsFlightTaskProgressChannel() {
         return new DirectChannel();
@@ -172,4 +177,28 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
+    @Bean(name = ChannelName.INBOUND_EVENTS_FLIGHT_TASK_READY)
+    public MessageChannel eventsEventsFlightTaskReady() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_FLY_TO_POINT_PROGRESS)
+    public MessageChannel eventsFlyToPointProgress() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_TAKE_OFF_TO_POINT_PROGRESS)
+    public MessageChannel eventsTakeoffToPointProgress() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_DRC_STATUS_NOTIFY)
+    public MessageChannel eventsDrcStatusNotify() {
+        return new DirectChannel();
+    }
+
+    @Bean(name = ChannelName.INBOUND_EVENTS_DRC_MODE_EXIT_NOTIFY)
+    public MessageChannel eventsDrcModeExitNotify() {
+        return new DirectChannel();
+    }
 }

@@ -8,9 +8,11 @@ import lombok.Data;
  * @date 2022/7/29
  */
 @Data
-public class EventsOutputReceiver {
+public class EventsOutputProgressReceiver<T> {
 
     private String status;
 
     private OutputProgressReceiver progress;
+
+    private T ext;
 }

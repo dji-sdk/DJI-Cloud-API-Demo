@@ -1,7 +1,7 @@
 package com.dji.sample.control.model.dto;
 
 import com.dji.sample.control.model.enums.BatteryStoreModeEnum;
-import com.dji.sample.manage.model.receiver.BasicDeviceProperty;
+import com.dji.sample.control.service.impl.RemoteDebugHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +18,7 @@ import java.util.Objects;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BatteryStoreMode extends BasicDeviceProperty {
+public class BatteryStoreMode extends RemoteDebugHandler {
 
     private Integer action;
 
