@@ -37,11 +37,9 @@ public final class RedisConst {
 
     public static final String LOGS_FILE_PREFIX = "logs_file" + DELIMITER;
 
-    public static final String WAYLINE_JOB_TIMED_EXECUTE = "wayline_job_timed_execute";
+    public static final String WAYLINE_JOB_PREPARED = "wayline_job_prepared";
 
-    public static final String WAYLINE_JOB_CONDITION_PREPARE = "wayline_job_condition_prepare";
-
-    public static final String WAYLINE_JOB_CONDITION_PREFIX = WAYLINE_JOB_CONDITION_PREPARE + DELIMITER;
+    public static final String WAYLINE_JOB_CONDITION_PREFIX = "wayline_job_condition" + DELIMITER;
 
     public static final String WAYLINE_JOB_BLOCK_PREFIX = "wayline_job_block" + DELIMITER;
 

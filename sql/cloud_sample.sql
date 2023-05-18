@@ -134,7 +134,8 @@ VALUES
 	(22,1,67,0,'Mavic 3T Camera',NULL),
 	(23,2,144,0,'DJI RC Pro','Remote control for Mavic 3E/T and Mavic 3M'),
 	(24,0,77,2,'Mavic 3M',NULL),
-	(25,1,68,0,'Mavic 3M Camera',NULL);
+	(25,1,68,0,'Mavic 3M Camera',NULL),
+	(26,0,89,0,'Matrice 350 RTK',NULL);
 
 /*!40000 ALTER TABLE `manage_device_dictionary` ENABLE KEYS */;
 UNLOCK TABLES;
