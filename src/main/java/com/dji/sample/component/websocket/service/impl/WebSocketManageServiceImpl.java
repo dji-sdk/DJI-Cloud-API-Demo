@@ -75,7 +75,7 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
         return RedisOpsUtils.hashKeys(key)
                 .stream()
                 .map(SESSIONS::get)
-                .filter(Objects::nonNull)
+                .filter(this.getValueWithWorkspace(workspaceId)::contains)
                 .collect(Collectors.toSet());
     }
 

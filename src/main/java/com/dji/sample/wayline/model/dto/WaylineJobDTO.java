@@ -1,5 +1,7 @@
 package com.dji.sample.wayline.model.dto;
 
+import com.dji.sample.wayline.model.enums.WaylineTaskTypeEnum;
+import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,9 +34,9 @@ public class WaylineJobDTO {
 
     private String workspaceId;
 
-    private Integer waylineType;
+    private WaylineTemplateTypeEnum waylineType;
 
-    private Integer taskType;
+    private WaylineTaskTypeEnum taskType;
 
     private LocalDateTime executeTime;
 

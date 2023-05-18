@@ -1,8 +1,8 @@
 package com.dji.sample.wayline.service;
 
 import com.dji.sample.component.mqtt.model.EventsReceiver;
-import com.dji.sample.wayline.model.dto.ConditionalWaylineJobKey;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
+import com.dji.sample.wayline.model.dto.WaylineJobKey;
 import com.dji.sample.wayline.model.dto.WaylineTaskProgressReceiver;
 
 import java.util.Optional;
@@ -71,6 +71,13 @@ public interface IWaylineRedisService {
     String getBlockedWaylineJobId(String dockSn);
 
     /**
+     * Delete the wayline job id blocked by the dock in redis.
+     * @param dockSn
+     * @return
+     */
+    Boolean delBlockedWaylineJobId(String dockSn);
+
+    /**
      * Save the conditional wayline job by the dock to redis.
      * @param waylineJob
      */
@@ -90,11 +97,30 @@ public interface IWaylineRedisService {
      */
     Boolean delConditionalWaylineJob(String jobId);
 
-    Boolean addPrepareConditionalWaylineJob(WaylineJobDTO waylineJob);
+    /**
+     * Add the wayline job that needs to be issued.
+     * @param waylineJob
+     * @return
+     */
+    Boolean addPreparedWaylineJob(WaylineJobDTO waylineJob);
 
-    Optional<ConditionalWaylineJobKey> getNearestConditionalWaylineJob();
+    /**
+     * Get the latest wayline job that needs to be issued.
+     * @return
+     */
+    Optional<WaylineJobKey> getNearestPreparedWaylineJob();
 
-    Double getConditionalWaylineJobTime(ConditionalWaylineJobKey jobKey);
+    /**
+     * Get the time when the wayline job is issued.
+     * @param jobKey
+     * @return
+     */
+    Double getPreparedWaylineJobTime(WaylineJobKey jobKey);
 
-    Boolean removePrepareConditionalWaylineJob(ConditionalWaylineJobKey jobKey);
+    /**
+     * Delete the wayline job that needs to be issued in redis.
+     * @param jobKey
+     * @return
+     */
+    Boolean removePreparedWaylineJob(WaylineJobKey jobKey);
 }

@@ -518,9 +518,37 @@ public class DeviceServiceImpl implements IDeviceService {
             }
             entity.setId(deviceEntity.getId());
             mapper.updateById(entity);
-            return Optional.of(deviceEntity);
+            fillNullField(entity, deviceEntity);
+            return Optional.of(entity);
         }
         return mapper.insert(entity) > 0 ? Optional.of(entity) : Optional.empty();
+    }
+
+    private void fillNullField(DeviceEntity entity, DeviceEntity oldEntity) {
+        if (Objects.isNull(entity) || Objects.isNull(oldEntity)) {
+            return;
+        }
+        if (Objects.isNull(entity.getWorkspaceId())) {
+            entity.setWorkspaceId(oldEntity.getWorkspaceId());
+        }
+        if (Objects.isNull(entity.getUserId())) {
+            entity.setUserId(oldEntity.getUserId());
+        }
+        if (Objects.isNull(entity.getChildSn())) {
+            entity.setChildSn(oldEntity.getChildSn());
+        }
+        if (Objects.isNull(entity.getBoundStatus())) {
+            entity.setBoundStatus(oldEntity.getBoundStatus());
+        }
+        if (Objects.isNull(entity.getBoundTime())) {
+            entity.setBoundTime(oldEntity.getBoundTime());
+        }
+        if (Objects.isNull(entity.getFirmwareVersion())) {
+            entity.setFirmwareVersion(oldEntity.getFirmwareVersion());
+        }
+        if (Objects.isNull(entity.getDeviceIndex())) {
+            entity.setDeviceIndex(oldEntity.getDeviceIndex());
+        }
     }
 
     /**
@@ -650,7 +678,7 @@ public class DeviceServiceImpl implements IDeviceService {
             return;
         }
         if (entity.getFirmwareVersion().equals(firmwareReleaseNoteOpt.get().getProductVersion())) {
-            deviceDTO.setFirmwareStatus(entity.getCompatibleStatus() ?
+            deviceDTO.setFirmwareStatus(Objects.requireNonNullElse(entity.getCompatibleStatus(), true) ?
                     DeviceFirmwareStatusEnum.NOT_UPGRADE.getVal() :
                     DeviceFirmwareStatusEnum.CONSISTENT_UPGRADE.getVal());
             return;
