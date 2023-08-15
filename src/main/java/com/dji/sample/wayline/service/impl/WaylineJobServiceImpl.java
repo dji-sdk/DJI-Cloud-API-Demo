@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
@@ -63,6 +64,12 @@ import java.util.stream.Collectors;
 public class WaylineJobServiceImpl implements IWaylineJobService {
 
     @Autowired
+    public WaylineJobServiceImpl(@Lazy IDrcService drcService){
+        this.drcService=drcService;
+    }
+
+
+    @Autowired
     private IWaylineJobMapper mapper;
 
     @Autowired
@@ -80,7 +87,7 @@ public class WaylineJobServiceImpl implements IWaylineJobService {
     @Autowired
     private IFileService fileService;
 
-    @Autowired
+
     private IDrcService drcService;
 
     @Autowired
