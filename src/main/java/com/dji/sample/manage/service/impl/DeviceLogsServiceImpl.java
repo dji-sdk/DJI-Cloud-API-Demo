@@ -3,35 +3,39 @@ package com.dji.sample.manage.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
+import com.dji.sample.component.mqtt.model.EventsReceiver;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.manage.dao.IDeviceLogsMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceLogsEntity;
-import com.dji.sample.manage.model.enums.*;
+import com.dji.sample.manage.model.enums.DeviceLogsStatusEnum;
+import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.model.param.DeviceLogsCreateParam;
 import com.dji.sample.manage.model.param.DeviceLogsQueryParam;
-import com.dji.sample.manage.model.param.LogsFileUpdateParam;
-import com.dji.sample.manage.model.receiver.*;
 import com.dji.sample.manage.service.IDeviceLogsService;
 import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.ILogsFileService;
 import com.dji.sample.manage.service.ITopologyService;
-import com.dji.sample.media.model.StsCredentialsDTO;
 import com.dji.sample.storage.service.IStorageService;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.dji.sdk.cloudapi.log.*;
+import com.dji.sdk.cloudapi.log.api.AbstractLogService;
+import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
+import com.dji.sdk.common.SDKManager;
+import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.events.EventsDataRequest;
+import com.dji.sdk.mqtt.events.TopicEventsRequest;
+import com.dji.sdk.mqtt.events.TopicEventsResponse;
+import com.dji.sdk.mqtt.services.ServicesReplyData;
+import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +57,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @Slf4j
-public class DeviceLogsServiceImpl implements IDeviceLogsService {
+public class DeviceLogsServiceImpl extends AbstractLogService implements IDeviceLogsService {
 
     private static final String LOGS_FILE_SUFFIX = ".tar";
 
@@ -62,9 +66,6 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
 
     @Autowired
     private ITopologyService topologyService;
-
-    @Autowired
-    private IMessageSenderService messageSenderService;
 
     @Autowired
     private ILogsFileService logsFileService;
@@ -76,10 +77,13 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private ISendMessageService webSocketMessageService;
+    private IWebSocketMessageService webSocketMessageService;
 
     @Autowired
     private IDeviceRedisService deviceRedisService;
+
+    @Autowired
+    private AbstractLogService abstractLogService;
 
     @Override
     public PaginationData<DeviceLogsDTO> getUploadedLogs(String deviceSn, DeviceLogsQueryParam param) {
@@ -100,22 +104,20 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
     }
 
     @Override
-    public ResponseResult getRealTimeLogs(String deviceSn, List<String> domainList) {
+    public HttpResultResponse getRealTimeLogs(String deviceSn, List<LogModuleEnum> domainList) {
         boolean exist = deviceRedisService.checkDeviceOnline(deviceSn);
         if (!exist) {
-            return ResponseResult.error("Device is offline.");
+            return HttpResultResponse.error("Device is offline.");
         }
 
-        ServiceReply<List<LogsFileUpload>> data = messageSenderService.publishServicesTopic(
-                new TypeReference<List<LogsFileUpload>>() {}, deviceSn, LogsFileMethodEnum.FILE_UPLOAD_LIST.getMethod(),
-                Map.of(MapKeyConst.MODULE_LIST, domainList));
-
-        for (LogsFileUpload file : data.getOutput()) {
+        TopicServicesResponse<ServicesReplyData<FileUploadListResponse>> response = abstractLogService
+                .fileuploadList(SDKManager.getDeviceSDK(deviceSn), new FileUploadListRequest().setModuleList(domainList));
+        for (FileUploadListFile file : response.getData().getOutput().getFiles()) {
             if (file.getDeviceSn().isBlank()) {
                 file.setDeviceSn(deviceSn);
             }
         }
-        return ResponseResult.success(new LogsFileUploadList(data.getOutput(), data.getResult()));
+        return HttpResultResponse.success(response.getData().getOutput());
     }
 
     @Override
@@ -132,7 +134,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         if (!insert) {
             return "";
         }
-        for (LogsFileUpload file : param.getFiles()) {
+        for (FileUploadStartFile file : param.getFiles()) {
             insert = logsFileService.insertFile(file, entity.getLogsId());
             if (!insert) {
                 return "";
@@ -144,47 +146,46 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
 
 
     @Override
-    public ResponseResult pushFileUpload(String username, String deviceSn, DeviceLogsCreateParam param) {
-        StsCredentialsDTO stsCredentials = storageService.getSTSCredentials();
+    public HttpResultResponse pushFileUpload(String username, String deviceSn, DeviceLogsCreateParam param) {
+        StsCredentialsResponse stsCredentials = storageService.getSTSCredentials();
+        stsCredentials.getCredentials().setExpire(System.currentTimeMillis() + (stsCredentials.getCredentials().getExpire() - 60) * 1000);
         LogsUploadCredentialsDTO credentialsDTO = new LogsUploadCredentialsDTO(stsCredentials);
         // Set the storage name of the file.
-        List<LogsFileUpload> files = param.getFiles();
+        List<FileUploadStartFile> files = param.getFiles();
         files.forEach(file -> file.setObjectKey(credentialsDTO.getObjectKeyPrefix() + "/" + UUID.randomUUID().toString() + LOGS_FILE_SUFFIX));
 
-        credentialsDTO.setParams(LogsFileUploadList.builder().files(files).build());
-        String bid = UUID.randomUUID().toString();
-        ServiceReply reply = messageSenderService.publishServicesTopic(
-                deviceSn, LogsFileMethodEnum.FILE_UPLOAD_START.getMethod(), credentialsDTO, bid);
+        credentialsDTO.setParams(new FileUploadStartParam().setFiles(files));
 
-        if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
-            return ResponseResult.error(String.valueOf(reply.getResult()));
+        TopicServicesResponse<ServicesReplyData> response = abstractLogService.fileuploadStart(
+                SDKManager.getDeviceSDK(deviceSn), new FileUploadStartRequest()
+                        .setCredentials(stsCredentials.getCredentials())
+                        .setBucket(stsCredentials.getBucket())
+                        .setEndpoint(stsCredentials.getEndpoint())
+                        .setFileStoreDir(stsCredentials.getObjectKeyPrefix())
+                        .setProvider(stsCredentials.getProvider())
+                        .setRegion(stsCredentials.getRegion())
+                        .setParams(new FileUploadStartParam().setFiles(files)));
+
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
         }
 
-        String logsId = this.insertDeviceLogs(bid, username, deviceSn, param);
-        if (!bid.equals(logsId)) {
-            return ResponseResult.error("Database insert failed.");
-        }
+        String id = this.insertDeviceLogs(response.getBid(), username, deviceSn, param);
 
         // Save the status of the log upload.
-        RedisOpsUtils.hashSet(RedisConst.LOGS_FILE_PREFIX + deviceSn, bid, LogsOutputProgressDTO.builder().logsId(logsId).build());
-        return ResponseResult.success();
+        RedisOpsUtils.hashSet(RedisConst.LOGS_FILE_PREFIX + deviceSn, id, LogsOutputProgressDTO.builder().logsId(id).build());
+        return HttpResultResponse.success();
 
     }
 
     @Override
-    public ResponseResult pushUpdateFile(String deviceSn, LogsFileUpdateParam param) {
-        LogsFileUpdateMethodEnum method = LogsFileUpdateMethodEnum.find(param.getStatus());
-        if (LogsFileUpdateMethodEnum.UNKNOWN == method) {
-            return ResponseResult.error("Illegal param");
-        }
-        ServiceReply reply = messageSenderService.publishServicesTopic(
-                deviceSn, LogsFileMethodEnum.FILE_UPLOAD_UPDATE.getMethod(), param);
+    public HttpResultResponse pushUpdateFile(String deviceSn, FileUploadUpdateRequest param) {
+        TopicServicesResponse<ServicesReplyData> response = abstractLogService.fileuploadUpdate(SDKManager.getDeviceSDK(deviceSn), param);
 
-        if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
-            return ResponseResult.error("Error Code : " + reply.getResult());
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
         }
-
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
     @Override
@@ -194,92 +195,82 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
         logsFileService.deleteFileByLogsId(logsId);
     }
 
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
     @Override
-    public CommonTopicReceiver handleFileUploadProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String topic = headers.get(MqttHeaders.RECEIVED_TOPIC).toString();
-        String sn  = topic.substring((TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT).length(),
-                topic.indexOf(TopicConst.EVENTS_SUF));
-
-        EventsReceiver<OutputLogsProgressReceiver> eventsReceiver = objectMapper.convertValue(receiver.getData(),
-                new TypeReference<EventsReceiver<OutputLogsProgressReceiver>>(){});
-
+    public TopicEventsResponse<MqttReply> fileuploadProgress(TopicEventsRequest<EventsDataRequest<FileUploadProgress>> request, MessageHeaders headers) {
         EventsReceiver<LogsOutputProgressDTO> webSocketData = new EventsReceiver<>();
-        webSocketData.setBid(receiver.getBid());
-        webSocketData.setSn(sn);
+        webSocketData.setBid(request.getBid());
+        webSocketData.setSn(request.getGateway());
 
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(sn);
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getGateway());
         if (deviceOpt.isEmpty()) {
             return null;
         }
 
         DeviceDTO device = deviceOpt.get();
+        String key = RedisConst.LOGS_FILE_PREFIX + request.getGateway();
 
         try {
-            OutputLogsProgressReceiver output = eventsReceiver.getOutput();
-            EventsResultStatusEnum statusEnum = EventsResultStatusEnum.find(output.getStatus());
+            FileUploadProgress output = request.getData().getOutput();
             log.info("Logs upload progress: {}", output.toString());
 
-            String key = RedisConst.LOGS_FILE_PREFIX + sn;
             LogsOutputProgressDTO progress;
             boolean exist = RedisOpsUtils.checkExist(key);
-            if (!exist && !statusEnum.getEnd()) {
-                progress = LogsOutputProgressDTO.builder().logsId(receiver.getBid()).build();
-                RedisOpsUtils.hashSet(key, receiver.getBid(), progress);
+            if (!exist && !output.getStatus().isEnd()) {
+                progress = LogsOutputProgressDTO.builder().logsId(request.getBid()).build();
+                RedisOpsUtils.hashSet(key, request.getBid(), progress);
             } else if (exist) {
-                progress = (LogsOutputProgressDTO) RedisOpsUtils.hashGet(key, receiver.getBid());
+                progress = (LogsOutputProgressDTO) RedisOpsUtils.hashGet(key, request.getBid());
             } else {
                 progress = LogsOutputProgressDTO.builder().build();
             }
             progress.setStatus(output.getStatus());
 
             // If the logs file is empty, delete the cache of this task.
-            List<LogsExtFileReceiver> fileReceivers = output.getExt().getFiles();
+            List<FileUploadProgressFile> fileReceivers = output.getExt().getFiles();
             if (CollectionUtils.isEmpty(fileReceivers)) {
-                RedisOpsUtils.del(RedisConst.LOGS_FILE_PREFIX + sn);
+                RedisOpsUtils.del(key);
             }
 
             // refresh cache.
             List<LogsProgressDTO> fileProgressList = new ArrayList<>();
             fileReceivers.forEach(file -> {
-                LogsProgressReceiver logsProgress = file.getProgress();
+                LogFileProgress logsProgress = file.getProgress();
                 if (!StringUtils.hasText(file.getDeviceSn())) {
-                    if (String.valueOf(DeviceDomainEnum.DOCK.getVal()).equals(file.getDeviceModelDomain())) {
-                        file.setDeviceSn(sn);
-                    } else if (String.valueOf(DeviceDomainEnum.SUB_DEVICE.getVal()).equals(file.getDeviceModelDomain())) {
+                    if (LogModuleEnum.DOCK == file.getModule()) {
+                        file.setDeviceSn(request.getGateway());
+                    } else if (LogModuleEnum.DRONE == file.getModule()) {
                         file.setDeviceSn(device.getChildDeviceSn());
                     }
                 }
 
                 fileProgressList.add(LogsProgressDTO.builder()
                         .deviceSn(file.getDeviceSn())
-                        .deviceModelDomain(file.getDeviceModelDomain())
+                        .deviceModelDomain(file.getModule().getDomain())
                         .result(logsProgress.getResult())
-                        .status(logsProgress.getStatus())
+                        .status(logsProgress.getStatus().getStatus())
                         .uploadRate(logsProgress.getUploadRate())
                         .progress(((logsProgress.getCurrentStep() - 1) * 100 + logsProgress.getProgress()) / logsProgress.getTotalStep())
                         .build());
             });
             progress.setFiles(fileProgressList);
             webSocketData.setOutput(progress);
-            RedisOpsUtils.hashSet(RedisConst.LOGS_FILE_PREFIX + sn, receiver.getBid(), progress);
+            RedisOpsUtils.hashSet(RedisConst.LOGS_FILE_PREFIX + request.getGateway(), request.getBid(), progress);
             // Delete the cache at the end of the task.
-            if (statusEnum.getEnd()) {
-                RedisOpsUtils.del(RedisConst.LOGS_FILE_PREFIX + sn);
-                this.updateLogsStatus(receiver.getBid(), DeviceLogsStatusEnum.find(statusEnum).getVal());
+            if (output.getStatus().isEnd()) {
+                RedisOpsUtils.del(key);
+                updateLogsStatus(request.getBid(), DeviceLogsStatusEnum.find(output.getStatus()).getVal());
 
-                fileReceivers.forEach(file -> logsFileService.updateFile(receiver.getBid(), file));
+                fileReceivers.forEach(file -> logsFileService.updateFile(request.getBid(), file));
             }
         } catch (NullPointerException e) {
-            this.updateLogsStatus(receiver.getBid(), DeviceLogsStatusEnum.FAILED.getVal());
-
-            RedisOpsUtils.del(RedisConst.LOGS_FILE_PREFIX + sn);
+            this.updateLogsStatus(request.getBid(), DeviceLogsStatusEnum.FAILED.getVal());
+            RedisOpsUtils.del(key);
         }
 
         webSocketMessageService.sendBatch(device.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
                 BizCodeEnum.FILE_UPLOAD_PROGRESS.getCode(), webSocketData);
 
-        return receiver;
+        return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
     }
 
     @Override
@@ -315,7 +306,7 @@ public class DeviceLogsServiceImpl implements IDeviceLogsService {
                 .status(entity.getStatus())
                 .logsInformation(entity.getLogsInfo())
                 .userName(entity.getUsername())
-                .deviceLogs(LogsFileUploadList.builder().files(logsFileService.getLogsFileByLogsId(entity.getLogsId())).build())
+                .deviceLogs(LogsFileUploadListDTO.builder().files(logsFileService.getLogsFileByLogsId(entity.getLogsId())).build())
                 .logsProgress(Objects.requireNonNullElse(progress, new LogsOutputProgressDTO()).getFiles())
                 .deviceTopo(topologyService.getDeviceTopologyByGatewaySn(entity.getDeviceSn()).orElse(null))
                 .build();

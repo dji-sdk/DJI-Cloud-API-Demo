@@ -1,8 +1,9 @@
 package com.dji.sample.wayline.service;
 
-import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.wayline.model.dto.WaylineFileDTO;
-import com.dji.sample.wayline.model.param.WaylineQueryParam;
+import com.dji.sdk.cloudapi.wayline.GetWaylineListRequest;
+import com.dji.sdk.cloudapi.wayline.GetWaylineListResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URL;
@@ -23,7 +24,7 @@ public interface IWaylineFileService {
      * @param param
      * @return
      */
-    PaginationData<WaylineFileDTO> getWaylinesByParam(String workspaceId, WaylineQueryParam param);
+    PaginationData<GetWaylineListResponse> getWaylinesByParam(String workspaceId, GetWaylineListRequest param);
 
     /**
      * Query the information of this wayline file according to the wayline file id.
@@ -31,7 +32,7 @@ public interface IWaylineFileService {
      * @param waylineId
      * @return
      */
-    Optional<WaylineFileDTO> getWaylineByWaylineId(String workspaceId, String waylineId);
+    Optional<GetWaylineListResponse> getWaylineByWaylineId(String workspaceId, String waylineId);
 
     /**
      * Get the download address of the file object.

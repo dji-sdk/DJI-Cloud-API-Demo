@@ -1,5 +1,7 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
+
 /**
  * @author sean
  * @version 1.3
@@ -11,7 +13,7 @@ public abstract class BasicDeviceProperty {
         return false;
     }
 
-    public boolean canPublish(String fieldName, OsdSubDeviceReceiver osd) {
+    public boolean canPublish(OsdDockDrone osd) {
         return valid();
     }
 }

@@ -1,8 +1,6 @@
 package com.dji.sample.storage.service;
 
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.media.model.StsCredentialsDTO;
-import org.springframework.messaging.MessageHeaders;
+import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
 
 /**
  * @author sean
@@ -15,12 +13,6 @@ public interface IStorageService {
      * Get custom temporary credentials object for uploading the media and wayline.
      * @return temporary credentials object
      */
-    StsCredentialsDTO getSTSCredentials();
+    StsCredentialsResponse getSTSCredentials();
 
-    /**
-     * Handles requests from the dock to obtain temporary credentials.
-     * @param receiver
-     * @param headers
-     */
-    void replyConfigGet(CommonTopicReceiver receiver, MessageHeaders headers);
 }

@@ -27,4 +27,6 @@ public class MediaFileCountDTO {
     private Integer mediaCount;
 
     private Integer uploadedCount;
+
+    private String deviceSn;
 }

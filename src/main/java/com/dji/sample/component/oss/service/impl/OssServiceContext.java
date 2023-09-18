@@ -1,9 +1,9 @@
 package com.dji.sample.component.oss.service.impl;
 
 import com.dji.sample.component.oss.model.OssConfiguration;
-import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
-import com.dji.sample.media.model.CredentialsDTO;
+import com.dji.sdk.cloudapi.storage.CredentialsToken;
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -29,7 +29,7 @@ public class OssServiceContext {
             return;
         }
         this.ossService = ossServices.stream()
-                .filter(ossService -> ossService.getOssType().equals(OssConfiguration.provider))
+                .filter(ossService -> ossService.getOssType() == OssConfiguration.provider)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Oss provider is illegal. Optional: " +
                         Arrays.toString(Arrays.stream(OssTypeEnum.values()).map(OssTypeEnum::getType).toArray())));
@@ -39,7 +39,7 @@ public class OssServiceContext {
         return this.ossService;
     }
 
-    public CredentialsDTO getCredentials() {
+    public CredentialsToken getCredentials() {
         return this.ossService.getCredentials();
     }
 

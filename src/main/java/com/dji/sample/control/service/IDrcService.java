@@ -1,9 +1,9 @@
 package com.dji.sample.control.service;
 
 import com.dji.sample.control.model.dto.JwtAclDTO;
-import com.dji.sample.control.model.dto.MqttBrokerDTO;
 import com.dji.sample.control.model.param.DrcConnectParam;
 import com.dji.sample.control.model.param.DrcModeParam;
+import com.dji.sdk.cloudapi.control.DrcModeMqttBroker;
 
 /**
  * @author sean
@@ -41,7 +41,7 @@ public interface IDrcService {
      * @param param
      * @return
      */
-    MqttBrokerDTO userDrcAuth(String workspaceId, String userId, String username, DrcConnectParam param);
+    DrcModeMqttBroker userDrcAuth(String workspaceId, String userId, String username, DrcConnectParam param);
 
     /**
      * Make the dock enter drc mode. And grant relevant permissions.

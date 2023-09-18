@@ -1,6 +1,6 @@
 package com.dji.sample.component.mqtt.config;
 
-import com.dji.sample.component.mqtt.model.ChannelName;
+import com.dji.sdk.mqtt.ChannelName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,18 +27,13 @@ public class MqttMessageChannel {
         return new ExecutorChannel(threadPool);
     }
 
+    @Bean(name = ChannelName.DEFAULT)
+    public MessageChannel defaultChannel() {
+        return new DirectChannel();
+    }
+
     @Bean(name = ChannelName.INBOUND_STATUS)
     public MessageChannel statusChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATUS_ONLINE)
-    public MessageChannel statusOnlineChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATUS_OFFLINE)
-    public MessageChannel statusOffChannel() {
         return new DirectChannel();
     }
 
@@ -47,28 +42,8 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
-    @Bean(name = ChannelName.INBOUND_STATE_BASIC)
-    public MessageChannel stateBasicChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATE_PAYLOAD)
-    public MessageChannel statePayloadChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_SERVICE_REPLY)
+    @Bean(name = ChannelName.INBOUND_SERVICES_REPLY)
     public MessageChannel serviceReplyChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATE_CAPACITY)
-    public MessageChannel stateCapacityChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATE_PAYLOAD_UPDATE)
-    public MessageChannel statePayloadUpdateChannel() {
         return new DirectChannel();
     }
 
@@ -77,28 +52,8 @@ public class MqttMessageChannel {
         return new ExecutorChannel(threadPool);
     }
 
-    @Bean(name = ChannelName.DEFAULT)
-    public MessageChannel defaultChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.OUTBOUND)
-    public MessageChannel outboundChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_STATE_FIRMWARE_VERSION)
-    public MessageChannel stateFirmwareVersionChannel() {
-        return new DirectChannel();
-    }
-
     @Bean(name = ChannelName.INBOUND_REQUESTS)
     public MessageChannel requestsChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_REQUESTS_STORAGE_CONFIG_GET)
-    public MessageChannel requestsConfigGetChannel() {
         return new DirectChannel();
     }
 
@@ -107,98 +62,14 @@ public class MqttMessageChannel {
         return new DirectChannel();
     }
 
-    @Bean(name = ChannelName.OUTBOUND_EVENTS)
-    public MessageChannel eventsOutboundChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_FLIGHT_TASK_PROGRESS)
-    public MessageChannel eventsFlightTaskProgressChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK)
-    public MessageChannel eventsFileUploadCallbackChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_BIND_STATUS)
-    public MessageChannel requestsAirportBindStatusChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_GET)
-    public MessageChannel requestsAirportOrganizationGetChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_REQUESTS_AIRPORT_ORGANIZATION_BIND)
-    public MessageChannel requestsAirportOrganizationBindChannel() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_HMS)
-    public MessageChannel eventsHms() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_CONTROL_PROGRESS)
-    public MessageChannel eventsControlProgress() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_OTA_PROGRESS)
-    public MessageChannel eventsOtaProgress() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_PROGRESS)
-    public MessageChannel eventsFileUploadProgress() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_REQUESTS_FLIGHT_TASK_RESOURCE_GET)
-    public MessageChannel requestsFlightTaskResourceGet() {
-        return new DirectChannel();
-    }
-
     @Bean(name = ChannelName.INBOUND_PROPERTY_SET_REPLY)
     public MessageChannel propertySetReply() {
         return new DirectChannel();
     }
 
-    @Bean(name = ChannelName.INBOUND_REQUESTS_CONFIG)
-    public MessageChannel requestsConfig() {
+    @Bean(name = ChannelName.INBOUND_DRC_UP)
+    public MessageChannel drcUp() {
         return new DirectChannel();
     }
 
-    @Bean(name = ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA)
-    public MessageChannel eventsHighestPriorityUploadFlightTaskMedia() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_FLIGHT_TASK_READY)
-    public MessageChannel eventsEventsFlightTaskReady() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_FLY_TO_POINT_PROGRESS)
-    public MessageChannel eventsFlyToPointProgress() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_TAKE_OFF_TO_POINT_PROGRESS)
-    public MessageChannel eventsTakeoffToPointProgress() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_DRC_STATUS_NOTIFY)
-    public MessageChannel eventsDrcStatusNotify() {
-        return new DirectChannel();
-    }
-
-    @Bean(name = ChannelName.INBOUND_EVENTS_DRC_MODE_EXIT_NOTIFY)
-    public MessageChannel eventsDrcModeExitNotify() {
-        return new DirectChannel();
-    }
 }

@@ -1,13 +1,11 @@
 package com.dji.sample.control.model.dto;
 
-import com.dji.sample.control.model.enums.BatteryStoreModeEnum;
 import com.dji.sample.control.service.impl.RemoteDebugHandler;
+import com.dji.sdk.cloudapi.device.BatteryStoreModeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.Objects;
 
 /**
  * @author sean
@@ -20,10 +18,5 @@ import java.util.Objects;
 @NoArgsConstructor
 public class BatteryStoreMode extends RemoteDebugHandler {
 
-    private Integer action;
-
-    @Override
-    public boolean valid() {
-        return Objects.nonNull(action) && BatteryStoreModeEnum.find(action).isPresent();
-    }
+    private BatteryStoreModeEnum action;
 }

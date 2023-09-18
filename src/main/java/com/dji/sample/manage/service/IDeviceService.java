@@ -1,23 +1,20 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.CommonTopicResponse;
-import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
+import com.dji.sample.component.websocket.model.BizCodeEnum;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
-import com.dji.sample.manage.model.enums.DeviceModeCodeEnum;
-import com.dji.sample.manage.model.enums.DeviceSetPropertyEnum;
-import com.dji.sample.manage.model.enums.DockModeCodeEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
-import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
+import com.dji.sdk.cloudapi.device.ControlSourceEnum;
+import com.dji.sdk.cloudapi.device.DeviceOsdHost;
+import com.dji.sdk.cloudapi.device.DockModeCodeEnum;
+import com.dji.sdk.cloudapi.device.DroneModeCodeEnum;
+import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.messaging.Message;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -28,44 +25,34 @@ import java.util.Optional;
 public interface IDeviceService {
 
     /**
-     * The device goes online.
-     * @param deviceGateway gateway
-     * @return Whether the online is successful.
-     */
-    Boolean deviceOnline(StatusGatewayReceiver deviceGateway);
-
-    /**
-     * The device goes offline.
-     * @param gateway
-     * @return Whether the offline is successful.
-     */
-    Boolean deviceOffline(StatusGatewayReceiver gateway);
-
-    /**
      * The aircraft goes offline.
      * @param deviceSn aircraft's SN
-     * @return Whether the offline is successful.
      */
-    Boolean subDeviceOffline(String deviceSn);
+    void subDeviceOffline(String deviceSn);
 
     /**
-     * When the device goes online, it needs to subscribe to topics.
-     * @param sn device's SN
+     * The gateway goes offline.
+     * @param gatewaySn gateway's SN
      */
-    void subscribeTopicOnline(String sn);
+    void gatewayOffline(String gatewaySn);
 
     /**
-     * When the device goes offine, it needs to cancel the subscribed topics.
-     * @param sn device's SN
+     * Subscribe to the topic of the gateway when the gateway device goes online, and unsubscribe from the topic of the sub-device.
+     * @param gateway
      */
-    void unsubscribeTopicOffline(String sn);
+    void gatewayOnlineSubscribeTopic(GatewayManager gateway);
 
     /**
-     * Delete all device data according to the SN of the device.
-     * @param ids device's SN
-     * @return
+     * Subscribe to the gateway's and sub-device's topics when the drone comes online.
+     * @param gateway
      */
-    Boolean delDeviceByDeviceSns(List<String> ids);
+    void subDeviceOnlineSubscribeTopic(GatewayManager gateway);
+
+    /**
+     * When the gateway device goes offline, unsubscribe from the topics of the gateway and sub-device.
+     * @param gateway
+     */
+    void offlineUnsubscribeTopic(GatewayManager gateway);
 
     /**
      * Obtain device data according to different query conditions.
@@ -73,13 +60,6 @@ public interface IDeviceService {
      * @return
      */
     List<DeviceDTO> getDevicesByParams(DeviceQueryParam param);
-
-    /**
-     * When you receive a status topic message, you need to reply to it.
-     * @param sn   the target of sn
-     * @param response
-     */
-    void publishStatusReply(String sn, CommonTopicResponse<Object> response);
 
     /**
      * The business interface on the web side. Get all information about all devices in this workspace.
@@ -93,13 +73,6 @@ public interface IDeviceService {
      * @param device
      */
     void spliceDeviceTopo(DeviceDTO device);
-
-    /**
-     * Push the topology information to the pilot after one device is online.
-     * @param sessions  The collection of connection objects on the pilot side.
-     * @param sn
-     */
-    void pushDeviceOnlineTopo(Collection<ConcurrentWebSocketSession> sessions, String sn, String gatewaySn);
 
     /**
      * Query the information of the device according to the sn of the device.
@@ -120,25 +93,19 @@ public interface IDeviceService {
      * it also broadcasts a push of device online, offline and topology update to PILOT via websocket,
      * and PILOT will get the device topology list again after receiving the push.
      * @param workspaceId
-     * @param sn
+     * @param deviceSn
      */
-    void pushDeviceOfflineTopo(String workspaceId, String sn);
+    void pushDeviceOfflineTopo(String workspaceId, String deviceSn);
 
     /**
      * When the server receives the request of any device online, offline and topology update in the same workspace,
      * it also broadcasts a push of device online, offline and topology update to PILOT via websocket,
      * and PILOT will get the device topology list again after receiving the push.
      * @param workspaceId
-     * @param deviceSn
      * @param gatewaySn
+     * @param deviceSn
      */
     void pushDeviceOnlineTopo(String workspaceId, String gatewaySn, String deviceSn);
-
-    /**
-     * Handle messages from the osd topic.
-     * @param message     osd
-     */
-    void handleOSD(Message<?> message);
 
     /**
      * Update the device information.
@@ -182,24 +149,16 @@ public interface IDeviceService {
      * @param upgradeDTOS
      * @return
      */
-    ResponseResult createDeviceOtaJob(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
+    HttpResultResponse createDeviceOtaJob(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
 
     /**
      * Set the property parameters of the drone.
      * @param workspaceId
      * @param dockSn
-     * @param propertyEnum
      * @param param
+     * @return
      */
-    void devicePropertySet(String workspaceId, String dockSn, DeviceSetPropertyEnum propertyEnum, JsonNode param);
-
-    /**
-     * Set one property parameters of the drone.
-     * @param topic
-     * @param propertyEnum
-     * @param value
-     */
-    void deviceOnePropertySet(String topic, DeviceSetPropertyEnum propertyEnum, Map.Entry<String, Object> value);
+    int devicePropertySet(String workspaceId, String dockSn, JsonNode param);
 
     /**
      * Check the working status of the dock.
@@ -213,7 +172,7 @@ public interface IDeviceService {
      * @param deviceSn
      * @return
      */
-    DeviceModeCodeEnum getDeviceMode(String deviceSn);
+    DroneModeCodeEnum getDeviceMode(String deviceSn);
 
     /**
      * Check if the dock is in drc mode.
@@ -229,4 +188,13 @@ public interface IDeviceService {
      */
     Boolean checkAuthorityFlight(String gatewaySn);
 
+    Integer saveDevice(DeviceDTO device);
+
+    Boolean saveOrUpdateDevice(DeviceDTO device);
+
+    void pushOsdDataToPilot(String workspaceId, String sn, DeviceOsdHost data);
+
+    void pushOsdDataToWeb(String workspaceId, BizCodeEnum codeEnum, String sn, Object data);
+
+    void updateFlightControl(DeviceDTO gateway, ControlSourceEnum controlSource);
 }

@@ -1,9 +1,9 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.manage.model.dto.UserDTO;
 import com.dji.sample.manage.model.dto.UserListDTO;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 
 import java.util.Optional;
 
@@ -15,7 +15,7 @@ public interface IUserService {
      * @param workspaceId
      * @return
      */
-    ResponseResult getUserByUsername(String username, String workspaceId);
+    HttpResultResponse getUserByUsername(String username, String workspaceId);
 
     /**
      * Verify the username and password to log in.
@@ -24,7 +24,7 @@ public interface IUserService {
      * @param flag
      * @return
      */
-    ResponseResult userLogin(String username, String password, Integer flag);
+    HttpResultResponse userLogin(String username, String password, Integer flag);
 
     /**
      * Create a user object containing a new token.

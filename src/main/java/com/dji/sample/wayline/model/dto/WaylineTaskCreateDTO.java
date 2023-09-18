@@ -1,7 +1,5 @@
 package com.dji.sample.wayline.model.dto;
 
-import com.dji.sample.wayline.model.enums.WaylineTaskTypeEnum;
-import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,9 +18,9 @@ public class WaylineTaskCreateDTO {
 
     private String flightId;
 
-    private WaylineTaskTypeEnum taskType;
+    private Integer taskType;
 
-    private WaylineTemplateTypeEnum waylineType;
+    private Integer waylineType;
 
     private Long executeTime;
 

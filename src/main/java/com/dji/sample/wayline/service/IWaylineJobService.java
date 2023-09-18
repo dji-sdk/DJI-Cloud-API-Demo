@@ -1,16 +1,10 @@
 package com.dji.sample.wayline.service;
 
-import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.model.enums.WaylineJobStatusEnum;
 import com.dji.sample.wayline.model.param.CreateJobParam;
-import com.dji.sample.wayline.model.param.UpdateJobParam;
-import org.springframework.messaging.MessageHeaders;
+import com.dji.sdk.common.PaginationData;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -40,46 +34,6 @@ public interface IWaylineJobService {
      * @return
      */
     Optional<WaylineJobDTO> createWaylineJobByParent(String workspaceId, String parentId);
-
-    /**
-     * Issue wayline mission to the dock.
-     * @param param
-     * @param customClaim   user info
-     * @return
-     */
-    ResponseResult publishFlightTask(CreateJobParam param, CustomClaim customClaim) throws SQLException;
-
-    /**
-     * Issue wayline mission to the dock.
-     * @param waylineJob
-     * @return
-     * @throws SQLException
-     */
-    ResponseResult publishOneFlightTask(WaylineJobDTO waylineJob) throws SQLException;
-
-    /**
-     * Execute the task immediately.
-     * @param jobId
-     * @throws SQLException
-     * @return
-     */
-    Boolean executeFlightTask(String workspaceId, String jobId);
-
-    /**
-     * Cancel the task Base on job Ids.
-     * @param workspaceId
-     * @param jobIds
-     * @throws SQLException
-     */
-    void cancelFlightTask(String workspaceId, Collection<String> jobIds);
-
-    /**
-     * Cancel the dock tasks that have been issued but have not yet been executed.
-     * @param workspaceId
-     * @param dockSn
-     * @param jobIds
-     */
-    void publishCancelTask(String workspaceId, String dockSn, List<String> jobIds);
 
     /**
      * Query wayline jobs based on conditions.
@@ -113,28 +67,6 @@ public interface IWaylineJobService {
      * @return
      */
     PaginationData<WaylineJobDTO> getJobsByWorkspaceId(String workspaceId, long page, long pageSize);
-
-    /**
-     * Process to get interface data of flight mission resources.
-     * @param receiver
-     * @param headers
-     */
-    void flightTaskResourceGet(CommonTopicReceiver receiver, MessageHeaders headers);
-
-    /**
-     * Set the media files for this job to upload immediately.
-     * @param workspaceId
-     * @param jobId
-     */
-    void uploadMediaHighestPriority(String workspaceId, String jobId);
-
-    /**
-     * Manually control the execution status of wayline job.
-     * @param workspaceId
-     * @param jobId
-     * @param param
-     */
-    void updateJobStatus(String workspaceId, String jobId, UpdateJobParam param);
 
     /**
      * Query the wayline execution status of the dock.

@@ -1,8 +1,8 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.common.util.SpringBeanUtils;
-import com.dji.sample.manage.model.enums.DockModeCodeEnum;
+import com.dji.sample.common.util.SpringBeanUtilsTest;
 import com.dji.sample.manage.service.IDeviceService;
+import com.dji.sdk.cloudapi.device.DockModeCodeEnum;
 
 /**
  * @author sean
@@ -12,11 +12,11 @@ import com.dji.sample.manage.service.IDeviceService;
 public class RemoteDebugHandler {
 
     public boolean valid() {
-        return false;
+        return true;
     }
 
     public boolean canPublish(String sn) {
-        IDeviceService deviceService = SpringBeanUtils.getBean(IDeviceService.class);
+        IDeviceService deviceService = SpringBeanUtilsTest.getBean(IDeviceService.class);
         DockModeCodeEnum dockMode = deviceService.getDockMode(sn);
         return DockModeCodeEnum.REMOTE_DEBUGGING == dockMode;
     }

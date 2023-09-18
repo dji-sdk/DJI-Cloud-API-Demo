@@ -1,6 +1,6 @@
 package com.dji.sample.manage.model.dto;
 
-import com.dji.sample.manage.model.receiver.LogsFileUploadList;
+import com.dji.sdk.cloudapi.tsa.TopologyList;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,10 +32,10 @@ public class DeviceLogsDTO {
 
     private Integer status;
 
-    private TopologyDTO deviceTopo;
+    private TopologyList deviceTopo;
 
     private List<LogsProgressDTO> logsProgress;
 
-    private LogsFileUploadList deviceLogs;
+    private LogsFileUploadListDTO deviceLogs;
 
 }

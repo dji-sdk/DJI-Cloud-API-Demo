@@ -1,12 +1,13 @@
 package com.dji.sample.wayline.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.model.param.CreateJobParam;
 import com.dji.sample.wayline.model.param.UpdateJobParam;
+import com.dji.sample.wayline.service.IFlightTaskService;
 import com.dji.sample.wayline.service.IWaylineJobService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +30,9 @@ public class WaylineJobController {
     @Autowired
     private IWaylineJobService waylineJobService;
 
+    @Autowired
+    private IFlightTaskService flighttaskService;
+
     /**
      * Create a wayline task for the Dock.
      * @param request
@@ -38,12 +42,12 @@ public class WaylineJobController {
      * @throws SQLException
      */
     @PostMapping("/{workspace_id}/flight-tasks")
-    public ResponseResult createJob(HttpServletRequest request, @Valid @RequestBody CreateJobParam param,
-                                    @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
+    public HttpResultResponse createJob(HttpServletRequest request, @Valid @RequestBody CreateJobParam param,
+                                        @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
         CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
         customClaim.setWorkspaceId(workspaceId);
 
-        return waylineJobService.publishFlightTask(param, customClaim);
+        return flighttaskService.publishFlightTask(param, customClaim);
     }
 
     /**
@@ -54,11 +58,11 @@ public class WaylineJobController {
      * @return
      */
     @GetMapping("/{workspace_id}/jobs")
-    public ResponseResult<PaginationData<WaylineJobDTO>> getJobs(@RequestParam(defaultValue = "1") Long page,
-                     @RequestParam(name = "page_size", defaultValue = "10") Long pageSize,
-                     @PathVariable(name = "workspace_id") String workspaceId) {
+    public HttpResultResponse<PaginationData<WaylineJobDTO>> getJobs(@RequestParam(defaultValue = "1") Long page,
+                                                                     @RequestParam(name = "page_size", defaultValue = "10") Long pageSize,
+                                                                     @PathVariable(name = "workspace_id") String workspaceId) {
         PaginationData<WaylineJobDTO> data = waylineJobService.getJobsByWorkspaceId(workspaceId, page, pageSize);
-        return ResponseResult.success(data);
+        return HttpResultResponse.success(data);
     }
 
     /**
@@ -69,10 +73,10 @@ public class WaylineJobController {
      * @throws SQLException
      */
     @DeleteMapping("/{workspace_id}/jobs")
-    public ResponseResult publishCancelJob(@RequestParam(name = "job_id") Set<String> jobIds,
-                                     @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
-        waylineJobService.cancelFlightTask(workspaceId, jobIds);
-        return ResponseResult.success();
+    public HttpResultResponse publishCancelJob(@RequestParam(name = "job_id") Set<String> jobIds,
+                                               @PathVariable(name = "workspace_id") String workspaceId) throws SQLException {
+        flighttaskService.cancelFlightTask(workspaceId, jobIds);
+        return HttpResultResponse.success();
     }
 
     /**
@@ -82,17 +86,17 @@ public class WaylineJobController {
      * @return
      */
     @PostMapping("/{workspace_id}/jobs/{job_id}/media-highest")
-    public ResponseResult uploadMediaHighestPriority(@PathVariable(name = "workspace_id") String workspaceId,
-                                             @PathVariable(name = "job_id") String jobId) {
-        waylineJobService.uploadMediaHighestPriority(workspaceId, jobId);
-        return ResponseResult.success();
+    public HttpResultResponse uploadMediaHighestPriority(@PathVariable(name = "workspace_id") String workspaceId,
+                                                         @PathVariable(name = "job_id") String jobId) {
+        flighttaskService.uploadMediaHighestPriority(workspaceId, jobId);
+        return HttpResultResponse.success();
     }
 
     @PutMapping("/{workspace_id}/jobs/{job_id}")
-    public ResponseResult updateJobStatus(@PathVariable(name = "workspace_id") String workspaceId,
-                                          @PathVariable(name = "job_id") String jobId,
-                                          @Valid @RequestBody UpdateJobParam param) {
-        waylineJobService.updateJobStatus(workspaceId, jobId, param);
-        return ResponseResult.success();
+    public HttpResultResponse updateJobStatus(@PathVariable(name = "workspace_id") String workspaceId,
+                                              @PathVariable(name = "job_id") String jobId,
+                                              @Valid @RequestBody UpdateJobParam param) {
+        flighttaskService.updateJobStatus(workspaceId, jobId, param);
+        return HttpResultResponse.success();
     }
 }

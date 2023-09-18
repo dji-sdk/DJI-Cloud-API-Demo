@@ -1,6 +1,6 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.manage.model.dto.TopologyDTO;
+import com.dji.sdk.cloudapi.tsa.TopologyList;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,12 +17,12 @@ public interface ITopologyService {
      * @param workspaceId
      * @return
      */
-    List<TopologyDTO> getDeviceTopology(String workspaceId);
+    List<TopologyList> getDeviceTopology(String workspaceId);
 
     /**
      * Query the topology according to the gateway sn.
      * @param gatewaySn
      * @return
      */
-    Optional<TopologyDTO> getDeviceTopologyByGatewaySn(String gatewaySn);
+    Optional<TopologyList> getDeviceTopologyByGatewaySn(String gatewaySn);
 }

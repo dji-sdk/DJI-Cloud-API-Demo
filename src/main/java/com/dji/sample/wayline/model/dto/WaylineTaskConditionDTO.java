@@ -1,5 +1,7 @@
 package com.dji.sample.wayline.model.dto;
 
+import com.dji.sdk.cloudapi.wayline.ExecutableConditions;
+import com.dji.sdk.cloudapi.wayline.ReadyConditions;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WaylineTaskConditionDTO {
 
-    private WaylineTaskReadyConditionDTO readyConditions;
+    private ReadyConditions readyConditions;
 
-    private WaylineTaskExecutableConditionDTO executableConditions;
+    private ExecutableConditions executableConditions;
 }

@@ -1,9 +1,9 @@
 package com.dji.sample.component.oss.service.impl;
 
 import com.dji.sample.component.oss.model.OssConfiguration;
-import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
-import com.dji.sample.media.model.CredentialsDTO;
+import com.dji.sdk.cloudapi.storage.CredentialsToken;
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import io.minio.*;
 import io.minio.credentials.AssumeRoleProvider;
 import io.minio.errors.*;
@@ -31,17 +31,17 @@ public class MinIOServiceImpl implements IOssService {
     private MinioClient client;
     
     @Override
-    public String getOssType() {
-        return OssTypeEnum.MINIO.getType();
+    public OssTypeEnum getOssType() {
+        return OssTypeEnum.MINIO;
     }
 
     @Override
-    public CredentialsDTO getCredentials() {
+    public CredentialsToken getCredentials() {
         try {
             AssumeRoleProvider provider = new AssumeRoleProvider(OssConfiguration.endpoint, OssConfiguration.accessKey,
                     OssConfiguration.secretKey, Math.toIntExact(OssConfiguration.expire),
                     null, OssConfiguration.region, null, null, null, null);
-            return new CredentialsDTO(provider.fetch(), OssConfiguration.expire);
+            return new CredentialsToken(provider.fetch(), OssConfiguration.expire);
         } catch (NoSuchAlgorithmException e) {
             log.debug("Failed to obtain sts.");
             e.printStackTrace();
@@ -100,9 +100,9 @@ public class MinIOServiceImpl implements IOssService {
             try {
                 ObjectWriteResponse response = client.putObject(
                         PutObjectArgs.builder().bucket(bucket).object(objectKey).stream(input, input.available(), 0).build());
-                log.info("Upload File: {}", response.etag());
+                log.info("Upload FlighttaskCreateFile: {}", response.etag());
             } catch (MinioException | IOException | InvalidKeyException | NoSuchAlgorithmException ex) {
-                log.error("Failed to upload File {}.", objectKey);
+                log.error("Failed to upload FlighttaskCreateFile {}.", objectKey);
                 ex.printStackTrace();
             }
         }

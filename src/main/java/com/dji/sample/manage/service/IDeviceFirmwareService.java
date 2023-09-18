@@ -1,12 +1,12 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.manage.model.dto.DeviceFirmwareDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareNoteDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
 import com.dji.sample.manage.model.param.DeviceFirmwareQueryParam;
 import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
-import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
+import com.dji.sdk.cloudapi.firmware.OtaCreateDevice;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public interface IDeviceFirmwareService {
      * @param upgradeDTOS
      * @return
      */
-    List<DeviceOtaCreateParam> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
+    List<OtaCreateDevice> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS);
 
     /**
      * Query firmware version information by page.

@@ -1,6 +1,8 @@
 server:
   port: 6789
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: cloud-api-sample
   datasource:
@@ -50,13 +52,18 @@ mqtt:
     client-id: 123456
     # If the protocol is ws/wss, this value is required.
     path:
-    # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
-    inbound-topic: sys/product/+/status,thing/product/+/requests
   DRC:
     protocol: WS # @see com.dji.sample.component.mqtt.model.MqttProtocolEnum
     host: Please enter your ip.
     port: 8083
     path: /mqtt
+    username: JavaServer
+    password: 123456
+
+cloud-sdk:
+  mqtt:
+    # Topics that need to be subscribed when initially connecting to mqtt, multiple topics are divided by ",".
+    inbound-topic: sys/product/+/status,thing/product/+/requests
 
 url:
   manage:
@@ -81,7 +88,7 @@ url:
 # Tutorial: https://www.alibabacloud.com/help/en/object-storage-service/latest/use-a-temporary-credential-provided-by-sts-to-access-oss
 oss:
   enable: false
-  provider: ali # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
+  provider: ALIYUN # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
   endpoint: https://oss-cn-hangzhou.aliyuncs.com
   access-key: Please enter your access key.
   secret-key: Please enter your secret key.
@@ -118,7 +125,7 @@ oss:
 
 logging:
   level:
-    com.dji.sample: debug
+    com.dji: debug
   file:
     name: logs/cloud-api-sample.log
 

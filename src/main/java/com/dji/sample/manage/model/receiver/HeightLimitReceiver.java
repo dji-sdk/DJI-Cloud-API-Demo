@@ -1,5 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,10 +23,15 @@ public class HeightLimitReceiver extends BasicDeviceProperty {
 
     private static final int HEIGHT_LIMIT_MIN = 20;
 
-    private Integer value;
+    private Integer heightLimit;
 
     @Override
     public boolean valid() {
-        return Objects.nonNull(this.value) && this.value >= HEIGHT_LIMIT_MIN && this.value <= HEIGHT_LIMIT_MAX;
+        return Objects.nonNull(this.heightLimit) && this.heightLimit >= HEIGHT_LIMIT_MIN && this.heightLimit <= HEIGHT_LIMIT_MAX;
+    }
+
+    @Override
+    public boolean canPublish(OsdDockDrone osd) {
+        return heightLimit.intValue() != osd.getHeightLimit();
     }
 }

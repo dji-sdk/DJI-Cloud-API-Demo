@@ -13,9 +13,9 @@ import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
 import com.dji.sample.component.AuthInterceptor;
 import com.dji.sample.component.oss.model.OssConfiguration;
-import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
-import com.dji.sample.media.model.CredentialsDTO;
+import com.dji.sdk.cloudapi.storage.CredentialsToken;
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -39,12 +39,12 @@ public class AmazonS3ServiceImpl implements IOssService {
     private AmazonS3 client;
     
     @Override
-    public String getOssType() {
-        return OssTypeEnum.AWS.getType();
+    public OssTypeEnum getOssType() {
+        return OssTypeEnum.AWS;
     }
 
     @Override
-    public CredentialsDTO getCredentials() {
+    public CredentialsToken getCredentials() {
         AWSSecurityTokenService stsClient = AWSSecurityTokenServiceClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(
                         new BasicAWSCredentials(OssConfiguration.accessKey, OssConfiguration.secretKey)))
@@ -56,7 +56,7 @@ public class AmazonS3ServiceImpl implements IOssService {
                 .withDurationSeconds(Math.toIntExact(OssConfiguration.expire));
         AssumeRoleResult result = stsClient.assumeRole(request);
         Credentials credentials = result.getCredentials();
-        return new CredentialsDTO(credentials);
+        return new CredentialsToken(credentials);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class AmazonS3ServiceImpl implements IOssService {
             throw new RuntimeException("The filename already exists.");
         }
         PutObjectResult objectResult = client.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
-        log.info("Upload File: {}", objectResult.toString());
+        log.info("Upload FlighttaskCreateFile: {}", objectResult.toString());
     }
 
     public void createClient() {

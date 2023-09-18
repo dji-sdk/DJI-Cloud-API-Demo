@@ -1,13 +1,12 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.manage.model.dto.DeviceLogsDTO;
 import com.dji.sample.manage.model.param.DeviceLogsCreateParam;
 import com.dji.sample.manage.model.param.DeviceLogsQueryParam;
-import com.dji.sample.manage.model.param.LogsFileUpdateParam;
-import org.springframework.messaging.MessageHeaders;
+import com.dji.sdk.cloudapi.log.FileUploadUpdateRequest;
+import com.dji.sdk.cloudapi.log.LogModuleEnum;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 
 import java.net.URL;
 import java.util.List;
@@ -33,7 +32,7 @@ public interface IDeviceLogsService {
      * @param domainList
      * @return
      */
-    ResponseResult getRealTimeLogs(String deviceSn, List<String> domainList);
+    HttpResultResponse getRealTimeLogs(String deviceSn, List<LogModuleEnum> domainList);
 
     /**
      * Add device logs.
@@ -53,7 +52,7 @@ public interface IDeviceLogsService {
      * @param param
      * @return
      */
-    ResponseResult pushFileUpload(String username, String deviceSn, DeviceLogsCreateParam param);
+    HttpResultResponse pushFileUpload(String username, String deviceSn, DeviceLogsCreateParam param);
 
     /**
      * Push a request to modify the  status of the logs file.
@@ -61,7 +60,7 @@ public interface IDeviceLogsService {
      * @param param
      * @return
      */
-    ResponseResult pushUpdateFile(String deviceSn, LogsFileUpdateParam param);
+    HttpResultResponse pushUpdateFile(String deviceSn, FileUploadUpdateRequest param);
 
     /**
      * Delete log records.
@@ -69,14 +68,6 @@ public interface IDeviceLogsService {
      * @param logsId
      */
     void deleteLogs(String deviceSn, String logsId);
-
-    /**
-     * Handle logs file upload progress.
-     * @param receiver
-     * @param headers
-     * @return
-     */
-    CommonTopicReceiver handleFileUploadProgress(CommonTopicReceiver receiver, MessageHeaders headers);
 
     /**
      * Update status, which is updated when the logs upload succeeds or fails.

@@ -2,17 +2,18 @@ package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.dji.sample.component.mqtt.model.EventsResultStatusEnum;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.manage.dao.ILogsFileMapper;
 import com.dji.sample.manage.model.dto.LogsFileDTO;
+import com.dji.sample.manage.model.dto.LogsFileUploadDTO;
 import com.dji.sample.manage.model.entity.LogsFileEntity;
-import com.dji.sample.manage.model.receiver.LogsExtFileReceiver;
-import com.dji.sample.manage.model.receiver.LogsFile;
-import com.dji.sample.manage.model.receiver.LogsFileUpload;
 import com.dji.sample.manage.service.ILogsFileIndexService;
 import com.dji.sample.manage.service.ILogsFileService;
+import com.dji.sdk.cloudapi.log.FileUploadProgressFile;
+import com.dji.sdk.cloudapi.log.FileUploadStartFile;
+import com.dji.sdk.cloudapi.log.FileUploadStatusEnum;
+import com.dji.sdk.cloudapi.log.LogFileIndex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +72,7 @@ public class LogsFileServiceImpl implements ILogsFileService {
     }
 
     @Override
-    public List<LogsFileUpload> getLogsFileByLogsId(String logsId) {
+    public List<LogsFileUploadDTO> getLogsFileByLogsId(String logsId) {
         List<LogsFileDTO> logsFiles = this.getLogsFileInfoByLogsId(logsId);
         if (CollectionUtils.isEmpty(logsFiles)) {
             return new ArrayList<>();
@@ -80,7 +81,7 @@ public class LogsFileServiceImpl implements ILogsFileService {
     }
 
     @Override
-    public Boolean insertFile(LogsFileUpload file, String logsId) {
+    public Boolean insertFile(FileUploadStartFile file, String logsId) {
         LogsFileEntity entity = LogsFileEntity.builder()
                 .logsId(logsId)
                 .fileId(UUID.randomUUID().toString())
@@ -92,8 +93,8 @@ public class LogsFileServiceImpl implements ILogsFileService {
         if (!insert) {
             return false;
         }
-        for (LogsFile logsFile : file.getList()) {
-            insert = logsFileIndexService.insertFileIndex(logsFile, file.getDeviceSn(), Integer.valueOf(file.getDeviceModelDomain()), entity.getFileId());
+        for (LogFileIndex logsFile : file.getList()) {
+            insert = logsFileIndexService.insertFileIndex(logsFile, file.getDeviceSn(), Integer.valueOf(file.getModule().getDomain()), entity.getFileId());
             if (!insert) {
                 return false;
             }
@@ -120,7 +121,7 @@ public class LogsFileServiceImpl implements ILogsFileService {
     }
 
     @Override
-    public void updateFile(String logsId, LogsExtFileReceiver fileReceiver) {
+    public void updateFile(String logsId, FileUploadProgressFile fileReceiver) {
         List<LogsFileDTO> logsFiles = this.getLogsFileInfoByLogsId(logsId);
         if (CollectionUtils.isEmpty(logsFiles)) {
             return;
@@ -146,15 +147,15 @@ public class LogsFileServiceImpl implements ILogsFileService {
         return ossService.getObjectUrl(OssConfiguration.bucket, logsFile.getObjectKey());
     }
 
-    private LogsFileEntity receiver2Entity(LogsExtFileReceiver receiver) {
+    private LogsFileEntity receiver2Entity(FileUploadProgressFile receiver) {
         if (Objects.isNull(receiver)) {
             return null;
         }
         return LogsFileEntity.builder()
                 .fingerprint(receiver.getFingerprint())
                 .size(receiver.getSize())
-                .status(Objects.nonNull(receiver.getProgress()) &&
-                        EventsResultStatusEnum.OK.getDesc().equals(receiver.getProgress().getStatus()))
+                .status(Objects.nonNull(receiver.getProgress())
+                        && FileUploadStatusEnum.OK == receiver.getProgress().getStatus())
                 .name(receiver.getKey().substring(receiver.getKey().lastIndexOf("/") + 1)).build();
     }
 }

@@ -105,7 +105,7 @@ public class JwtUtil {
         }
 
         if (Objects.nonNull(age)) {
-            builder.withExpiresAt(new Date(now.getTime() + age * 1000));
+            builder.withExpiresAt(new Date(now.getTime() + age));
         }
 
         String token = builder

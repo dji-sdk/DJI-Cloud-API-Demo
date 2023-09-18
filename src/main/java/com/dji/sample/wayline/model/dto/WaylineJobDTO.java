@@ -1,7 +1,8 @@
 package com.dji.sample.wayline.model.dto;
 
-import com.dji.sample.wayline.model.enums.WaylineTaskTypeEnum;
-import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
+import com.dji.sdk.cloudapi.wayline.OutOfControlActionEnum;
+import com.dji.sdk.cloudapi.wayline.TaskTypeEnum;
+import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,9 +35,9 @@ public class WaylineJobDTO {
 
     private String workspaceId;
 
-    private WaylineTemplateTypeEnum waylineType;
+    private WaylineTypeEnum waylineType;
 
-    private WaylineTaskTypeEnum taskType;
+    private TaskTypeEnum taskType;
 
     private LocalDateTime executeTime;
 
@@ -56,7 +57,7 @@ public class WaylineJobDTO {
 
     private Integer rthAltitude;
 
-    private Integer outOfControlAction;
+    private OutOfControlActionEnum outOfControlAction;
 
     private Integer mediaCount;
 

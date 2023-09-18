@@ -1,5 +1,7 @@
 package com.dji.sample.common.error;
 
+import com.dji.sdk.common.IErrorInfo;
+
 /**
  * @author sean.zhou
  * @version 0.1
@@ -43,12 +45,13 @@ public enum CommonErrorEnum implements IErrorInfo {
     }
 
     @Override
-    public String getErrorMsg() {
+    public String getMessage() {
         return this.msg;
     }
 
     @Override
-    public Integer getErrorCode() {
+    public Integer getCode() {
         return this.code;
     }
+
 }

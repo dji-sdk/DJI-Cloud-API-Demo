@@ -3,15 +3,8 @@ package com.dji.sample.manage.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.component.mqtt.model.ChannelName;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.component.mqtt.model.MapKeyConst;
-import com.dji.sample.component.mqtt.model.TopicConst;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.impl.SendMessageServiceImpl;
-import com.dji.sample.component.websocket.service.impl.WebSocketManageServiceImpl;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.manage.dao.IDeviceHmsMapper;
 import com.dji.sample.manage.model.common.HmsJsonUtil;
 import com.dji.sample.manage.model.common.HmsMessage;
@@ -19,20 +12,19 @@ import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceHmsDTO;
 import com.dji.sample.manage.model.dto.TelemetryDTO;
 import com.dji.sample.manage.model.entity.DeviceHmsEntity;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-import com.dji.sample.manage.model.enums.HmsEnum;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.model.param.DeviceHmsQueryParam;
-import com.dji.sample.manage.model.receiver.DeviceHmsReceiver;
-import com.dji.sample.manage.model.receiver.HmsArgsReceiver;
 import com.dji.sample.manage.service.IDeviceHmsService;
 import com.dji.sample.manage.service.IDeviceRedisService;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.hms.*;
+import com.dji.sdk.cloudapi.hms.api.AbstractHmsService;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
+import com.dji.sdk.mqtt.events.TopicEventsRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +46,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @Slf4j
-public class DeviceHmsServiceImpl implements IDeviceHmsService {
+public class DeviceHmsServiceImpl extends AbstractHmsService implements IDeviceHmsService {
 
     @Autowired
     private IDeviceHmsMapper mapper;
@@ -63,33 +55,25 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private SendMessageServiceImpl sendMessageService;
-
-    @Autowired
-    private WebSocketManageServiceImpl webSocketManageService;
+    private IWebSocketMessageService sendMessageService;
 
     @Autowired
     private IDeviceRedisService deviceRedisService;
 
     private static final Pattern PATTERN_KEY = Pattern.compile(
-            HmsEnum.FormatKeyEnum.KEY_START +
                     "(" +
-                    Arrays.stream(HmsEnum.FormatKeyEnum.values())
-                            .map(HmsEnum.FormatKeyEnum::getKey)
+                    Arrays.stream(HmsFormatKeyEnum.values())
+                            .map(HmsFormatKeyEnum::getKey)
                             .collect(Collectors.joining("|")) +
                     ")");
 
     @Override
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_HMS)
-    public void handleHms(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String topic = headers.get(MqttHeaders.RECEIVED_TOPIC).toString();
-        String sn  = topic.substring((TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT).length(),
-                topic.indexOf(TopicConst.EVENTS_SUF));
-
+    public void hms(TopicEventsRequest<Hms> response, MessageHeaders headers) {
+        String sn = response.getFrom();
         DeviceHmsEntity entity = DeviceHmsEntity.builder()
-                .bid(receiver.getBid())
-                .tid(receiver.getTid())
-                .createTime(receiver.getTimestamp())
+                .bid(response.getBid())
+                .tid(response.getTid())
+                .createTime(response.getTimestamp())
                 .updateTime(0L)
                 .sn(sn)
                 .build();
@@ -97,8 +81,7 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
         Set<String> hmsMap = deviceRedisService.getAllHmsKeys(sn);
 
         List<DeviceHmsDTO> unReadList = new ArrayList<>();
-        objectMapper.convertValue(((Map) (receiver.getData())).get(MapKeyConst.LIST),
-                new TypeReference<List<DeviceHmsReceiver>>() {})
+        response.getData().getList()
                 .forEach(hmsReceiver -> {
                     final DeviceHmsEntity hms = entity.clone();
                     this.fillEntity(hms, hmsReceiver);
@@ -133,10 +116,10 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
                 .eq(param.getUpdateTime() != null, DeviceHmsEntity::getUpdateTime, param.getUpdateTime())
                 .eq(param.getLevel() != null, DeviceHmsEntity::getLevel, param.getLevel())
                 .like(StringUtils.hasText(param.getMessage()) &&
-                                HmsEnum.MessageLanguage.ZH.getLanguage().equals(param.getLanguage()),
+                                HmsMessageLanguageEnum.ZH.getLanguage().equals(param.getLanguage()),
                         DeviceHmsEntity::getMessageZh, param.getMessage())
                 .like(StringUtils.hasText(param.getMessage()) &&
-                                HmsEnum.MessageLanguage.EN.getLanguage().equals(param.getLanguage()),
+                                HmsMessageLanguageEnum.EN.getLanguage().equals(param.getLanguage()),
                         DeviceHmsEntity::getMessageEn, param.getMessage())
                 .orderByDesc(DeviceHmsEntity::getCreateTime);
         if (param.getPage() == null || param.getPageSize() == null) {
@@ -186,23 +169,19 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
      * @param dto
      * @param receiver
      */
-    private void fillEntity(DeviceHmsEntity dto, DeviceHmsReceiver receiver) {
-        dto.setLevel(receiver.getLevel());
-        dto.setModule(receiver.getModule());
+    private void fillEntity(DeviceHmsEntity dto, DeviceHms receiver) {
+        dto.setLevel(receiver.getLevel().getLevel());
+        dto.setModule(receiver.getModule().getModule());
         dto.setHmsId(UUID.randomUUID().toString());
-        Optional<DeviceDomainEnum> domainEnumOpt = Optional.ofNullable(receiver.getDeviceType())
-                .map(type -> type.split("-")).map(type -> type[0]).map(Integer::parseInt).map(DeviceDomainEnum::find);
-        if (domainEnumOpt.isEmpty()) {
-            throw new RuntimeException("The device type does not match, please check the data.");
-        }
-        if (DeviceDomainEnum.DOCK == domainEnumOpt.get()) {
-            dto.setHmsKey(HmsEnum.HmsFaqIdEnum.DOCK_TIP.getText() + receiver.getCode());
+        DeviceDomainEnum domain = receiver.getDeviceType().getDomain();
+        if (DeviceDomainEnum.DOCK == domain) {
+            dto.setHmsKey(HmsFaqIdEnum.DOCK_TIP.getText() + receiver.getCode());
             return;
         }
-        StringBuilder key = new StringBuilder(HmsEnum.HmsFaqIdEnum.FPV_TIP.getText()).append(receiver.getCode());
+        StringBuilder key = new StringBuilder(HmsFaqIdEnum.FPV_TIP.getText()).append(receiver.getCode());
 
-        if (receiver.getInTheSky() == HmsEnum.IN_THE_SKY.getVal()) {
-            key.append(HmsEnum.IN_THE_SKY.getText());
+        if (receiver.getInTheSky()) {
+            key.append(HmsInTheSkyEnum.IN_THE_SKY.getText());
         }
         dto.setHmsKey(key.toString());
     }
@@ -213,7 +192,7 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
      * @param dto
      * @param args
      */
-    private void fillMessage(DeviceHmsEntity dto, HmsArgsReceiver args) {
+    private void fillMessage(DeviceHmsEntity dto, DeviceHmsArgs args) {
         HmsMessage hmsMessage = HmsJsonUtil.get(dto.getHmsKey());
         String zh = StringUtils.hasText(hmsMessage.getZh()) ? hmsMessage.getZh() : String.format("未知错误（%s）", dto.getHmsKey());
         String en = StringUtils.hasText(hmsMessage.getEn()) ? hmsMessage.getEn() : String.format("Unknown(%s)", dto.getHmsKey());//
@@ -228,27 +207,37 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
      * @param hmsArgs
      * @return
      */
-    private List<String> fillKeyArgs(String l, HmsArgsReceiver hmsArgs) {
-        List<String> args = new ArrayList<>();
-        args.add(Objects.nonNull(hmsArgs.getAlarmId()) ? Long.toHexString(hmsArgs.getAlarmId()) : null);
-        args.add(Objects.nonNull(hmsArgs.getComponentIndex()) ? String.valueOf(hmsArgs.getComponentIndex() + 1) : null);
+    private Map<String, String> fillKeyArgs(String l, DeviceHmsArgs hmsArgs) {
+        Map<String, String> args = new HashMap<>();
+        args.put(HmsFormatKeyEnum.ALARM_ID.getKey(), Objects.nonNull(hmsArgs.getAlarmId()) ? Long.toHexString(hmsArgs.getAlarmId()) : null);
+        args.put(HmsFormatKeyEnum.COMPONENT_INDEX.getKey(),
+                Objects.nonNull(hmsArgs.getComponentIndex()) ? String.valueOf(hmsArgs.getComponentIndex() + 1) : null);
         if (Objects.nonNull(hmsArgs.getSensorIndex())) {
-            args.add(String.valueOf(hmsArgs.getSensorIndex() + 1));
+            args.put(HmsFormatKeyEnum.INDEX.getKey(), String.valueOf(hmsArgs.getSensorIndex() + 1));
 
-            HmsEnum.HmsBatteryIndexEnum hmsBatteryIndexEnum = HmsEnum.HmsBatteryIndexEnum.find(hmsArgs.getSensorIndex());
-            HmsEnum.HmsDockCoverIndexEnum hmsDockCoverIndexEnum = HmsEnum.HmsDockCoverIndexEnum.find(hmsArgs.getSensorIndex());
-            HmsEnum.HmsChargingRodIndexEnum hmsChargingRodIndexEnum = HmsEnum.HmsChargingRodIndexEnum.find(hmsArgs.getSensorIndex());
+            HmsBatteryIndexEnum hmsBatteryIndexEnum = Optional.ofNullable(hmsArgs.getSensorIndex())
+                    .filter(arg -> arg <= 1).map(HmsBatteryIndexEnum::find).orElse(null);
+            HmsDockCoverIndexEnum hmsDockCoverIndexEnum = Optional.ofNullable(hmsArgs.getSensorIndex())
+                    .filter(arg -> arg <= 1).map(HmsDockCoverIndexEnum::find).orElse(null);
+            HmsChargingRodIndexEnum hmsChargingRodIndexEnum = Optional.ofNullable(hmsArgs.getSensorIndex())
+                    .filter(arg -> arg <= 3).map(HmsChargingRodIndexEnum::find).orElse(null);
 
             switch (l) {
                 case "zh":
-                    args.add(hmsBatteryIndexEnum.getZh());
-                    args.add(hmsDockCoverIndexEnum.getZh());
-                    args.add(hmsChargingRodIndexEnum.getZh());
+                    args.put(HmsFormatKeyEnum.BATTERY_INDEX.getKey(), Optional.ofNullable(hmsBatteryIndexEnum)
+                            .map(HmsBatteryIndexEnum::getZh).orElse(null));
+                    args.put(HmsFormatKeyEnum.DOCK_COVER_INDEX.getKey(), Optional.ofNullable(hmsDockCoverIndexEnum)
+                            .map(HmsDockCoverIndexEnum::getZh).orElse(null));
+                    args.put(HmsFormatKeyEnum.CHARGING_ROD_INDEX.getKey(), Optional.ofNullable(hmsChargingRodIndexEnum)
+                            .map(HmsChargingRodIndexEnum::getZh).orElse(null));
                     break;
                 case "en":
-                    args.add(hmsBatteryIndexEnum.getEn());
-                    args.add(hmsDockCoverIndexEnum.getEn());
-                    args.add(hmsChargingRodIndexEnum.getEn());
+                    args.put(HmsFormatKeyEnum.BATTERY_INDEX.getKey(), Optional.ofNullable(hmsBatteryIndexEnum)
+                            .map(HmsBatteryIndexEnum::getEn).orElse(null));
+                    args.put(HmsFormatKeyEnum.DOCK_COVER_INDEX.getKey(), Optional.ofNullable(hmsDockCoverIndexEnum)
+                            .map(HmsDockCoverIndexEnum::getEn).orElse(null));
+                    args.put(HmsFormatKeyEnum.CHARGING_ROD_INDEX.getKey(), Optional.ofNullable(hmsChargingRodIndexEnum)
+                            .map(HmsChargingRodIndexEnum::getEn).orElse(null));
                     break;
                 default:
                     break;
@@ -265,17 +254,15 @@ public class DeviceHmsServiceImpl implements IDeviceHmsService {
      * @param hmsArgs
      * @return
      */
-    private String format(String l, String format, HmsArgsReceiver hmsArgs) {
-        List<String> args = fillKeyArgs(l, hmsArgs);
+    private String format(String l, String format, DeviceHmsArgs hmsArgs) {
+        Map<String, String> args = fillKeyArgs(l, hmsArgs);
         List<String> list = parse(format);
         StringBuilder sb = new StringBuilder();
         for (String word : list) {
             if (!StringUtils.hasText(word)) {
                 continue;
             }
-            HmsEnum.FormatKeyEnum keyEnum = HmsEnum.FormatKeyEnum.find(word.substring(1));
-            sb.append(HmsEnum.FormatKeyEnum.KEY_START != word.charAt(0) || HmsEnum.FormatKeyEnum.UNKNOWN == keyEnum ?
-                    word : args.get(keyEnum.getIndex()));
+            sb.append(args.getOrDefault(word, word));
         }
         return sb.toString();
     }

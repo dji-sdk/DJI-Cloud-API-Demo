@@ -1,6 +1,6 @@
 package com.dji.sample.component;
 
-import com.dji.sample.common.model.ResponseResult;
+import com.dji.sdk.common.HttpResultResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -22,21 +22,21 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(Exception.class)
-    public ResponseResult exceptionHandler(Exception e) {
+    public HttpResultResponse exceptionHandler(Exception e) {
         e.printStackTrace();
-        return ResponseResult.error(e.getLocalizedMessage());
+        return HttpResultResponse.error(e.getLocalizedMessage());
     }
 
     @ExceptionHandler(NullPointerException.class)
-    public ResponseResult nullPointerExceptionHandler(NullPointerException e) {
+    public HttpResultResponse nullPointerExceptionHandler(NullPointerException e) {
         e.printStackTrace();
-        return ResponseResult.error("A null object appeared.");
+        return HttpResultResponse.error("A null object appeared.");
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseResult methodArgumentNotValidExceptionHandler(BindException e) {
+    public HttpResultResponse methodArgumentNotValidExceptionHandler(BindException e) {
         e.printStackTrace();
-        return ResponseResult.error(e.getFieldError().getField() + e.getFieldError().getDefaultMessage());
+        return HttpResultResponse.error(e.getFieldError().getField() + e.getFieldError().getDefaultMessage());
     }
 
 }
