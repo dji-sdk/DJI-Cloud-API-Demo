@@ -1,6 +1,6 @@
 package com.dji.sample.wayline.model.enums;
 
-import com.dji.sample.common.error.IErrorInfo;
+import com.dji.sdk.common.IErrorInfo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.Arrays;
@@ -63,12 +63,12 @@ public enum WaylineErrorCodeEnum implements IErrorInfo {
     }
 
     @Override
-    public String getErrorMsg() {
+    public String getMessage() {
         return msg;
     }
 
     @Override
-    public Integer getErrorCode() {
+    public Integer getCode() {
         return code;
     }
 

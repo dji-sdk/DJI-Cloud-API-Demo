@@ -1,12 +1,11 @@
 package com.dji.sample.component;
 
-import com.dji.sample.component.mqtt.service.IMqttTopicService;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.wayline.service.IWaylineJobService;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.mqtt.IMqttTopicService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +31,6 @@ public class GlobalScheduleService {
     private IMqttTopicService topicService;
 
     @Autowired
-    private IWaylineJobService waylineJobService;
-    @Autowired
     private ObjectMapper mapper;
     /**
      * Check the status of the devices every 30 seconds. It is recommended to use cache.
@@ -46,14 +43,13 @@ public class GlobalScheduleService {
             long expire = RedisOpsUtils.getExpire(key);
             if (expire <= 30) {
                 DeviceDTO device = (DeviceDTO) RedisOpsUtils.get(key);
-                if (DeviceDomainEnum.SUB_DEVICE.getVal() == device.getDomain()) {
+                if (null == device) {
+                    return;
+                }
+                if (DeviceDomainEnum.DRONE == device.getDomain()) {
                     deviceService.subDeviceOffline(key.substring(start));
                 } else {
-                    deviceService.unsubscribeTopicOffline(key.substring(start));
-                    deviceService.pushDeviceOfflineTopo(device.getWorkspaceId(), device.getDeviceSn());
-                    RedisOpsUtils.hashDel(RedisConst.LIVE_CAPACITY, new String[]{device.getDeviceSn()});
-                    RedisOpsUtils.del(RedisConst.HMS_PREFIX + device.getDeviceSn());
-                    RedisOpsUtils.del(RedisConst.OSD_PREFIX + device.getDeviceSn());
+                    deviceService.gatewayOffline(key.substring(start));
                 }
                 RedisOpsUtils.del(key);
             }

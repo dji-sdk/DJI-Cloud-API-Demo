@@ -1,13 +1,14 @@
 package com.dji.sample.storage.controller;
 
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.media.model.StsCredentialsDTO;
 import com.dji.sample.storage.service.IStorageService;
+import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
+import com.dji.sdk.cloudapi.storage.api.IHttpStorageService;
+import com.dji.sdk.common.HttpResultResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author sean
@@ -15,8 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @date 2021/12/29
  */
 @RestController
-@RequestMapping("${url.storage.prefix}${url.storage.version}/workspaces/")
-public class StorageController {
+public class StorageController implements IHttpStorageService {
 
     @Autowired
     private IStorageService storageService;
@@ -26,11 +26,9 @@ public class StorageController {
      * @param workspaceId
      * @return
      */
-    @PostMapping("/{workspace_id}/sts")
-    public ResponseResult<StsCredentialsDTO> getSTSCredentials(@PathVariable(name = "workspace_id") String workspaceId) {
-
-        StsCredentialsDTO stsCredentials = storageService.getSTSCredentials();
-        return ResponseResult.success(stsCredentials);
+    @Override
+    public HttpResultResponse<StsCredentialsResponse> getTemporaryCredential(String workspaceId, HttpServletRequest req, HttpServletResponse rsp) {
+        StsCredentialsResponse stsCredentials = storageService.getSTSCredentials();
+        return HttpResultResponse.success(stsCredentials);
     }
-
 }

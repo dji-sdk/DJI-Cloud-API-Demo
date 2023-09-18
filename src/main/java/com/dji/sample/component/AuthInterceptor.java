@@ -26,7 +26,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String uri = request.getRequestURI();
-        log.debug("request uri: {}", uri);
+        log.debug("request uri: {}, IP: {}", uri, request.getRemoteAddr());
         // The options method is passed directly.
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             response.setStatus(HttpStatus.OK.value());
@@ -36,7 +36,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         // Check if the token exists.
         if (!StringUtils.hasText(token)) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            log.error(CommonErrorEnum.NO_TOKEN.getErrorMsg());
+            log.error(CommonErrorEnum.NO_TOKEN.getMessage());
             return false;
         }
 

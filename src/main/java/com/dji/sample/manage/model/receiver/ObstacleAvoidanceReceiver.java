@@ -1,6 +1,8 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.StateSwitchEnum;
+import com.dji.sdk.cloudapi.device.ObstacleAvoidance;
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
+import com.dji.sdk.cloudapi.device.SwitchActionEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,46 +17,21 @@ import java.util.Objects;
 @Data
 public class ObstacleAvoidanceReceiver extends BasicDeviceProperty {
 
-    private Integer horizon;
+    private SwitchActionEnum horizon;
 
-    private Integer upside;
+    private SwitchActionEnum upside;
 
-    private Integer downside;
+    private SwitchActionEnum downside;
 
-    @Override
     public boolean valid() {
-        boolean valid = Objects.nonNull(this.horizon) || Objects.nonNull(this.upside) || Objects.nonNull(this.downside);
-
-        if (Objects.nonNull(this.horizon)) {
-            valid = StateSwitchEnum.find(horizon).isPresent();
-        }
-        if (Objects.nonNull(this.upside)) {
-            valid &= StateSwitchEnum.find(upside).isPresent();
-        }
-        if (Objects.nonNull(this.downside)) {
-            valid &= StateSwitchEnum.find(downside).isPresent();
-        }
-        return valid;
+        return Objects.nonNull(this.horizon) || Objects.nonNull(this.upside) || Objects.nonNull(this.downside);
     }
 
     @Override
-    public boolean canPublish(String fieldName, OsdSubDeviceReceiver osd) {
-        ObstacleAvoidanceReceiver obstacleAvoidance = osd.getObstacleAvoidance();
-        switch (fieldName) {
-            case "horizon":
-                return Objects.isNull(obstacleAvoidance.getHorizon()) ||
-                        Objects.nonNull(obstacleAvoidance.getHorizon()) &&
-                                obstacleAvoidance.getHorizon().intValue() != this.horizon;
-            case "upside":
-                return Objects.isNull(obstacleAvoidance.getUpside()) ||
-                        Objects.nonNull(obstacleAvoidance.getUpside()) &&
-                                obstacleAvoidance.getUpside().intValue() != this.upside;
-            case "downside":
-                return Objects.isNull(obstacleAvoidance.getDownside()) ||
-                        Objects.nonNull(obstacleAvoidance.getDownside()) &&
-                                obstacleAvoidance.getDownside().intValue() != this.downside;
-            default:
-                throw new RuntimeException("Property " + fieldName + " does not exist.");
-        }
+    public boolean canPublish(OsdDockDrone osd) {
+        ObstacleAvoidance obstacleAvoidance = osd.getObstacleAvoidance();
+        return (Objects.nonNull(obstacleAvoidance.getHorizon()) && horizon != obstacleAvoidance.getHorizon())
+                || (Objects.nonNull(obstacleAvoidance.getUpside()) && upside != obstacleAvoidance.getUpside())
+                || (Objects.nonNull(obstacleAvoidance.getDownside()) && downside != obstacleAvoidance.getDownside());
     }
 }

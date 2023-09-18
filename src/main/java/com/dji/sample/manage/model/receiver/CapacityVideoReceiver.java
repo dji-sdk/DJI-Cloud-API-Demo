@@ -1,7 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.dji.sdk.cloudapi.livestream.VideoTypeEnum;
 import lombok.Data;
 
 import java.util.List;
@@ -12,12 +11,11 @@ import java.util.List;
  * @version 0.1
  */
 @Data
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class CapacityVideoReceiver {
 
     private String videoIndex;
 
-    private String videoType;
+    private VideoTypeEnum videoType;
 
-    private List<String> switchableVideoTypes;
+    private List<VideoTypeEnum> switchableVideoTypes;
 }

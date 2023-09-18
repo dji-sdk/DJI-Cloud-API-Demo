@@ -1,6 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

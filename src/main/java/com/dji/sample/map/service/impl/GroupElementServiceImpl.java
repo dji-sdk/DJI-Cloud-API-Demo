@@ -2,11 +2,12 @@ package com.dji.sample.map.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.dji.sample.map.dao.IGroupElementMapper;
-import com.dji.sample.map.model.dto.*;
+import com.dji.sample.map.model.dto.GroupElementDTO;
 import com.dji.sample.map.model.entity.GroupElementEntity;
 import com.dji.sample.map.model.enums.ElementTypeEnum;
 import com.dji.sample.map.service.IElementCoordinateService;
 import com.dji.sample.map.service.IGroupElementService;
+import com.dji.sdk.cloudapi.map.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,15 +32,14 @@ public class GroupElementServiceImpl implements IGroupElementService {
     private IElementCoordinateService elementCoordinateService;
 
     @Override
-    public List<GroupElementDTO> getElementsByGroupId(String groupId) {
+    public List<MapGroupElement> getElementsByGroupId(String groupId) {
         List<GroupElementEntity> elementList = mapper.selectList(
                 new LambdaQueryWrapper<GroupElementEntity>()
                         .eq(GroupElementEntity::getGroupId, groupId));
 
-        List<GroupElementDTO> groupElementList = new ArrayList<>();
+        List<MapGroupElement> groupElementList = new ArrayList<>();
         for (GroupElementEntity elementEntity : elementList) {
-
-            GroupElementDTO groupElement = this.entityConvertToDto(elementEntity);
+            MapGroupElement groupElement = this.entityConvertToDto(elementEntity);
             groupElementList.add(groupElement);
 
             this.addCoordinateToElement(groupElement, elementEntity);
@@ -48,7 +48,7 @@ public class GroupElementServiceImpl implements IGroupElementService {
     }
 
     @Override
-    public Boolean saveElement(String groupId, ElementCreateDTO elementCreate) {
+    public Boolean saveElement(String groupId, CreateMapElementRequest elementCreate) {
         Optional<GroupElementEntity> groupElementOpt = this.getEntityByElementId(elementCreate.getId());
 
         if (groupElementOpt.isPresent()) {
@@ -57,11 +57,17 @@ public class GroupElementServiceImpl implements IGroupElementService {
         GroupElementEntity groupElement = this.createDtoConvertToEntity(elementCreate);
         groupElement.setGroupId(groupId);
 
-        return mapper.insert(groupElement) > 0;
+        boolean saveElement = mapper.insert(groupElement) > 0;
+        if (!saveElement) {
+            return false;
+        }
+        // save coordinate
+        return elementCoordinateService.saveCoordinate(
+                elementCreate.getResource().getContent().getGeometry().convertToList(), elementCreate.getId());
     }
 
     @Override
-    public Boolean updateElement(String elementId, ElementUpdateDTO elementUpdate, String username) {
+    public Boolean updateElement(String elementId, UpdateMapElementRequest elementUpdate, String username) {
         Optional<GroupElementEntity> groupElementOpt = this.getEntityByElementId(elementId);
         if (groupElementOpt.isEmpty()) {
             return false;
@@ -70,8 +76,16 @@ public class GroupElementServiceImpl implements IGroupElementService {
         GroupElementEntity groupElement = groupElementOpt.get();
         groupElement.setUsername(username);
         this.updateEntityWithDto(elementUpdate, groupElement);
-
-        return mapper.updateById(groupElement) > 0;
+        boolean update = mapper.updateById(groupElement) > 0;
+        if (!update) {
+            return false;
+        }
+        // delete all coordinates according to element id.
+        boolean delCoordinate = elementCoordinateService.deleteCoordinateByElementId(elementId);
+        // save coordinate
+        boolean saveCoordinate = elementCoordinateService.saveCoordinate(
+                elementUpdate.getContent().getGeometry().convertToList(), elementId);
+        return delCoordinate & saveCoordinate;
     }
 
     @Override
@@ -93,11 +107,24 @@ public class GroupElementServiceImpl implements IGroupElementService {
             return Optional.empty();
         }
         GroupElementEntity elementEntity = elementEntityOpt.get();
-        GroupElementDTO groupElement = this.entityConvertToDto(elementEntity);
+        MapGroupElement groupElement = this.entityConvertToDto(elementEntity);
 
         this.addCoordinateToElement(groupElement, elementEntity);
+        return Optional.ofNullable(groupElement2Dto(groupElement, elementEntity.getGroupId()));
+    }
 
-        return Optional.ofNullable(groupElement);
+    private GroupElementDTO groupElement2Dto(MapGroupElement element, String groupId) {
+        if (null == element) {
+            return null;
+        }
+        return GroupElementDTO.builder()
+                .elementId(element.getId())
+                .groupId(groupId)
+                .updateTime(element.getUpdateTime())
+                .createTime(element.getCreateTime())
+                .name(element.getName())
+                .resource(element.getResource())
+                .build();
     }
 
     /**
@@ -105,24 +132,19 @@ public class GroupElementServiceImpl implements IGroupElementService {
      * @param element
      * @param elementEntity
      */
-    private void addCoordinateToElement(GroupElementDTO element, GroupElementEntity elementEntity) {
-        Optional<ElementType> coordinateOpt = ElementTypeEnum.findType(elementEntity.getElementType());
+    private void addCoordinateToElement(MapGroupElement element, GroupElementEntity elementEntity) {
+        Optional<ElementGeometryType> coordinateOpt = ElementTypeEnum.findType(elementEntity.getElementType());
         if (coordinateOpt.isEmpty()) {
             return;
         }
+        element.getResource()
+                .setContent(new ElementContent()
+                        .setProperties(new ElementProperty()
+                                .setClampToGround(elementEntity.getClampToGround())
+                                .setColor(elementEntity.getColor()))
+                        .setGeometry(coordinateOpt.get()));
 
-        ElementType elementType = coordinateOpt.get();
-
-        element.getResource().setContent(
-                ResourceContentDTO.builder()
-                        .properties(ContentPropertyDTO.builder()
-                                .clampToGround(elementEntity.getClampToGround())
-                                .color(elementEntity.getColor())
-                                .build())
-                        .geometry(elementType)
-                        .build());
-
-        elementType.adapterCoordinateType(
+        coordinateOpt.get().adapterCoordinateType(
                 elementCoordinateService.getCoordinateByElementId(elementEntity.getElementId()));
     }
 
@@ -142,24 +164,19 @@ public class GroupElementServiceImpl implements IGroupElementService {
      * @param entity
      * @return
      */
-    private GroupElementDTO entityConvertToDto(GroupElementEntity entity) {
-        GroupElementDTO.GroupElementDTOBuilder builder = GroupElementDTO.builder();
+    private MapGroupElement entityConvertToDto(GroupElementEntity entity) {
         if (entity == null) {
-            return builder.build();
+            return null;
         }
 
-        return builder
-                .display(entity.getDisplay())
-                .groupId(entity.getGroupId())
-                .elementId(entity.getElementId())
-                .name(entity.getElementName())
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
-                .resource(ElementResourceDTO.builder()
-                        .type(entity.getElementType())
-                        .username(entity.getUsername())
-                        .build())
-                .build();
+        return new MapGroupElement()
+                .setId(entity.getElementId())
+                .setName(entity.getElementName())
+                .setCreateTime(entity.getCreateTime())
+                .setUpdateTime(entity.getUpdateTime())
+                .setResource(new ElementResource()
+                        .setType(ElementResourceTypeEnum.find(entity.getElementType()))
+                        .setUsername(entity.getUsername()));
     }
 
     /**
@@ -167,8 +184,8 @@ public class GroupElementServiceImpl implements IGroupElementService {
      * @param elementCreate
      * @return
      */
-    private GroupElementEntity createDtoConvertToEntity(ElementCreateDTO elementCreate) {
-        ContentPropertyDTO properties = elementCreate.getResource().getContent().getProperties();
+    private GroupElementEntity createDtoConvertToEntity(CreateMapElementRequest elementCreate) {
+        ElementProperty properties = elementCreate.getResource().getContent().getProperties();
         return GroupElementEntity.builder()
                 .elementId(elementCreate.getId())
                 .elementName(elementCreate.getName())
@@ -184,7 +201,7 @@ public class GroupElementServiceImpl implements IGroupElementService {
      * @param elementUpdate
      * @param groupElement
      */
-    private void updateEntityWithDto(ElementUpdateDTO elementUpdate, GroupElementEntity groupElement) {
+    private void updateEntityWithDto(UpdateMapElementRequest elementUpdate, GroupElementEntity groupElement) {
         if (elementUpdate == null || groupElement == null) {
             return;
         }

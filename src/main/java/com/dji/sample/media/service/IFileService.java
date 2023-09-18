@@ -1,8 +1,8 @@
 package com.dji.sample.media.service;
 
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.model.MediaFileDTO;
+import com.dji.sdk.cloudapi.media.MediaUploadCallbackRequest;
+import com.dji.sdk.common.PaginationData;
 
 import java.net.URL;
 import java.util.List;
@@ -28,7 +28,7 @@ public interface IFileService {
      * @param file
      * @return
      */
-    Integer saveFile(String workspaceId, FileUploadDTO file);
+    Integer saveFile(String workspaceId, MediaUploadCallbackRequest file);
 
     /**
      * Query information about all files in this workspace based on the workspace id.

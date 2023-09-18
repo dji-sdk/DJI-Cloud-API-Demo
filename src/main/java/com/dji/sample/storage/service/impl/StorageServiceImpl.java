@@ -1,14 +1,15 @@
 package com.dji.sample.storage.service.impl;
 
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
-import com.dji.sample.media.model.StsCredentialsDTO;
 import com.dji.sample.storage.service.IStorageService;
+import com.dji.sdk.cloudapi.media.StorageConfigGet;
+import com.dji.sdk.cloudapi.media.api.AbstractMediaService;
+import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
+import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.requests.TopicRequestsRequest;
+import com.dji.sdk.mqtt.requests.TopicRequestsResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 
@@ -18,36 +19,24 @@ import org.springframework.stereotype.Service;
  * @date 2022/3/9
  */
 @Service
-public class StorageServiceImpl implements IStorageService {
-
-    @Autowired
-    private IMessageSenderService messageSender;
+public class StorageServiceImpl extends AbstractMediaService implements IStorageService {
 
     @Autowired
     private OssServiceContext ossService;
 
     @Override
-    public StsCredentialsDTO getSTSCredentials() {
-        return StsCredentialsDTO.builder()
-                .endpoint(OssConfiguration.endpoint)
-                .bucket(OssConfiguration.bucket)
-                .credentials(ossService.getCredentials())
-                .provider(OssConfiguration.provider)
-                .objectKeyPrefix(OssConfiguration.objectDirPrefix)
-                .region(OssConfiguration.region)
-                .build();
+    public StsCredentialsResponse getSTSCredentials() {
+        return new StsCredentialsResponse()
+                .setEndpoint(OssConfiguration.endpoint)
+                .setBucket(OssConfiguration.bucket)
+                .setCredentials(ossService.getCredentials())
+                .setProvider(OssConfiguration.provider)
+                .setObjectKeyPrefix(OssConfiguration.objectDirPrefix)
+                .setRegion(OssConfiguration.region);
     }
 
     @Override
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_STORAGE_CONFIG_GET, outputChannel = ChannelName.OUTBOUND)
-    public void replyConfigGet(CommonTopicReceiver receiver, MessageHeaders headers) {
-        CommonTopicResponse<RequestsReply> response = CommonTopicResponse.<RequestsReply>builder()
-                .tid(receiver.getTid())
-                .bid(receiver.getBid())
-                .data(RequestsReply.success(this.getSTSCredentials()))
-                .timestamp(System.currentTimeMillis())
-                .method(receiver.getMethod())
-                .build();
-        messageSender.publish(headers.get(MqttHeaders.RECEIVED_TOPIC) + TopicConst._REPLY_SUF, response);
+    public TopicRequestsResponse<MqttReply<StsCredentialsResponse>> storageConfigGet(TopicRequestsRequest<StorageConfigGet> response, MessageHeaders headers) {
+        return new TopicRequestsResponse<MqttReply<StsCredentialsResponse>>().setData(MqttReply.success(getSTSCredentials()));
     }
 }

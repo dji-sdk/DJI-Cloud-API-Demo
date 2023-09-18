@@ -44,7 +44,7 @@ public class DeviceEntity implements Serializable {
     private Integer domain;
 
     @TableField(value = "version")
-    private Integer version;
+    private String version;
 
     @TableField(value = "device_index")
     private String deviceIndex;

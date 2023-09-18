@@ -1,9 +1,7 @@
 package com.dji.sample.manage.service;
 
 
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
 import com.dji.sample.manage.model.dto.WorkspaceDTO;
-import org.springframework.messaging.MessageHeaders;
 
 import java.util.Optional;
 
@@ -23,9 +21,4 @@ public interface IWorkspaceService {
      */
     Optional<WorkspaceDTO> getWorkspaceNameByBindCode(String bindCode);
 
-    /**
-     * Handle the request for obtaining the organization information corresponding to the device binding.
-     * @param receiver
-     */
-    void replyOrganizationGet(CommonTopicReceiver receiver, MessageHeaders headers);
 }

@@ -1,12 +1,12 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.common.util.SpringBeanUtils;
+import com.dji.sample.common.util.SpringBeanUtilsTest;
 import com.dji.sample.control.model.param.DronePayloadParam;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.receiver.OsdCameraReceiver;
-import com.dji.sample.manage.model.receiver.OsdSubDeviceReceiver;
 import com.dji.sample.manage.service.IDevicePayloadService;
 import com.dji.sample.manage.service.IDeviceRedisService;
+import com.dji.sdk.cloudapi.device.OsdCamera;
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
 
 import java.util.Optional;
 
@@ -19,7 +19,7 @@ public abstract class PayloadCommandsHandler {
 
     DronePayloadParam param;
 
-    OsdCameraReceiver osdCamera;
+    OsdCamera osdCamera;
 
     PayloadCommandsHandler(DronePayloadParam param) {
         this.param = param;
@@ -30,20 +30,20 @@ public abstract class PayloadCommandsHandler {
     }
 
     public boolean canPublish(String deviceSn) {
-        Optional<OsdSubDeviceReceiver> deviceOpt = SpringBeanUtils.getBean(IDeviceRedisService.class)
-                .getDeviceOsd(deviceSn, OsdSubDeviceReceiver.class);
+        Optional<OsdDockDrone> deviceOpt = SpringBeanUtilsTest.getBean(IDeviceRedisService.class)
+                .getDeviceOsd(deviceSn, OsdDockDrone.class);
         if (deviceOpt.isEmpty()) {
             throw new RuntimeException("The device is offline.");
         }
         osdCamera = deviceOpt.get().getCameras().stream()
-                .filter(osdCamera -> param.getPayloadIndex().equals(osdCamera.getPayloadIndex()))
+                .filter(osdCamera -> param.getPayloadIndex().equals(osdCamera.getPayloadIndex().toString()))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Did not receive osd information about the camera, please check the cache data."));
         return true;
     }
 
     private String checkDockOnline(String dockSn) {
-        Optional<DeviceDTO> deviceOpt = SpringBeanUtils.getBean(IDeviceRedisService.class).getDeviceOnline(dockSn);
+        Optional<DeviceDTO> deviceOpt = SpringBeanUtilsTest.getBean(IDeviceRedisService.class).getDeviceOnline(dockSn);
         if (deviceOpt.isEmpty()) {
             throw new RuntimeException("The dock is offline.");
         }
@@ -51,14 +51,14 @@ public abstract class PayloadCommandsHandler {
     }
 
     private void checkDeviceOnline(String deviceSn) {
-        boolean isOnline = SpringBeanUtils.getBean(IDeviceRedisService.class).checkDeviceOnline(deviceSn);
+        boolean isOnline = SpringBeanUtilsTest.getBean(IDeviceRedisService.class).checkDeviceOnline(deviceSn);
         if (!isOnline) {
             throw new RuntimeException("The device is offline.");
         }
     }
 
     private void checkAuthority(String deviceSn) {
-        boolean hasAuthority = SpringBeanUtils.getBean(IDevicePayloadService.class)
+        boolean hasAuthority = SpringBeanUtilsTest.getBean(IDevicePayloadService.class)
                 .checkAuthorityPayload(deviceSn, param.getPayloadIndex());
         if (!hasAuthority) {
             throw new RuntimeException("The device does not have payload control authority.");

@@ -1,6 +1,6 @@
 package com.dji.sample.control.model.param;
 
-import com.dji.sample.control.model.dto.PointDTO;
+import com.dji.sdk.cloudapi.control.Point;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,5 +33,5 @@ public class FlyToPointParam {
     @Size(min = 1)
     @Valid
     @NotNull
-    private List<PointDTO> points;
+    private List<Point> points;
 }

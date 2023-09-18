@@ -1,6 +1,6 @@
 package com.dji.sample.map.service;
 
-import com.dji.sample.map.model.dto.GroupDTO;
+import com.dji.sdk.cloudapi.map.GetMapElementsResponse;
 
 import java.util.List;
 
@@ -19,6 +19,6 @@ public interface IGroupService {
      * @param isDistributed Used to define if the group needs to be distributed. Default is true.
      * @return
      */
-    List<GroupDTO> getAllGroupsByWorkspaceId(String workspaceId, String groupId, Boolean isDistributed);
+    List<GetMapElementsResponse> getAllGroupsByWorkspaceId(String workspaceId, String groupId, Boolean isDistributed);
 
 }

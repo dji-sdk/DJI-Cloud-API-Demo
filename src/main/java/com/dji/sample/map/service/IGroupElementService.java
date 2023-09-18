@@ -1,8 +1,9 @@
 package com.dji.sample.map.service;
 
-import com.dji.sample.map.model.dto.ElementCreateDTO;
-import com.dji.sample.map.model.dto.ElementUpdateDTO;
 import com.dji.sample.map.model.dto.GroupElementDTO;
+import com.dji.sdk.cloudapi.map.CreateMapElementRequest;
+import com.dji.sdk.cloudapi.map.MapGroupElement;
+import com.dji.sdk.cloudapi.map.UpdateMapElementRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,7 @@ public interface IGroupElementService {
      * @param groupId
      * @return
      */
-    List<GroupElementDTO> getElementsByGroupId(String groupId);
+    List<MapGroupElement> getElementsByGroupId(String groupId);
 
     /**
      * Save all the elements.
@@ -27,7 +28,7 @@ public interface IGroupElementService {
      * @param elementCreate
      * @return
      */
-    Boolean saveElement(String groupId, ElementCreateDTO elementCreate);
+    Boolean saveElement(String groupId, CreateMapElementRequest elementCreate);
 
     /**
      * Query the element information based on the element id and update element.
@@ -36,7 +37,7 @@ public interface IGroupElementService {
      * @param username
      * @return
      */
-    Boolean updateElement(String elementId, ElementUpdateDTO elementUpdate, String username);
+    Boolean updateElement(String elementId, UpdateMapElementRequest elementUpdate, String username);
 
     /**
      * Delete the element based on the element id.

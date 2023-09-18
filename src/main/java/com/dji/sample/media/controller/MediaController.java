@@ -1,17 +1,17 @@
 package com.dji.sample.media.controller;
 
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.MapKeyConst;
-import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.service.IMediaService;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.dji.sdk.cloudapi.media.*;
+import com.dji.sdk.cloudapi.media.api.IHttpMediaService;
+import com.dji.sdk.common.HttpResultResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author sean
@@ -20,8 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @RestController
-@RequestMapping("${url.media.prefix}${url.media.version}/workspaces")
-public class MediaController {
+public class MediaController implements IHttpMediaService {
 
     @Autowired
     private IMediaService mediaService;
@@ -29,45 +28,44 @@ public class MediaController {
     /**
      * Check if the file has been uploaded by the fingerprint.
      * @param workspaceId
-     * @param file
+     * @param request
      * @return
      */
-    @PostMapping("/{workspace_id}/fast-upload")
-    public ResponseResult fastUpload(@PathVariable(name = "workspace_id") String workspaceId, @RequestBody FileUploadDTO file) {
+    @Override
+    public HttpResultResponse mediaFastUpload(String workspaceId, @Valid MediaFastUploadRequest request, HttpServletRequest req, HttpServletResponse rsp) {
+        boolean isExist = mediaService.fastUpload(workspaceId, request.getFingerprint());
 
-        boolean isExist = mediaService.fastUpload(workspaceId, file.getFingerprint());
-
-        return isExist ? ResponseResult.success() : ResponseResult.error(file.getFingerprint() + "don't exist.");
+        return isExist ? HttpResultResponse.success() : HttpResultResponse.error(request.getFingerprint() + "don't exist.");
     }
 
     /**
      * When the file is uploaded to the storage server by pilot,
      * the basic information of the file is reported through this interface.
      * @param workspaceId
-     * @param file
+     * @param request
      * @return
      */
-    @PostMapping("/{workspace_id}/upload-callback")
-    public ResponseResult<String> uploadCallback(@PathVariable(name = "workspace_id") String workspaceId, @RequestBody FileUploadDTO file) {
-        mediaService.saveMediaFile(workspaceId, file);
-        return ResponseResult.success(file.getObjectKey());
-
+    @Override
+    public HttpResultResponse<String> mediaUploadCallback(String workspaceId, @Valid MediaUploadCallbackRequest request, HttpServletRequest req, HttpServletResponse rsp) {
+        mediaService.saveMediaFile(workspaceId, request);
+        return HttpResultResponse.success(request.getObjectKey());
     }
 
     /**
      * Query the files that already exist in this workspace based on the workspace id and the collection of tiny fingerprints.
      * @param workspaceId
-     * @param tinyFingerprints  There is only one tiny_fingerprint parameter in the body.
+     * @param request  There is only one tiny_fingerprint parameter in the body.
      *                          But it is not recommended to use Map to receive the parameter.
      * @return
      */
-    @PostMapping("/{workspace_id}/files/tiny-fingerprints")
-    public ResponseResult<Map<String, List<String>>> uploadCallback(
-                                @PathVariable(name = "workspace_id") String workspaceId,
-                               @RequestBody Map<String, List<String>> tinyFingerprints) throws JsonProcessingException {
-
-        List<String> existingList = mediaService.getExistTinyFingerprints(workspaceId, tinyFingerprints.get(MapKeyConst.TINY_FINGERPRINTS));
-        return ResponseResult.success(new ConcurrentHashMap<>(Map.of(MapKeyConst.TINY_FINGERPRINTS, existingList)));
+    @Override
+    public HttpResultResponse<GetFileFingerprintResponse> getExistFileTinyFingerprint(String workspaceId, @Valid GetFileFingerprintRequest request, HttpServletRequest req, HttpServletResponse rsp) {
+        List<String> existingList = mediaService.getExistTinyFingerprints(workspaceId, request.getTinyFingerprints());
+        return HttpResultResponse.success(new GetFileFingerprintResponse().setTinyFingerprints(existingList));
     }
 
+    @Override
+    public HttpResultResponse folderUploadCallback(String workspaceId, @Valid FolderUploadCallbackRequest request, HttpServletRequest req, HttpServletResponse rsp) {
+        return null;
+    }
 }

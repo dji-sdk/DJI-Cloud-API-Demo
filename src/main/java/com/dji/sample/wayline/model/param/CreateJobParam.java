@@ -1,7 +1,8 @@
 package com.dji.sample.wayline.model.param;
 
-import com.dji.sample.wayline.model.enums.WaylineTaskTypeEnum;
-import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
+import com.dji.sdk.cloudapi.wayline.OutOfControlActionEnum;
+import com.dji.sdk.cloudapi.wayline.TaskTypeEnum;
+import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
@@ -27,18 +28,17 @@ public class CreateJobParam {
     private String dockSn;
 
     @NotNull
-    private WaylineTemplateTypeEnum waylineType;
+    private WaylineTypeEnum waylineType;
 
     @NotNull
-    private WaylineTaskTypeEnum taskType;
+    private TaskTypeEnum taskType;
 
     @Range(min = 20, max = 500)
     @NotNull
     private Integer rthAltitude;
 
     @NotNull
-    @Range(max = 2)
-    private Integer outOfControlAction;
+    private OutOfControlActionEnum outOfControlAction;
 
     @Range(min = 50, max = 90)
     private Integer minBatteryCapacity;

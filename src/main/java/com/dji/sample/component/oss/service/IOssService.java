@@ -1,6 +1,7 @@
 package com.dji.sample.component.oss.service;
 
-import com.dji.sample.media.model.CredentialsDTO;
+import com.dji.sdk.cloudapi.storage.CredentialsToken;
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -12,13 +13,13 @@ import java.net.URL;
  */
 public interface IOssService {
 
-    String getOssType();
+    OssTypeEnum getOssType();
 
     /**
      * Get temporary credentials.
      * @return
      */
-    CredentialsDTO getCredentials();
+    CredentialsToken getCredentials();
 
     /**
      * Get the address of the object based on the bucket name and the object name.

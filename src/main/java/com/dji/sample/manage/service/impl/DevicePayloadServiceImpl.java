@@ -2,31 +2,20 @@ package com.dji.sample.manage.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.dji.sample.component.mqtt.model.ChannelName;
-import com.dji.sample.component.redis.RedisConst;
-import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.control.model.enums.DroneAuthorityEnum;
 import com.dji.sample.manage.dao.IDevicePayloadMapper;
-import com.dji.sample.manage.model.dto.DeviceAuthorityDTO;
-import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
-import com.dji.sample.manage.model.dto.DevicePayloadDTO;
+import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DevicePayloadEntity;
-import com.dji.sample.manage.model.enums.ControlSourceEnum;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
-import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
-import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
 import com.dji.sample.manage.service.ICapacityCameraService;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.manage.service.IDevicePayloadService;
 import com.dji.sample.manage.service.IDeviceRedisService;
+import com.dji.sdk.cloudapi.device.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -54,7 +43,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     private ICapacityCameraService capacityCameraService;
 
     @Autowired
-    private ISendMessageService sendMessageService;
+    private IWebSocketMessageService sendMessageService;
 
     @Autowired
     private IDeviceRedisService deviceRedisService;
@@ -80,31 +69,19 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     }
 
     @Override
-    public Boolean savePayloadDTOs(List<DevicePayloadReceiver> payloadReceiverList) {
-        if (payloadReceiverList.isEmpty()) {
-            return true;
-        }
-
-        String deviceSn = payloadReceiverList.get(0).getDeviceSn();
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(deviceSn);
-        if (deviceOpt.isEmpty()) {
-            return false;
-        }
-        DeviceDTO device = deviceOpt.get();
-        List<DevicePayloadDTO> payloads = new ArrayList<>();
-
-        Map<String, String> controlMap = CollectionUtils.isEmpty(device.getPayloadsList()) ?
-                Collections.emptyMap() :
-                device.getPayloadsList().stream()
-                        .collect(Collectors.toMap(DevicePayloadDTO::getPayloadIndex, DevicePayloadDTO::getControlSource));
+    public Boolean savePayloadDTOs(DeviceDTO device, List<DevicePayloadReceiver> payloadReceiverList) {
+        Map<String, ControlSourceEnum> controlMap = CollectionUtils.isEmpty(device.getPayloadsList()) ?
+                Collections.emptyMap() : device.getPayloadsList().stream()
+                    .collect(Collectors.toMap(DevicePayloadDTO::getPayloadSn, DevicePayloadDTO::getControlSource));
 
         for (DevicePayloadReceiver payloadReceiver : payloadReceiverList) {
+            payloadReceiver.setDeviceSn(device.getDeviceSn());
             int payloadId = this.saveOnePayloadDTO(payloadReceiver);
             if (payloadId <= 0) {
+                log.error("Payload data saving failed.");
                 return false;
             }
-            payloads.add(this.receiver2Dto(payloadReceiver));
-            if (!controlMap.getOrDefault(payloadReceiver.getPayloadIndex(), "").equals(payloadReceiver.getControlSource())) {
+            if (controlMap.get(payloadReceiver.getSn()) != payloadReceiver.getControlSource()) {
                 sendMessageService.sendBatch(device.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
                                     BizCodeEnum.CONTROL_SOURCE_CHANGE.getCode(),
                                     DeviceAuthorityDTO.builder()
@@ -115,18 +92,15 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
             }
         }
 
-        if (payloads.isEmpty()) {
-            payloads = this.getDevicePayloadEntitiesByDeviceSn(deviceSn);
-        }
+        List<DevicePayloadDTO> payloads = this.getDevicePayloadEntitiesByDeviceSn(device.getDeviceSn());
         device.setPayloadsList(payloads);
-
         deviceRedisService.setDeviceOnline(device);
         return true;
     }
 
     @Override
     public Integer saveOnePayloadDTO(DevicePayloadReceiver payloadReceiver) {
-        return this.saveOnePayloadEntity(payloadDTOConvertToEntity(payloadReceiver));
+        return this.saveOnePayloadEntity(receiverConvertToEntity(payloadReceiver));
     }
 
     @Override
@@ -150,46 +124,45 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     }
 
     @Override
-    public void updateFirmwareVersion(FirmwareVersionReceiver receiver) {
-        mapper.update(DevicePayloadEntity.builder()
-                        .firmwareVersion(receiver.getFirmwareVersion())
-                        .build()
-                , new LambdaUpdateWrapper<DevicePayloadEntity>()
-                        .eq(DevicePayloadEntity::getDeviceSn, receiver.getSn()));
+    public Boolean updateFirmwareVersion(String droneSn, PayloadFirmwareVersion receiver) {
+        return mapper.update(DevicePayloadEntity.builder()
+                        .firmwareVersion(receiver.getFirmwareVersion()).build(),
+                new LambdaUpdateWrapper<DevicePayloadEntity>()
+                        .eq(DevicePayloadEntity::getDeviceSn, droneSn)
+                        .eq(DevicePayloadEntity::getPayloadSn, droneSn + "-" + receiver.getPosition().getPosition())
+        ) > 0;
     }
 
     /**
      * Handle payload data for devices.
-     * @param payloadReceiverList
-     * @param headers
+     * @param drone
+     * @param payloads
      */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_PAYLOAD)
-    public void handleDeviceBasicPayload(List<DevicePayloadReceiver> payloadReceiverList, MessageHeaders headers) {
-        if (payloadReceiverList.isEmpty()) {
+    public void updatePayloadControl(DeviceDTO drone, List<DevicePayloadReceiver> payloads) {
+        boolean match = payloads.stream().peek(p -> p.setSn(Objects.requireNonNullElse(p.getSn(),
+                p.getDeviceSn() + "-" + p.getPayloadIndex().getPosition().getPosition())))
+                .anyMatch(p -> ControlSourceEnum.UNKNOWN == p.getControlSource());
+        if (match) {
             return;
         }
-        String deviceSn = payloadReceiverList.get(0).getDeviceSn();
-        String key = RedisConst.STATE_PAYLOAD_PREFIX + deviceSn;
-        // Solve timing problems
-        long last = (long) Objects.requireNonNullElse(RedisOpsUtils.get(key), 0L);
-        long timestamp = headers.getTimestamp();
-        if (last > timestamp) {
+
+        if (payloads.isEmpty()) {
+            drone.setPayloadsList(null);
+            this.deletePayloadsByDeviceSn(List.of(drone.getDeviceSn()));
+            deviceRedisService.setDeviceOnline(drone);
             return;
         }
 
         // Filter unsaved payload information.
-        Set<String> payloadSns = this.getDevicePayloadEntitiesByDeviceSn(payloadReceiverList.get(0).getDeviceSn())
+        Set<String> payloadSns = this.getDevicePayloadEntitiesByDeviceSn(drone.getDeviceSn())
                 .stream().map(DevicePayloadDTO::getPayloadSn).collect(Collectors.toSet());
 
-        Set<String> newPayloadSns = payloadReceiverList.stream().map(DevicePayloadReceiver::getSn).collect(Collectors.toSet());
+        Set<String> newPayloadSns = payloads.stream().map(DevicePayloadReceiver::getSn).collect(Collectors.toSet());
         payloadSns.removeAll(newPayloadSns);
         this.deletePayloadsByPayloadsSn(payloadSns);
 
         // Save the new payload information.
-        boolean isSave = this.savePayloadDTOs(payloadReceiverList);
-        if (isSave) {
-            RedisOpsUtils.setWithExpire(key, timestamp, RedisConst.DEVICE_ALIVE_SECOND);
-        }
+        boolean isSave = this.savePayloadDTOs(drone, payloads);
         log.debug("The result of saving the payloads is {}.", isSave);
     }
 
@@ -205,14 +178,14 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
     @Override
     public Boolean checkAuthorityPayload(String deviceSn, String payloadIndex) {
         return deviceRedisService.getDeviceOnline(deviceSn).flatMap(device ->
-                Optional.of(DeviceDomainEnum.SUB_DEVICE.getVal() == device.getDomain()
+                Optional.of(DeviceDomainEnum.DRONE == device.getDomain()
                         && !CollectionUtils.isEmpty(device.getPayloadsList())
-                        && ControlSourceEnum.A.getControlSource()
-                        .equals(device.getPayloadsList().stream()
-                                .filter(payload -> payloadIndex.equals(payload.getPayloadIndex()))
+                        && ControlSourceEnum.A ==
+                        device.getPayloadsList().stream()
+                                .filter(payload -> payloadIndex.equals(payload.getPayloadIndex().toString()))
                                 .map(DevicePayloadDTO::getControlSource).findAny()
-                                .orElse(ControlSourceEnum.B.getControlSource())))).orElse(true);
-
+                                .orElse(ControlSourceEnum.B)))
+                .orElse(true);
     }
 
     /**
@@ -227,8 +200,11 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
                     .payloadName(entity.getPayloadName())
                     .payloadDesc(entity.getPayloadDesc())
                     .index(entity.getPayloadIndex())
-                    .payloadIndex(entity.getPayloadType() + "-" + entity.getSubType() + "-" + entity.getPayloadIndex())
-                    .controlSource(entity.getControlSource());
+                    .payloadIndex(new PayloadIndex()
+                            .setType(DeviceTypeEnum.find(entity.getPayloadType()))
+                            .setSubType(DeviceSubTypeEnum.find(entity.getSubType()))
+                            .setPosition(PayloadPositionEnum.find(entity.getPayloadIndex())))
+                    .controlSource(ControlSourceEnum.find(entity.getControlSource()));
         }
         return builder.build();
     }
@@ -238,7 +214,7 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
      * @param dto   payload
      * @return
      */
-    private DevicePayloadEntity payloadDTOConvertToEntity(DevicePayloadReceiver dto) {
+    private DevicePayloadEntity receiverConvertToEntity(DevicePayloadReceiver dto) {
         if (dto == null) {
             return new DevicePayloadEntity();
         }
@@ -246,27 +222,17 @@ public class DevicePayloadServiceImpl implements IDevicePayloadService {
 
         // The cameraIndex consists of type and subType and the index of the payload hanging on the drone.
         // type-subType-index
-        String[] payloadIndexArr = dto.getPayloadIndex().split("-");
-        try {
-            int[] arr = Arrays.stream(payloadIndexArr)
-                    .mapToInt(Integer::parseInt)
-                    .toArray();
+        Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService.getOneDictionaryInfoByTypeSubType(
+                DeviceDomainEnum.PAYLOAD.getDomain(), dto.getPayloadIndex().getType().getType(),
+                dto.getPayloadIndex().getSubType().getSubType());
+        dictionaryOpt.ifPresent(dictionary ->
+                builder.payloadName(dictionary.getDeviceName())
+                        .payloadDesc(dictionary.getDeviceDesc()));
 
-            Optional<DeviceDictionaryDTO> dictionaryOpt = dictionaryService
-                    .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(), arr[0], arr[1]);
-            dictionaryOpt.ifPresent(dictionary ->
-                    builder.payloadName(dictionary.getDeviceName())
-                            .payloadDesc(dictionary.getDeviceDesc()));
-
-            builder.payloadType(arr[0])
-                    .subType(arr[1])
-                    .payloadIndex(arr[2])
-                    .controlSource(dto.getControlSource());
-        } catch (NumberFormatException e) {
-            builder.payloadType(-1)
-                    .subType(-1)
-                    .payloadIndex(-1);
-        }
+        builder.payloadType(dto.getPayloadIndex().getType().getType())
+                .subType(dto.getPayloadIndex().getSubType().getSubType())
+                .payloadIndex(dto.getPayloadIndex().getPosition().getPosition())
+                .controlSource(dto.getControlSource().getControlSource());
 
         return builder
                 .payloadSn(dto.getSn())

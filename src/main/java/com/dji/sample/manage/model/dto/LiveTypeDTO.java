@@ -1,5 +1,8 @@
 package com.dji.sample.manage.model.dto;
 
+import com.dji.sdk.cloudapi.livestream.LensChangeVideoTypeEnum;
+import com.dji.sdk.cloudapi.livestream.UrlTypeEnum;
+import com.dji.sdk.cloudapi.livestream.VideoQualityEnum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -13,7 +16,7 @@ import lombok.Data;
 public class LiveTypeDTO {
 
     @JsonProperty("url_type")
-    private Integer urlType;
+    private UrlTypeEnum urlType;
 
     private String url;
 
@@ -21,8 +24,8 @@ public class LiveTypeDTO {
     private String videoId;
 
     @JsonProperty("video_quality")
-    private Integer videoQuality;
+    private VideoQualityEnum videoQuality;
 
-    private String videoType;
+    private LensChangeVideoTypeEnum videoType;
 
 }

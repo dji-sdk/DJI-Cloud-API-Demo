@@ -1,8 +1,9 @@
 package com.dji.sample.manage.service;
 
+import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DevicePayloadDTO;
-import com.dji.sample.manage.model.receiver.DevicePayloadReceiver;
-import com.dji.sample.manage.model.receiver.FirmwareVersionReceiver;
+import com.dji.sample.manage.model.dto.DevicePayloadReceiver;
+import com.dji.sdk.cloudapi.device.PayloadFirmwareVersion;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,7 +27,7 @@ public interface IDevicePayloadService {
      * @param payloadReceiverList
      * @return
      */
-    Boolean savePayloadDTOs(List<DevicePayloadReceiver> payloadReceiverList);
+    Boolean savePayloadDTOs(DeviceDTO drone, List<DevicePayloadReceiver> payloadReceiverList);
 
     /**
      * Save a payload data.
@@ -52,7 +53,7 @@ public interface IDevicePayloadService {
      * Update the firmware version information of the payload.
      * @param receiver
      */
-    void updateFirmwareVersion(FirmwareVersionReceiver receiver);
+    Boolean updateFirmwareVersion(String droneSn, PayloadFirmwareVersion receiver);
 
     /**
      * Delete payload data based on payload sn.
@@ -67,4 +68,6 @@ public interface IDevicePayloadService {
      * @return
      */
     Boolean checkAuthorityPayload(String deviceSn, String payloadIndex);
+
+    void updatePayloadControl(DeviceDTO drone, List<DevicePayloadReceiver> payloads);
 }

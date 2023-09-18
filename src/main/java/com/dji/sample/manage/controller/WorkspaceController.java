@@ -1,9 +1,9 @@
 package com.dji.sample.manage.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.manage.model.dto.WorkspaceDTO;
 import com.dji.sample.manage.service.IWorkspaceService;
+import com.dji.sdk.common.HttpResultResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,10 +32,10 @@ public class WorkspaceController {
      * @return
      */
     @GetMapping("/current")
-    public ResponseResult getCurrentWorkspace(HttpServletRequest request) {
+    public HttpResultResponse getCurrentWorkspace(HttpServletRequest request) {
         CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
         Optional<WorkspaceDTO> workspaceOpt = workspaceService.getWorkspaceByWorkspaceId(customClaim.getWorkspaceId());
 
-        return workspaceOpt.isEmpty() ? ResponseResult.error() : ResponseResult.success(workspaceOpt.get());
+        return workspaceOpt.isEmpty() ? HttpResultResponse.error() : HttpResultResponse.success(workspaceOpt.get());
     }
 }

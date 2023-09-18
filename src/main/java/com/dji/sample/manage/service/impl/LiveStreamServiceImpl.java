@@ -1,32 +1,26 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.common.error.LiveErrorEnum;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.CommonTopicResponse;
-import com.dji.sample.component.mqtt.model.ServiceReply;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
-import com.dji.sample.component.redis.RedisConst;
-import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.*;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-import com.dji.sample.manage.model.enums.LiveStreamMethodEnum;
-import com.dji.sample.manage.model.enums.LiveUrlTypeEnum;
-import com.dji.sample.manage.model.enums.LiveVideoQualityEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
-import com.dji.sample.manage.model.receiver.CapacityDeviceReceiver;
-import com.dji.sample.manage.model.receiver.LiveCapacityReceiver;
 import com.dji.sample.manage.service.*;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.device.VideoId;
+import com.dji.sdk.cloudapi.livestream.*;
+import com.dji.sdk.cloudapi.livestream.api.AbstractLivestreamService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.SDKManager;
+import com.dji.sdk.mqtt.services.ServicesReplyData;
+import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dji.sample.component.mqtt.model.TopicConst.*;
 
 /**
  * @author sean.zhou
@@ -47,10 +41,10 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     private IWorkspaceService workspaceService;
 
     @Autowired
-    private IMessageSenderService messageSender;
+    private IDeviceRedisService deviceRedisService;
 
     @Autowired
-    private IDeviceRedisService deviceRedisService;
+    private AbstractLivestreamService abstractLivestreamService;
 
     @Override
     public List<CapacityDeviceDTO> getLiveCapacity(String workspaceId) {
@@ -59,7 +53,7 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         List<DeviceDTO> devicesList = deviceService.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .workspaceId(workspaceId)
-                        .domains(List.of(DeviceDomainEnum.SUB_DEVICE.getVal(), DeviceDomainEnum.DOCK.getVal()))
+                        .domains(List.of(DeviceDomainEnum.DRONE.getDomain(), DeviceDomainEnum.DOCK.getDomain()))
                         .build());
 
         // Query the live capability of each drone.
@@ -74,42 +68,29 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     }
 
     @Override
-    public void saveLiveCapacity(LiveCapacityReceiver liveCapacityReceiver, Long timestamp) {
-        // Solve timing problems
-        for (CapacityDeviceReceiver capacityDeviceReceiver : liveCapacityReceiver.getDeviceList()) {
-            long last = (long) Objects.requireNonNullElse(
-                    RedisOpsUtils.get(RedisConst.LIVE_CAPACITY + capacityDeviceReceiver.getSn()), 0L);
-            if (last > timestamp) {
-                return;
-            }
-            capacityCameraService.saveCapacityCameraReceiverList(
-                    capacityDeviceReceiver.getCameraList(),
-                    capacityDeviceReceiver.getSn(), timestamp);
-        }
-    }
-
-    @Override
-    public ResponseResult liveStart(LiveTypeDTO liveParam) {
+    public HttpResultResponse liveStart(LiveTypeDTO liveParam) {
         // Check if this lens is available live.
-        ResponseResult responseResult = this.checkBeforeLive(liveParam.getVideoId());
-        if (ResponseResult.CODE_SUCCESS != responseResult.getCode()) {
+        HttpResultResponse<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
+        if (HttpResultResponse.CODE_SUCCESS != responseResult.getCode()) {
             return responseResult;
         }
 
-        DeviceDTO data = (DeviceDTO)responseResult.getData();
-        // target topic
-        String respTopic = THING_MODEL_PRE + PRODUCT +
-                data.getDeviceSn() + SERVICES_SUF;
-        ServiceReply receiveReply = this.publishLiveStart(respTopic, liveParam);
+        TopicServicesResponse<ServicesReplyData<String>> response = abstractLivestreamService.liveStartPush(
+                SDKManager.getDeviceSDK(responseResult.getData().getDeviceSn()), new LiveStartPushRequest()
+                        .setUrl(liveParam.getUrl())
+                        .setUrlType(liveParam.getUrlType())
+                        .setVideoId(new VideoId(liveParam.getVideoId()))
+                        .setVideoQuality(liveParam.getVideoQuality()));
 
-        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
         }
 
-        LiveUrlTypeEnum urlType = LiveUrlTypeEnum.find(liveParam.getUrlType());
         LiveDTO live = new LiveDTO();
 
-        switch (urlType) {
+        switch (liveParam.getUrlType()) {
+            case AGORA:
+                break;
             case RTMP:
                 live.setUrl(liveParam.getUrl().replace("rtmp", "webrtc"));
                 break;
@@ -125,89 +106,68 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
                         .toString());
                 break;
             case RTSP:
-                String url = receiveReply.getOutput().toString();
+                String url = response.getData().getOutput();
                 this.resolveUrlUser(url, live);
                 break;
-            case UNKNOWN:
-                return ResponseResult.error(LiveErrorEnum.URL_TYPE_NOT_SUPPORTED);
+            default:
+                return HttpResultResponse.error(LiveErrorCodeEnum.URL_TYPE_NOT_SUPPORTED);
         }
 
-        return ResponseResult.success(live);
+        return HttpResultResponse.success(live);
     }
 
     @Override
-    public ResponseResult liveStop(String videoId) {
-        ResponseResult<DeviceDTO> responseResult = this.checkBeforeLive(videoId);
+    public HttpResultResponse liveStop(String videoId) {
+        HttpResultResponse<DeviceDTO> responseResult = this.checkBeforeLive(videoId);
+        if (HttpResultResponse.CODE_SUCCESS != responseResult.getCode()) {
+            return responseResult;
+        }
+
+        TopicServicesResponse<ServicesReplyData> response = abstractLivestreamService.liveStopPush(
+                SDKManager.getDeviceSDK(responseResult.getData().getDeviceSn()), new LiveStopPushRequest()
+                        .setVideoId(new VideoId(videoId)));
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
+        }
+
+        return HttpResultResponse.success();
+    }
+
+    @Override
+    public HttpResultResponse liveSetQuality(LiveTypeDTO liveParam) {
+        HttpResultResponse<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
         if (responseResult.getCode() != 0) {
             return responseResult;
         }
 
-        String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
-
-        ServiceReply receiveReply = this.publishLiveStop(respTopic, videoId);
-        if (receiveReply.getResult() != 0) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
+        TopicServicesResponse<ServicesReplyData> response = abstractLivestreamService.liveSetQuality(
+                SDKManager.getDeviceSDK(responseResult.getData().getDeviceSn()), new LiveSetQualityRequest()
+                        .setVideoQuality(liveParam.getVideoQuality())
+                        .setVideoId(new VideoId(liveParam.getVideoId())));
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
         }
 
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
     @Override
-    public ResponseResult liveSetQuality(LiveTypeDTO liveParam) {
-        if (liveParam.getVideoQuality() == null ||
-                LiveVideoQualityEnum.UNKNOWN == LiveVideoQualityEnum.find(liveParam.getVideoQuality())) {
-            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
-        }
-
-        ResponseResult<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
-
-        if (responseResult.getCode() != 0) {
+    public HttpResultResponse liveLensChange(LiveTypeDTO liveParam) {
+        HttpResultResponse<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
+        if (HttpResultResponse.CODE_SUCCESS != responseResult.getCode()) {
             return responseResult;
         }
 
-        String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
+        TopicServicesResponse<ServicesReplyData> response = abstractLivestreamService.liveLensChange(
+                SDKManager.getDeviceSDK(responseResult.getData().getDeviceSn()), new LiveLensChangeRequest()
+                        .setVideoType(liveParam.getVideoType())
+                        .setVideoId(new VideoId(liveParam.getVideoId())));
 
-        ServiceReply receiveReply = this.publishLiveSetQuality(respTopic, liveParam);
-        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
+        if (!response.getData().getResult().isSuccess()) {
+            return HttpResultResponse.error(response.getData().getResult());
         }
 
-        return ResponseResult.success();
-    }
-
-    @Override
-    public ResponseResult liveLensChange(LiveTypeDTO liveParam) {
-        if (!StringUtils.hasText(liveParam.getVideoType())) {
-            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
-        }
-
-        ResponseResult<DeviceDTO> responseResult = this.checkBeforeLive(liveParam.getVideoId());
-        if (ResponseResult.CODE_SUCCESS != responseResult.getCode()) {
-            return responseResult;
-        }
-        if (DeviceDomainEnum.GATEWAY.getVal() == responseResult.getData().getDomain()) {
-            return ResponseResult.error(LiveErrorEnum.FUNCTION_NOT_SUPPORT);
-        }
-
-        String respTopic = THING_MODEL_PRE + PRODUCT + responseResult.getData().getDeviceSn() + SERVICES_SUF;
-
-        ServiceReply receiveReply = this.publishLiveLensChange(respTopic, liveParam);
-
-        if (ResponseResult.CODE_SUCCESS != receiveReply.getResult()) {
-            return ResponseResult.error(LiveErrorEnum.find(receiveReply.getResult()));
-        }
-
-        return ResponseResult.success();
-    }
-
-    private ServiceReply publishLiveLensChange(String respTopic, LiveTypeDTO liveParam) {
-        CommonTopicResponse<LiveTypeDTO> response = new CommonTopicResponse<>();
-        response.setTid(UUID.randomUUID().toString());
-        response.setBid(UUID.randomUUID().toString());
-        response.setMethod(LiveStreamMethodEnum.LIVE_LENS_CHANGE.getMethod());
-        response.setData(liveParam);
-
-        return messageSender.publishWithReply(ServiceReply.class, respTopic, response);
+        return HttpResultResponse.success();
     }
 
     /**
@@ -215,34 +175,34 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
      * @param videoId
      * @return
      */
-    private ResponseResult<DeviceDTO> checkBeforeLive(String videoId) {
+    private HttpResultResponse<DeviceDTO> checkBeforeLive(String videoId) {
         if (!StringUtils.hasText(videoId)) {
-            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
+            return HttpResultResponse.error(LiveErrorCodeEnum.ERROR_PARAMETERS);
         }
         String[] videoIdArr = videoId.split("/");
         // drone sn / enumeration value of the location where the payload is mounted / payload lens
         if (videoIdArr.length != 3) {
-            return ResponseResult.error(LiveErrorEnum.ERROR_PARAMETERS);
+            return HttpResultResponse.error(LiveErrorCodeEnum.ERROR_PARAMETERS);
         }
 
         Optional<DeviceDTO> deviceOpt = deviceService.getDeviceBySn(videoIdArr[0]);
         // Check if the gateway device connected to this drone exists
         if (deviceOpt.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_AIRCRAFT);
+            return HttpResultResponse.error(LiveErrorCodeEnum.NO_AIRCRAFT);
         }
 
-        if (DeviceDomainEnum.DOCK.getVal() == deviceOpt.get().getDomain()) {
-            return ResponseResult.success(deviceOpt.get());
+        if (DeviceDomainEnum.DOCK == deviceOpt.get().getDomain()) {
+            return HttpResultResponse.success(deviceOpt.get());
         }
         List<DeviceDTO> gatewayList = deviceService.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .childSn(videoIdArr[0])
                         .build());
         if (gatewayList.isEmpty()) {
-            return ResponseResult.error(LiveErrorEnum.NO_FLIGHT_CONTROL);
+            return HttpResultResponse.error(LiveErrorCodeEnum.NO_FLIGHT_CONTROL);
         }
 
-        return ResponseResult.success(gatewayList.get(0));
+        return HttpResultResponse.success(gatewayList.get(0));
     }
 
     /**
@@ -290,57 +250,4 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
         }
         return gb28181;
     }
-
-    /**
-     * Send a message to the pilot via mqtt to start the live streaming.
-     * @param topic
-     * @param liveParam
-     * @return
-     */
-    private ServiceReply publishLiveStart(String topic, LiveTypeDTO liveParam) {
-        CommonTopicResponse<LiveTypeDTO> response = new CommonTopicResponse<>();
-        response.setTid(UUID.randomUUID().toString());
-        response.setBid(UUID.randomUUID().toString());
-        response.setData(liveParam);
-        response.setMethod(LiveStreamMethodEnum.LIVE_START_PUSH.getMethod());
-
-        return messageSender.publishWithReply(ServiceReply.class, topic, response);
-    }
-
-    /**
-     * Send a message to the pilot via mqtt to set quality.
-     * @param respTopic
-     * @param liveParam
-     * @return
-     */
-    private ServiceReply publishLiveSetQuality(String respTopic, LiveTypeDTO liveParam) {
-        Map<String, Object> data = new ConcurrentHashMap<>(Map.of(
-                "video_id", liveParam.getVideoId(),
-                "video_quality", liveParam.getVideoQuality()));
-        CommonTopicResponse<Map<String, Object>> response = new CommonTopicResponse<>();
-        response.setTid(UUID.randomUUID().toString());
-        response.setBid(UUID.randomUUID().toString());
-        response.setMethod(LiveStreamMethodEnum.LIVE_SET_QUALITY.getMethod());
-        response.setData(data);
-
-        return messageSender.publishWithReply(ServiceReply.class, respTopic, response);
-    }
-
-    /**
-     * Send a message to the pilot via mqtt to stop the live streaming.
-     * @param topic
-     * @param videoId
-     * @return
-     */
-    private ServiceReply publishLiveStop(String topic, String videoId) {
-        Map<String, String> data = new ConcurrentHashMap<>(Map.of("video_id", videoId));
-        CommonTopicResponse<Map<String, String>> response = new CommonTopicResponse<>();
-        response.setTid(UUID.randomUUID().toString());
-        response.setBid(UUID.randomUUID().toString());
-        response.setData(data);
-        response.setMethod(LiveStreamMethodEnum.LIVE_STOP_PUSH.getMethod());
-
-        return messageSender.publishWithReply(ServiceReply.class, topic, response);
-    }
-
 }

@@ -1,12 +1,13 @@
 package com.dji.sample.manage.service.impl;
 
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.dto.TopologyDTO;
 import com.dji.sample.manage.model.dto.TopologyDeviceDTO;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.model.param.DeviceQueryParam;
 import com.dji.sample.manage.service.IDeviceService;
 import com.dji.sample.manage.service.ITopologyService;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.tsa.DeviceTopology;
+import com.dji.sdk.cloudapi.tsa.TopologyList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +27,15 @@ public class TopologyServiceImpl implements ITopologyService {
     private IDeviceService deviceService;
 
     @Override
-    public List<TopologyDTO> getDeviceTopology(String workspaceId) {
+    public List<TopologyList> getDeviceTopology(String workspaceId) {
         // Query the information of all gateway devices in the workspace.
         List<DeviceDTO> gatewayList = deviceService.getDevicesByParams(
                 DeviceQueryParam.builder()
                         .workspaceId(workspaceId)
-                        .domains(List.of(DeviceDomainEnum.GATEWAY.getVal()))
+                        .domains(List.of(DeviceDomainEnum.REMOTER_CONTROL.getDomain()))
                         .build());
 
-        List<TopologyDTO> topologyList = new ArrayList<>();
+        List<TopologyList> topologyList = new ArrayList<>();
 
         gatewayList.forEach(device -> this.getDeviceTopologyByGatewaySn(device.getDeviceSn())
                 .ifPresent(topologyList::add));
@@ -42,21 +43,22 @@ public class TopologyServiceImpl implements ITopologyService {
         return topologyList;
     }
 
-    public Optional<TopologyDTO> getDeviceTopologyByGatewaySn(String gatewaySn) {
+    public Optional<TopologyList> getDeviceTopologyByGatewaySn(String gatewaySn) {
         Optional<DeviceDTO> dtoOptional = deviceService.getDeviceBySn(gatewaySn);
         if (dtoOptional.isEmpty()) {
             return Optional.empty();
         }
-        List<TopologyDeviceDTO> parents = new ArrayList<>();
+        List<DeviceTopology> parents = new ArrayList<>();
         DeviceDTO device = dtoOptional.get();
-        TopologyDeviceDTO gateway = deviceService.deviceConvertToTopologyDTO(device);
+        DeviceTopology gateway = deviceService.deviceConvertToTopologyDTO(device);
         parents.add(gateway);
 
         // Query the topology data of the drone based on the drone sn.
         Optional<TopologyDeviceDTO> deviceTopo = deviceService.getDeviceTopoForPilot(device.getChildDeviceSn());
-        List<TopologyDeviceDTO> deviceTopoList = new ArrayList<>();
+        List<DeviceTopology> deviceTopoList = new ArrayList<>();
         deviceTopo.ifPresent(deviceTopoList::add);
 
-        return Optional.ofNullable(TopologyDTO.builder().parents(parents).hosts(deviceTopoList).build());
+        return Optional.ofNullable(new TopologyList().setParents(parents).setHosts(deviceTopoList));
     }
+
 }

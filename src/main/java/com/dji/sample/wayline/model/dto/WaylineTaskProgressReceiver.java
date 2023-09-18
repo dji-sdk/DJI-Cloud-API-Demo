@@ -10,9 +10,9 @@ import lombok.Data;
 @Data
 public class WaylineTaskProgressReceiver {
 
-    private WaylineTaskProgressExt ext;
+    private FlighttaskProgressExt ext;
 
-    private WaylineTaskProgress progress;
+    private FlighttaskProgressProgress progress;
 
     private String status;
 

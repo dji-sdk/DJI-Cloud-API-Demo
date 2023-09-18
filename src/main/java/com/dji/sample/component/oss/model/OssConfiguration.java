@@ -1,5 +1,6 @@
 package com.dji.sample.component.oss.model;
 
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Component;
 public class OssConfiguration {
 
     /**
-     * @see com.dji.sample.component.oss.model.enums.OssTypeEnum
+     * @see OssTypeEnum
      */
-    public static String provider;
+    public static OssTypeEnum provider;
 
     /**
      * Whether to use the object storage service.
@@ -43,7 +44,7 @@ public class OssConfiguration {
 
     public static String objectDirPrefix;
 
-    public void setProvider(String provider) {
+    public void setProvider(OssTypeEnum provider) {
         OssConfiguration.provider = provider;
     }
 

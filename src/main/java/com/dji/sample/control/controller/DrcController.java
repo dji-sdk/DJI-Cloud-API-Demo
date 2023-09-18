@@ -1,12 +1,12 @@
 package com.dji.sample.control.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.control.model.dto.JwtAclDTO;
-import com.dji.sample.control.model.dto.MqttBrokerDTO;
 import com.dji.sample.control.model.param.DrcConnectParam;
 import com.dji.sample.control.model.param.DrcModeParam;
 import com.dji.sample.control.service.IDrcService;
+import com.dji.sdk.cloudapi.control.DrcModeMqttBroker;
+import com.dji.sdk.common.HttpResultResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -30,25 +30,25 @@ public class DrcController {
     private IDrcService drcService;
 
     @PostMapping("/workspaces/{workspace_id}/drc/connect")
-    public ResponseResult drcConnect(@PathVariable("workspace_id") String workspaceId, HttpServletRequest request, @Valid @RequestBody DrcConnectParam param) {
+    public HttpResultResponse drcConnect(@PathVariable("workspace_id") String workspaceId, HttpServletRequest request, @Valid @RequestBody DrcConnectParam param) {
         CustomClaim claims = (CustomClaim) request.getAttribute(TOKEN_CLAIM);
 
-        MqttBrokerDTO brokerDTO = drcService.userDrcAuth(workspaceId, claims.getId(), claims.getUsername(), param);
-        return ResponseResult.success(brokerDTO);
+        DrcModeMqttBroker brokerDTO = drcService.userDrcAuth(workspaceId, claims.getId(), claims.getUsername(), param);
+        return HttpResultResponse.success(brokerDTO);
     }
 
     @PostMapping("/workspaces/{workspace_id}/drc/enter")
-    public ResponseResult drcEnter(@PathVariable("workspace_id") String workspaceId, @Valid @RequestBody DrcModeParam param) {
+    public HttpResultResponse drcEnter(@PathVariable("workspace_id") String workspaceId, @Valid @RequestBody DrcModeParam param) {
         JwtAclDTO acl = drcService.deviceDrcEnter(workspaceId, param);
 
-        return ResponseResult.success(acl);
+        return HttpResultResponse.success(acl);
     }
 
     @PostMapping("/workspaces/{workspace_id}/drc/exit")
-    public ResponseResult drcExit(@PathVariable("workspace_id") String workspaceId, @Valid @RequestBody DrcModeParam param) {
+    public HttpResultResponse drcExit(@PathVariable("workspace_id") String workspaceId, @Valid @RequestBody DrcModeParam param) {
         drcService.deviceDrcExit(workspaceId, param);
 
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
 

@@ -3,10 +3,10 @@ package com.dji.sample.wayline.service.impl;
 import com.dji.sample.component.mqtt.model.EventsReceiver;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
+import com.dji.sample.wayline.model.dto.ConditionalWaylineJobKey;
 import com.dji.sample.wayline.model.dto.WaylineJobDTO;
-import com.dji.sample.wayline.model.dto.WaylineJobKey;
-import com.dji.sample.wayline.model.dto.WaylineTaskProgressReceiver;
 import com.dji.sample.wayline.service.IWaylineRedisService;
+import com.dji.sdk.cloudapi.wayline.FlighttaskProgress;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -25,13 +25,13 @@ import java.util.Optional;
 public class WaylineRedisServiceImpl implements IWaylineRedisService {
 
     @Override
-    public void setRunningWaylineJob(String dockSn, EventsReceiver<WaylineTaskProgressReceiver> data) {
+    public void setRunningWaylineJob(String dockSn, EventsReceiver<FlighttaskProgress> data) {
         RedisOpsUtils.setWithExpire(RedisConst.WAYLINE_JOB_RUNNING_PREFIX + dockSn, data, RedisConst.DRC_MODE_ALIVE_SECOND);
     }
 
     @Override
-    public Optional<EventsReceiver<WaylineTaskProgressReceiver>> getRunningWaylineJob(String dockSn) {
-        return Optional.ofNullable((EventsReceiver<WaylineTaskProgressReceiver>) RedisOpsUtils.get(RedisConst.WAYLINE_JOB_RUNNING_PREFIX + dockSn));
+    public Optional<EventsReceiver<FlighttaskProgress>> getRunningWaylineJob(String dockSn) {
+        return Optional.ofNullable((EventsReceiver<FlighttaskProgress>) RedisOpsUtils.get(RedisConst.WAYLINE_JOB_RUNNING_PREFIX + dockSn));
     }
 
     @Override
@@ -65,17 +65,12 @@ public class WaylineRedisServiceImpl implements IWaylineRedisService {
     }
 
     @Override
-    public Boolean delBlockedWaylineJobId(String dockSn) {
-        return RedisOpsUtils.del(RedisConst.WAYLINE_JOB_BLOCK_PREFIX + dockSn);
-    }
-
-    @Override
     public void setConditionalWaylineJob(WaylineJobDTO waylineJob) {
         if (!StringUtils.hasText(waylineJob.getJobId())) {
             throw new RuntimeException("Job id can't be null.");
         }
         RedisOpsUtils.setWithExpire(RedisConst.WAYLINE_JOB_CONDITION_PREFIX + waylineJob.getJobId(), waylineJob,
-                Math.abs(Duration.between(waylineJob.getEndTime(), LocalDateTime.now()).getSeconds()));
+                (Duration.between(waylineJob.getEndTime(), LocalDateTime.now()).getSeconds()));
     }
 
     @Override
@@ -89,29 +84,29 @@ public class WaylineRedisServiceImpl implements IWaylineRedisService {
     }
 
     @Override
-    public Boolean addPreparedWaylineJob(WaylineJobDTO waylineJob) {
+    public Boolean addPrepareConditionalWaylineJob(WaylineJobDTO waylineJob) {
         if (Objects.isNull(waylineJob.getBeginTime())) {
             return false;
         }
         // value: {workspace_id}:{dock_sn}:{job_id}
-        return RedisOpsUtils.zAdd(RedisConst.WAYLINE_JOB_PREPARED,
+        return RedisOpsUtils.zAdd(RedisConst.WAYLINE_JOB_CONDITION_PREPARE,
                 waylineJob.getWorkspaceId() + RedisConst.DELIMITER + waylineJob.getDockSn() + RedisConst.DELIMITER + waylineJob.getJobId(),
                 waylineJob.getBeginTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
 
     @Override
-    public Optional<WaylineJobKey> getNearestPreparedWaylineJob() {
-        return Optional.ofNullable(RedisOpsUtils.zGetMin(RedisConst.WAYLINE_JOB_PREPARED))
-                .map(Object::toString).map(WaylineJobKey::new);
+    public Optional<ConditionalWaylineJobKey> getNearestConditionalWaylineJob() {
+        return Optional.ofNullable(RedisOpsUtils.zGetMin(RedisConst.WAYLINE_JOB_CONDITION_PREPARE))
+                .map(Object::toString).map(ConditionalWaylineJobKey::new);
     }
 
     @Override
-    public Double getPreparedWaylineJobTime(WaylineJobKey jobKey) {
-        return RedisOpsUtils.zScore(RedisConst.WAYLINE_JOB_PREPARED, jobKey.getKey());
+    public Double getConditionalWaylineJobTime(ConditionalWaylineJobKey jobKey) {
+        return RedisOpsUtils.zScore(RedisConst.WAYLINE_JOB_CONDITION_PREPARE, jobKey.getKey());
     }
 
     @Override
-    public Boolean removePreparedWaylineJob(WaylineJobKey jobKey) {
-        return RedisOpsUtils.zRemove(RedisConst.WAYLINE_JOB_PREPARED, jobKey.getKey());
+    public Boolean removePrepareConditionalWaylineJob(ConditionalWaylineJobKey jobKey) {
+        return RedisOpsUtils.zRemove(RedisConst.WAYLINE_JOB_CONDITION_PREPARE, jobKey.getKey());
     }
 }

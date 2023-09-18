@@ -1,6 +1,6 @@
 package com.dji.sample.map.service;
 
-import com.dji.sample.map.model.dto.ElementCoordinateDTO;
+import com.dji.sdk.cloudapi.map.ElementCoordinate;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ public interface IElementCoordinateService {
      * @param elementId
      * @return
      */
-    List<ElementCoordinateDTO> getCoordinateByElementId(String elementId);
+    List<ElementCoordinate> getCoordinateByElementId(String elementId);
 
     /**
      * Save all the coordinate data of this element.
@@ -24,7 +24,7 @@ public interface IElementCoordinateService {
      * @param elementId
      * @return
      */
-    Boolean saveCoordinate(List<ElementCoordinateDTO> coordinate, String elementId);
+    Boolean saveCoordinate(List<ElementCoordinate> coordinate, String elementId);
 
     /**
      * Delete all the coordinates of the element according to its id.

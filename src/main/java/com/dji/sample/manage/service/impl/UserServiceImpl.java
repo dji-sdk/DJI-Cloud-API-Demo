@@ -8,11 +8,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.common.util.JwtUtil;
-import com.dji.sample.component.mqtt.config.MqttConfiguration;
+import com.dji.sample.component.mqtt.config.MqttPropertyConfiguration;
 import com.dji.sample.manage.dao.IUserMapper;
 import com.dji.sample.manage.model.dto.UserDTO;
 import com.dji.sample.manage.model.dto.UserListDTO;
@@ -21,6 +18,9 @@ import com.dji.sample.manage.model.entity.UserEntity;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.service.IUserService;
 import com.dji.sample.manage.service.IWorkspaceService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -43,54 +43,50 @@ public class UserServiceImpl implements IUserService {
     private IUserMapper mapper;
 
     @Autowired
-    private MqttConfiguration mqttConfiguration;
+    private MqttPropertyConfiguration mqttPropertyConfiguration;
 
     @Autowired
     private IWorkspaceService workspaceService;
 
     @Override
-    public ResponseResult getUserByUsername(String username, String workspaceId) {
+    public HttpResultResponse getUserByUsername(String username, String workspaceId) {
 
         UserEntity userEntity = this.getUserByUsername(username);
         if (userEntity == null) {
-            return ResponseResult.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .message("invalid username")
-                    .build();
+            return new HttpResultResponse()
+                    .setCode(HttpStatus.UNAUTHORIZED.value())
+                    .setMessage("invalid username");
         }
 
         UserDTO user = this.entityConvertToDTO(userEntity);
         user.setWorkspaceId(workspaceId);
 
-        return ResponseResult.success(user);
+        return HttpResultResponse.success(user);
     }
 
     @Override
-    public ResponseResult userLogin(String username, String password, Integer flag) {
+    public HttpResultResponse userLogin(String username, String password, Integer flag) {
         // check user
         UserEntity userEntity = this.getUserByUsername(username);
         if (userEntity == null) {
-            return ResponseResult.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .message("invalid username")
-                    .build();
+            return new HttpResultResponse()
+                    .setCode(HttpStatus.UNAUTHORIZED.value())
+                    .setMessage("invalid username");
         }
         if (flag.intValue() != userEntity.getUserType().intValue()) {
-            return ResponseResult.error("The account type does not match.");
+            return HttpResultResponse.error("The account type does not match.");
         }
         if (!password.equals(userEntity.getPassword())) {
-            return ResponseResult.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .message("invalid password")
-                    .build();
+            return new HttpResultResponse()
+                    .setCode(HttpStatus.UNAUTHORIZED.value())
+                    .setMessage("invalid password");
         }
 
         Optional<WorkspaceDTO> workspaceOpt = workspaceService.getWorkspaceByWorkspaceId(userEntity.getWorkspaceId());
         if (workspaceOpt.isEmpty()) {
-            return ResponseResult.builder()
-                    .code(HttpStatus.UNAUTHORIZED.value())
-                    .message("invalid workspace id")
-                    .build();
+            return new HttpResultResponse()
+                    .setCode(HttpStatus.UNAUTHORIZED.value())
+                    .setMessage("invalid workspace id");
         }
 
         CustomClaim customClaim = new CustomClaim(userEntity.getUserId(),
@@ -101,10 +97,10 @@ public class UserServiceImpl implements IUserService {
         String token = JwtUtil.createToken(customClaim.convertToMap());
 
         UserDTO userDTO = entityConvertToDTO(userEntity);
-        userDTO.setMqttAddr(MqttConfiguration.getBasicMqttAddress());
+        userDTO.setMqttAddr(MqttPropertyConfiguration.getBasicMqttAddress());
         userDTO.setAccessToken(token);
         userDTO.setWorkspaceId(workspaceOpt.get().getWorkspaceId());
-        return ResponseResult.success(userDTO);
+        return HttpResultResponse.success(userDTO);
     }
 
     @Override
@@ -212,7 +208,7 @@ public class UserServiceImpl implements IUserService {
                 .userType(entity.getUserType())
                 .mqttUsername(entity.getMqttUsername())
                 .mqttPassword(entity.getMqttPassword())
-                .mqttAddr(MqttConfiguration.getBasicMqttAddress())
+                .mqttAddr(MqttPropertyConfiguration.getBasicMqttAddress())
                 .build();
     }
 }

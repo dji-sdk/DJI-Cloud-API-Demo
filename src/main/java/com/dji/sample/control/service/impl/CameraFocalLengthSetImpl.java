@@ -1,8 +1,8 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.control.model.enums.CameraStateEnum;
-import com.dji.sample.control.model.enums.CameraTypeEnum;
 import com.dji.sample.control.model.param.DronePayloadParam;
+import com.dji.sdk.cloudapi.control.CameraTypeEnum;
+import com.dji.sdk.cloudapi.device.CameraStateEnum;
 
 import java.util.Objects;
 
@@ -32,7 +32,8 @@ public class CameraFocalLengthSetImpl extends PayloadCommandsHandler {
         }
         switch (param.getCameraType()) {
             case IR:
-                return param.getZoomFactor().intValue() != osdCamera.getIrZoomFactor();
+                return Objects.nonNull(osdCamera.getIrZoomFactor())
+                        && param.getZoomFactor().intValue() != osdCamera.getIrZoomFactor();
             case ZOOM:
                 return param.getZoomFactor().intValue() != osdCamera.getZoomFactor();
         }

@@ -1,6 +1,7 @@
 package com.dji.sample.manage.model.dto;
 
 import com.dji.sample.control.model.enums.DroneAuthorityEnum;
+import com.dji.sdk.cloudapi.device.ControlSourceEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,6 @@ public class DeviceAuthorityDTO {
 
     private DroneAuthorityEnum type;
 
-    private String controlSource;
+    private ControlSourceEnum controlSource;
 
 }

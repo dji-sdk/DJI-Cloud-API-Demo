@@ -1,17 +1,16 @@
 package com.dji.sample.manage.controller;
 
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.manage.model.dto.TopologyDTO;
 import com.dji.sample.manage.service.ITopologyService;
+import com.dji.sdk.cloudapi.tsa.TopologyList;
+import com.dji.sdk.cloudapi.tsa.TopologyResponse;
+import com.dji.sdk.cloudapi.tsa.api.IHttpTsaService;
+import com.dji.sdk.common.HttpResultResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author sean
@@ -19,22 +18,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2021/12/8
  */
 @RestController
-@RequestMapping("${url.manage.prefix}${url.manage.version}/workspaces")
-public class TopologyController {
+public class TopologyController implements IHttpTsaService {
 
     @Autowired
     private ITopologyService topologyService;
+
 
     /**
      * Get the topology list of all devices in the current user workspace for pilot display.
      * @param workspaceId
      * @return
      */
-    @GetMapping("/{workspace_id}/devices/topologies")
-    public ResponseResult<Map<String, List<TopologyDTO>>> getDevicesTopologiesForPilot(
-            @PathVariable(name = "workspace_id") String workspaceId) {
-        List<TopologyDTO> topologyList = topologyService.getDeviceTopology(workspaceId);
-        return ResponseResult.success(new ConcurrentHashMap<>(Map.of("list", topologyList)));
+    @Override
+    public HttpResultResponse<TopologyResponse> obtainDeviceTopologyList(String workspaceId, HttpServletRequest req, HttpServletResponse rsp) {
+        List<TopologyList> topologyList = topologyService.getDeviceTopology(workspaceId);
+        return HttpResultResponse.success(new TopologyResponse().setList(topologyList));
     }
-
 }

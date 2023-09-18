@@ -1,5 +1,6 @@
 package com.dji.sample.map.model.dto;
 
+import com.dji.sdk.cloudapi.map.ElementResource;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupElementDTO {
-    private Integer display;
 
     @JsonProperty("id")
     private String elementId;
@@ -31,7 +31,7 @@ public class GroupElementDTO {
     @JsonProperty(value = "update_time")
     private Long updateTime;
 
-    private ElementResourceDTO resource;
+    private ElementResource resource;
 
     @JsonProperty("group_id")
     private String groupId;

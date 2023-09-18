@@ -1,14 +1,15 @@
 package com.dji.sample.control.model.dto;
 
-import com.dji.sample.control.model.enums.LinkWorkModeEnum;
 import com.dji.sample.control.service.impl.RemoteDebugHandler;
+import com.dji.sdk.cloudapi.device.LinkWorkModeEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.Objects;
+import java.util.Map;
 
 /**
  * @author sean
@@ -17,15 +18,18 @@ import java.util.Objects;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class LinkWorkMode extends RemoteDebugHandler {
 
-    @JsonProperty("link_workmode")
-    private Integer linkWorkMode;
+    private LinkWorkModeEnum linkWorkMode;
 
-    @Override
-    public boolean valid() {
-        return Objects.nonNull(linkWorkMode) && LinkWorkModeEnum.find(linkWorkMode).isPresent();
+    @JsonCreator
+    public LinkWorkMode(@JsonProperty("action") Integer linkWorkMode) {
+        this.linkWorkMode = LinkWorkModeEnum.find(linkWorkMode);
+    }
+
+    @JsonValue
+    public Map toMap() {
+        return Map.of("link_workmode", linkWorkMode.getMode());
     }
 }

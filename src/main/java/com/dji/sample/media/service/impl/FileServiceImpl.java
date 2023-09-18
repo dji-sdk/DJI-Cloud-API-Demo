@@ -2,18 +2,19 @@ package com.dji.sample.media.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.manage.model.dto.DeviceDictionaryDTO;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.manage.service.IDeviceDictionaryService;
 import com.dji.sample.media.dao.IFileMapper;
-import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.model.MediaFileDTO;
 import com.dji.sample.media.model.MediaFileEntity;
 import com.dji.sample.media.service.IFileService;
+import com.dji.sdk.cloudapi.device.DeviceEnum;
+import com.dji.sdk.cloudapi.media.MediaSubFileTypeEnum;
+import com.dji.sdk.cloudapi.media.MediaUploadCallbackRequest;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,6 @@ import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -66,7 +66,7 @@ public class FileServiceImpl implements IFileService {
     }
 
     @Override
-    public Integer saveFile(String workspaceId, FileUploadDTO file) {
+    public Integer saveFile(String workspaceId, MediaUploadCallbackRequest file) {
         MediaFileEntity fileEntity = this.fileUploadConvertToEntity(file);
         fileEntity.setWorkspaceId(workspaceId);
         fileEntity.setFileId(UUID.randomUUID().toString());
@@ -121,7 +121,7 @@ public class FileServiceImpl implements IFileService {
      * @param file
      * @return
      */
-    private MediaFileEntity fileUploadConvertToEntity(FileUploadDTO file) {
+    private MediaFileEntity fileUploadConvertToEntity(MediaUploadCallbackRequest file) {
         MediaFileEntity.MediaFileEntityBuilder builder = MediaFileEntity.builder();
 
         if (file != null) {
@@ -129,19 +129,18 @@ public class FileServiceImpl implements IFileService {
                     .filePath(file.getPath())
                     .fingerprint(file.getFingerprint())
                     .objectKey(file.getObjectKey())
-                    .subFileType(file.getSubFileType())
-                    .isOriginal(file.getExt().getIsOriginal())
-                    .jobId(file.getExt().getFlightId())
+                    .subFileType(Optional.ofNullable(file.getSubFileType()).map(MediaSubFileTypeEnum::getType).orElse(null))
+                    .isOriginal(file.getExt().getOriginal())
+                    .jobId(file.getExt().getFileGroupId())
                     .drone(file.getExt().getSn())
-                    .tinnyFingerprint(file.getExt().getTinnyFingerprint());
+                    .tinnyFingerprint(file.getExt().getTinnyFingerprint())
+                    .payload(file.getExt().getPayloadModelKey().getDevice());
 
             // domain-type-subType
-            int[] payloadModel = Arrays.stream(file.getExt().getPayloadModelKey().split("-"))
-                    .map(Integer::valueOf)
-                    .mapToInt(Integer::intValue)
-                    .toArray();
+            DeviceEnum payloadModelKey = file.getExt().getPayloadModelKey();
             Optional<DeviceDictionaryDTO> payloadDict = deviceDictionaryService
-                    .getOneDictionaryInfoByTypeSubType(DeviceDomainEnum.PAYLOAD.getVal(), payloadModel[1], payloadModel[2]);
+                    .getOneDictionaryInfoByTypeSubType(payloadModelKey.getDomain().getDomain(),
+                            payloadModelKey.getType().getType(), payloadModelKey.getSubType().getSubType());
             payloadDict.ifPresent(payload -> builder.payload(payload.getDeviceName()));
         }
         return builder.build();

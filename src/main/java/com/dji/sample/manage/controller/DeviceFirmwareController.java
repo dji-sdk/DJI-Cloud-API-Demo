@@ -1,8 +1,6 @@
 package com.dji.sample.manage.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.manage.model.dto.DeviceFirmwareDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareNoteDTO;
 import com.dji.sample.manage.model.dto.FirmwareFileProperties;
@@ -10,6 +8,8 @@ import com.dji.sample.manage.model.param.DeviceFirmwareQueryParam;
 import com.dji.sample.manage.model.param.DeviceFirmwareUpdateParam;
 import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +43,7 @@ public class DeviceFirmwareController {
      * @return
      */
     @GetMapping("/firmware-release-notes/latest")
-    public ResponseResult<List<DeviceFirmwareNoteDTO>> getLatestFirmwareNote(@RequestParam("device_name") List<String> deviceNames) {
+    public HttpResultResponse<List<DeviceFirmwareNoteDTO>> getLatestFirmwareNote(@RequestParam("device_name") List<String> deviceNames) {
 
         List<DeviceFirmwareNoteDTO> releaseNotes = deviceNames.stream()
                 .map(deviceName -> service.getLatestFirmwareReleaseNote(deviceName))
@@ -51,7 +51,7 @@ public class DeviceFirmwareController {
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        return ResponseResult.success(releaseNotes);
+        return HttpResultResponse.success(releaseNotes);
     }
 
     /**
@@ -61,11 +61,11 @@ public class DeviceFirmwareController {
      * @return
      */
     @GetMapping("/{workspace_id}/firmwares")
-    public ResponseResult<PaginationData<DeviceFirmwareDTO>> getAllFirmwarePagination(
+    public HttpResultResponse<PaginationData<DeviceFirmwareDTO>> getAllFirmwarePagination(
             @PathVariable("workspace_id") String workspaceId, @Valid DeviceFirmwareQueryParam param) {
 
         PaginationData<DeviceFirmwareDTO> data = service.getAllFirmwarePagination(workspaceId, param);
-        return ResponseResult.success(data);
+        return HttpResultResponse.success(data);
     }
 
     /**
@@ -77,19 +77,19 @@ public class DeviceFirmwareController {
      * @return
      */
     @PostMapping("/{workspace_id}/firmwares/file/upload")
-    public ResponseResult importFirmwareFile(HttpServletRequest request, @PathVariable("workspace_id") String workspaceId,
-                                             @NotNull(message = "No file received.") MultipartFile file,
-                                             @Valid DeviceFirmwareUploadParam param) {
+    public HttpResultResponse importFirmwareFile(HttpServletRequest request, @PathVariable("workspace_id") String workspaceId,
+                                                 @NotNull(message = "No file received.") MultipartFile file,
+                                                 @Valid DeviceFirmwareUploadParam param) {
 
         if (!file.getOriginalFilename().endsWith(FirmwareFileProperties.FIRMWARE_FILE_SUFFIX)) {
-            return ResponseResult.error("The file format is incorrect.");
+            return HttpResultResponse.error("The file format is incorrect.");
         }
 
         CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
         String creator = customClaim.getUsername();
 
         service.importFirmwareFile(workspaceId, creator, param, file);
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
     /**
@@ -100,13 +100,13 @@ public class DeviceFirmwareController {
      * @return
      */
     @PutMapping("/{workspace_id}/firmwares/{firmware_id}")
-    public ResponseResult changeFirmwareStatus(@PathVariable("workspace_id") String workspaceId,
-                                             @PathVariable("firmware_id") String firmwareId,
-                                             @Valid @RequestBody DeviceFirmwareUpdateParam param) {
+    public HttpResultResponse changeFirmwareStatus(@PathVariable("workspace_id") String workspaceId,
+                                                   @PathVariable("firmware_id") String firmwareId,
+                                                   @Valid @RequestBody DeviceFirmwareUpdateParam param) {
 
         service.updateFirmwareInfo(DeviceFirmwareDTO.builder()
                 .firmwareId(firmwareId).firmwareStatus(param.getStatus()).build());
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
 

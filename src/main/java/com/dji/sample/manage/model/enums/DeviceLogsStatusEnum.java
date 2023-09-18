@@ -1,6 +1,6 @@
 package com.dji.sample.manage.model.enums;
 
-import com.dji.sample.component.mqtt.model.EventsResultStatusEnum;
+import com.dji.sdk.cloudapi.log.FileUploadStatusEnum;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -15,27 +15,28 @@ import java.util.HashSet;
 @Getter
 public enum DeviceLogsStatusEnum {
 
-    UPLOADING(1, EventsResultStatusEnum.IN_PROGRESS),
+    UPLOADING(1, FileUploadStatusEnum.FILE_PULL, FileUploadStatusEnum.FILE_ZIP,
+            FileUploadStatusEnum.FILE_UPLOADING, FileUploadStatusEnum.IN_PROGRESS, FileUploadStatusEnum.PAUSED),
 
-    DONE(2, EventsResultStatusEnum.OK),
+    DONE(2, FileUploadStatusEnum.OK),
 
-    CANCELED(3, EventsResultStatusEnum.CANCELED),
+    CANCELED(3, FileUploadStatusEnum.CANCELED),
 
-    FAILED(4, EventsResultStatusEnum.FAILED, EventsResultStatusEnum.REJECTED, EventsResultStatusEnum.TIMEOUT),
+    FAILED(4, FileUploadStatusEnum.FAILED, FileUploadStatusEnum.REJECTED, FileUploadStatusEnum.TIMEOUT),
 
     UNKNOWN(-1);
 
     int val;
 
-    HashSet<EventsResultStatusEnum> status;
+    HashSet<FileUploadStatusEnum> status;
 
-    DeviceLogsStatusEnum(int val, EventsResultStatusEnum... status) {
+    DeviceLogsStatusEnum(int val, FileUploadStatusEnum... status) {
         this.status = new HashSet<>();
         Collections.addAll(this.status, status);
         this.val = val;
     }
 
-    public static DeviceLogsStatusEnum find(EventsResultStatusEnum status) {
+    public static DeviceLogsStatusEnum find(FileUploadStatusEnum status) {
         return Arrays.stream(DeviceLogsStatusEnum.values()).filter(element -> element.status.contains(status)).findAny().orElse(UNKNOWN);
     }
 }

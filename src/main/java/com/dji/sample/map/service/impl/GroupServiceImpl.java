@@ -2,10 +2,11 @@ package com.dji.sample.map.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.dji.sample.map.dao.IGroupMapper;
-import com.dji.sample.map.model.dto.GroupDTO;
 import com.dji.sample.map.model.entity.GroupEntity;
 import com.dji.sample.map.service.IGroupElementService;
 import com.dji.sample.map.service.IGroupService;
+import com.dji.sdk.cloudapi.map.GetMapElementsResponse;
+import com.dji.sdk.cloudapi.map.GroupTypeEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class GroupServiceImpl implements IGroupService {
     private IGroupElementService groupElementService;
 
     @Override
-    public List<GroupDTO> getAllGroupsByWorkspaceId(String workspaceId, String groupId, Boolean isDistributed) {
+    public List<GetMapElementsResponse> getAllGroupsByWorkspaceId(String workspaceId, String groupId, Boolean isDistributed) {
 
         return mapper.selectList(
                 new LambdaQueryWrapper<GroupEntity>()
@@ -47,20 +48,15 @@ public class GroupServiceImpl implements IGroupService {
      * @param entity
      * @return
      */
-    private GroupDTO entityConvertToDto(GroupEntity entity) {
-        GroupDTO.GroupDTOBuilder builder = GroupDTO.builder();
-
+    private GetMapElementsResponse entityConvertToDto(GroupEntity entity) {
         if (entity == null) {
-            return builder.build();
+            return null;
         }
 
-        return builder
-                .id(entity.getGroupId())
-                .name(entity.getGroupName())
-                .type(entity.getGroupType())
-                .isLock(entity.getIsLock())
-                .isDistributed(entity.getIsDistributed())
-                .createTime(entity.getCreateTime())
-                .build();
+        return new GetMapElementsResponse()
+                .setId(entity.getGroupId())
+                .setName(entity.getGroupName())
+                .setType(GroupTypeEnum.find(entity.getGroupType()))
+                .setLock(entity.getIsLock());
     }
 }

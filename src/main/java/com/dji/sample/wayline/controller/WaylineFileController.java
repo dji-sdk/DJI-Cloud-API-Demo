@@ -1,23 +1,31 @@
 package com.dji.sample.wayline.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.wayline.model.dto.WaylineFileDTO;
-import com.dji.sample.wayline.model.dto.WaylineFileUploadDTO;
-import com.dji.sample.wayline.model.param.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
+import com.dji.sdk.cloudapi.device.DeviceEnum;
+import com.dji.sdk.cloudapi.wayline.*;
+import com.dji.sdk.cloudapi.wayline.api.IHttpWaylineService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 
@@ -27,38 +35,52 @@ import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
  * @date 2021/12/22
  */
 @RestController
-@RequestMapping("${url.wayline.prefix}${url.wayline.version}/workspaces")
-public class WaylineFileController {
+public class WaylineFileController implements IHttpWaylineService {
 
     @Autowired
     private IWaylineFileService waylineFileService;
 
     /**
+     * Delete the wayline file in the workspace according to the wayline id.
+     * @param workspaceId
+     * @param waylineId
+     * @return
+     */
+    @DeleteMapping("${url.wayline.prefix}${url.wayline.version}/workspaces/{workspace_id}/waylines/{wayline_id}")
+    public HttpResultResponse deleteWayline(@PathVariable(name = "workspace_id") String workspaceId,
+                                            @PathVariable(name = "wayline_id") String waylineId) {
+        boolean isDel = waylineFileService.deleteByWaylineId(workspaceId, waylineId);
+        return isDel ? HttpResultResponse.success() : HttpResultResponse.error("Failed to delete wayline.");
+    }
+
+    /**
+     * Import kmz wayline files.
+     * @param file
+     * @return
+     */
+    @PostMapping("${url.wayline.prefix}${url.wayline.version}/workspaces/{workspace_id}/waylines/file/upload")
+    public HttpResultResponse importKmzFile(HttpServletRequest request, MultipartFile file) {
+        if (Objects.isNull(file)) {
+            return HttpResultResponse.error("No file received.");
+        }
+        CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
+        String workspaceId = customClaim.getWorkspaceId();
+        String creator = customClaim.getUsername();
+        waylineFileService.importKmzFile(file, workspaceId, creator);
+        return HttpResultResponse.success();
+    }
+
+    /**
      * Query the basic data of the wayline file according to the query conditions.
      * The query condition field in pilot is fixed.
-     * @param orderBy   Sorted fields. Spliced at the end of the sql statement.
-     * @param favorited Whether the wayline file is favorited or not.
-     * @param page
-     * @param pageSize
-     * @param templateType
+     * @param request
      * @param workspaceId
      * @return
      */
-    @GetMapping("/{workspace_id}/waylines")
-    public ResponseResult<PaginationData<WaylineFileDTO>> getWaylinesPagination(@RequestParam(name = "order_by") String orderBy,
-                                      @RequestParam(required = false) boolean favorited, @RequestParam Integer page,
-                                      @RequestParam(name = "page_size", defaultValue = "10") Integer pageSize,
-                                      @RequestParam(name = "template_type", required = false) Integer[] templateType,
-                                      @PathVariable(name = "workspace_id") String workspaceId) {
-        WaylineQueryParam param = WaylineQueryParam.builder()
-                .favorited(favorited)
-                .page(page)
-                .pageSize(pageSize)
-                .orderBy(orderBy)
-                .templateType(templateType)
-                .build();
-        PaginationData<WaylineFileDTO> data = waylineFileService.getWaylinesByParam(workspaceId, param);
-        return ResponseResult.success(data);
+    @Override
+    public HttpResultResponse<PaginationData<GetWaylineListResponse>> getWaylineList(@Valid GetWaylineListRequest request, String workspaceId, HttpServletRequest req, HttpServletResponse rsp) {
+        PaginationData<GetWaylineListResponse> data = waylineFileService.getWaylinesByParam(workspaceId, request);
+        return HttpResultResponse.success(data);
     }
 
     /**
@@ -66,72 +88,18 @@ public class WaylineFileController {
      * and redirect to this address directly for download.
      * @param workspaceId
      * @param waylineId
-     * @param response
+     * @param req
+     * @param rsp
      */
-    @GetMapping("/{workspace_id}/waylines/{wayline_id}/url")
-    public void getFileUrl(@PathVariable(name = "workspace_id") String workspaceId,
-                                @PathVariable(name = "wayline_id") String waylineId, HttpServletResponse response) {
-
+    @Override
+    public void getWaylineFileDownloadAddress(String workspaceId, String waylineId, HttpServletRequest req, HttpServletResponse rsp) {
         try {
             URL url = waylineFileService.getObjectUrl(workspaceId, waylineId);
-            response.sendRedirect(url.toString());
+            rsp.sendRedirect(url.toString());
 
         } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * When the wayline file is uploaded to the storage server by pilot,
-     * the basic information of the file is reported through this interface.
-     * @param request
-     * @param workspaceId
-     * @param uploadFile
-     * @return
-     */
-    @PostMapping("/{workspace_id}/upload-callback")
-    public ResponseResult uploadCallBack(HttpServletRequest request,
-                                         @PathVariable(name = "workspace_id") String workspaceId,
-                                         @RequestBody WaylineFileUploadDTO uploadFile) {
-
-        CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
-
-        WaylineFileDTO metadata = uploadFile.getMetadata();
-        metadata.setUsername(customClaim.getUsername());
-        metadata.setObjectKey(uploadFile.getObjectKey());
-        metadata.setName(uploadFile.getName());
-
-        int id = waylineFileService.saveWaylineFile(workspaceId, metadata);
-
-        return id <= 0 ? ResponseResult.error() : ResponseResult.success();
-    }
-
-    /**
-     * Favorite the wayline file according to the wayline file id.
-     * @param workspaceId
-     * @param ids   wayline file id
-     * @return
-     */
-    @PostMapping("/{workspace_id}/favorites")
-    public ResponseResult markFavorite(@PathVariable(name = "workspace_id") String workspaceId,
-                             @RequestParam(name = "id") List<String> ids) {
-        boolean isMark = waylineFileService.markFavorite(workspaceId, ids, true);
-
-        return isMark ? ResponseResult.success() : ResponseResult.error();
-    }
-
-    /**
-     * Delete the favorites of this wayline file based on the wayline file id.
-     * @param workspaceId
-     * @param ids wayline file id
-     * @return
-     */
-    @DeleteMapping("/{workspace_id}/favorites")
-    public ResponseResult unmarkFavorite(@PathVariable(name = "workspace_id") String workspaceId,
-                             @RequestParam(name = "id") List<String> ids) {
-        boolean isMark = waylineFileService.markFavorite(workspaceId, ids, false);
-
-        return isMark ? ResponseResult.success() : ResponseResult.error();
     }
 
     /**
@@ -141,41 +109,63 @@ public class WaylineFileController {
      * @param names
      * @return
      */
-    @GetMapping("/{workspace_id}/waylines/duplicate-names")
-    public ResponseResult checkDuplicateNames(@PathVariable(name = "workspace_id") String workspaceId,
-                                              @RequestParam(name = "name") List<String> names) {
+    @Override
+    public HttpResultResponse<List<String>> getDuplicatedWaylineName(String workspaceId, @NotNull @Size(min = 1) List<String> names, HttpServletRequest req, HttpServletResponse rsp) {
         List<String> existNamesList = waylineFileService.getDuplicateNames(workspaceId, names);
 
-        return ResponseResult.success(existNamesList);
+        return HttpResultResponse.success(existNamesList);
     }
 
     /**
-     * Delete the wayline file in the workspace according to the wayline id.
+     * When the wayline file is uploaded to the storage server by pilot,
+     * the basic information of the file is reported through this interface.
+     * @param request
      * @param workspaceId
-     * @param waylineId
      * @return
      */
-    @DeleteMapping("/{workspace_id}/waylines/{wayline_id}")
-    public ResponseResult deleteWayline(@PathVariable(name = "workspace_id") String workspaceId,
-                                        @PathVariable(name = "wayline_id") String waylineId) {
-        boolean isDel = waylineFileService.deleteByWaylineId(workspaceId, waylineId);
-        return isDel ? ResponseResult.success() : ResponseResult.error("Failed to delete wayline.");
+    @Override
+    public HttpResultResponse fileUploadResultReport(String workspaceId, @Valid WaylineUploadCallbackRequest request, HttpServletRequest req, HttpServletResponse rsp) {
+        CustomClaim customClaim = (CustomClaim)req.getAttribute(TOKEN_CLAIM);
+
+        WaylineUploadCallbackMetadata metadata = request.getMetadata();
+
+        WaylineFileDTO file = WaylineFileDTO.builder()
+                .username(customClaim.getUsername())
+                .objectKey(request.getObjectKey())
+                .name(request.getName())
+                .templateTypes(metadata.getTemplateTypes().stream().map(WaylineTypeEnum::getValue).collect(Collectors.toList()))
+                .payloadModelKeys(metadata.getPayloadModelKeys().stream().map(DeviceEnum::getDevice).collect(Collectors.toList()))
+                .droneModelKey(metadata.getDroneModelKey().getDevice())
+                .build();
+
+        int id = waylineFileService.saveWaylineFile(workspaceId, file);
+
+        return id <= 0 ? HttpResultResponse.error() : HttpResultResponse.success();
     }
 
     /**
-     * Import kmz wayline files.
-     * @param file
+     * Favorite the wayline file according to the wayline file id.
+     * @param workspaceId
+     * @param ids   wayline file id
      * @return
      */
-    @PostMapping("/{workspace_id}/waylines/file/upload")
-    public ResponseResult importKmzFile(HttpServletRequest request, MultipartFile file) {
-        if (Objects.isNull(file)) {
-            return ResponseResult.error("No file received.");
-        }
-        CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
-        String workspaceId = customClaim.getWorkspaceId();
-        String creator = customClaim.getUsername();
-        waylineFileService.importKmzFile(file, workspaceId, creator);
-        return ResponseResult.success();
+    @Override
+    public HttpResultResponse batchFavoritesWayline(String workspaceId, @NotNull @Size(min = 1) List<String> ids, HttpServletRequest req, HttpServletResponse rsp) {
+        boolean isMark = waylineFileService.markFavorite(workspaceId, ids, true);
+
+        return isMark ? HttpResultResponse.success() : HttpResultResponse.error();
+    }
+
+    /**
+     * Delete the favorites of this wayline file based on the wayline file id.
+     * @param workspaceId
+     * @param ids wayline file id
+     * @return
+     */
+    @Override
+    public HttpResultResponse batchUnfavoritesWayline(String workspaceId, @NotNull @Size(min = 1) List<String> ids, HttpServletRequest req, HttpServletResponse rsp) {
+        boolean isMark = waylineFileService.markFavorite(workspaceId, ids, false);
+
+        return isMark ? HttpResultResponse.success() : HttpResultResponse.error();
     }
 }

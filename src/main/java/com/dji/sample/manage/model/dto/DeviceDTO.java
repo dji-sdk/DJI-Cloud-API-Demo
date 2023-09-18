@@ -1,5 +1,11 @@
 package com.dji.sample.manage.model.dto;
 
+import com.dji.sample.manage.model.enums.DeviceFirmwareStatusEnum;
+import com.dji.sdk.cloudapi.device.ControlSourceEnum;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.device.DeviceSubTypeEnum;
+import com.dji.sdk.cloudapi.device.DeviceTypeEnum;
+import com.dji.sdk.cloudapi.tsa.DeviceIconUrl;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,21 +31,21 @@ public class DeviceDTO {
 
     private String workspaceId;
 
-    private String controlSource;
+    private ControlSourceEnum controlSource;
 
     private String deviceDesc;
 
     private String childDeviceSn;
 
-    private Integer domain;
+    private DeviceDomainEnum domain;
 
-    private Integer type;
+    private DeviceTypeEnum type;
 
-    private Integer subType;
+    private DeviceSubTypeEnum subType;
 
     private List<DevicePayloadDTO> payloadsList;
 
-    private IconUrlDTO iconUrl;
+    private DeviceIconUrl iconUrl;
 
     private Boolean status;
 
@@ -59,9 +65,11 @@ public class DeviceDTO {
 
     private DeviceDTO children;
 
-    private Integer firmwareStatus;
+    private DeviceFirmwareStatusEnum firmwareStatus;
 
     private Integer firmwareProgress;
 
     private String parentSn;
+
+    private String thingVersion;
 }

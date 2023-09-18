@@ -1,12 +1,13 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.component.mqtt.model.EventsOutputProgressReceiver;
 import com.dji.sample.component.mqtt.model.EventsReceiver;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.receiver.FirmwareProgressExtReceiver;
+import com.dji.sample.manage.service.ICapacityCameraService;
 import com.dji.sample.manage.service.IDeviceRedisService;
+import com.dji.sdk.cloudapi.firmware.OtaProgress;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -20,6 +21,9 @@ import java.util.stream.Collectors;
  */
 @Service
 public class DeviceRedisServiceImpl implements IDeviceRedisService {
+
+    @Autowired
+    private ICapacityCameraService capacityCameraService;
 
     @Override
     public Boolean checkDeviceOnline(String sn) {
@@ -43,18 +47,28 @@ public class DeviceRedisServiceImpl implements IDeviceRedisService {
     }
 
     @Override
+    public void setDeviceOsd(String sn, Object data) {
+        RedisOpsUtils.setWithExpire(RedisConst.OSD_PREFIX + sn, data, RedisConst.DEVICE_ALIVE_SECOND);
+    }
+
+    @Override
     public <T> Optional<T> getDeviceOsd(String sn, Class<T> clazz) {
         return Optional.ofNullable(clazz.cast(RedisOpsUtils.get(RedisConst.OSD_PREFIX + sn)));
     }
 
     @Override
-    public void setFirmwareUpgrading(String sn, EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>> events) {
+    public Boolean delDeviceOsd(String sn) {
+        return RedisOpsUtils.del(RedisConst.OSD_PREFIX + sn);
+    }
+
+    @Override
+    public void setFirmwareUpgrading(String sn, EventsReceiver<OtaProgress> events) {
         RedisOpsUtils.setWithExpire(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn, events, RedisConst.DEVICE_ALIVE_SECOND * 20);
     }
 
     @Override
-    public Optional<EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>> getFirmwareUpgradingProgress(String sn) {
-        return Optional.ofNullable((EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>) RedisOpsUtils.get(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn));
+    public Optional<EventsReceiver<OtaProgress>> getFirmwareUpgradingProgress(String sn) {
+        return Optional.ofNullable((EventsReceiver<OtaProgress>) RedisOpsUtils.get(RedisConst.FIRMWARE_UPGRADING_PREFIX + sn));
     }
 
     @Override
@@ -76,5 +90,20 @@ public class DeviceRedisServiceImpl implements IDeviceRedisService {
     @Override
     public Boolean delHmsKeysBySn(String sn) {
         return RedisOpsUtils.del(RedisConst.HMS_PREFIX + sn);
+    }
+
+    @Override
+    public void gatewayOffline(String gatewaySn) {
+        delDeviceOnline(gatewaySn);
+        delHmsKeysBySn(gatewaySn);
+        capacityCameraService.deleteCapacityCameraByDeviceSn(gatewaySn);
+    }
+
+    @Override
+    public void subDeviceOffline(String deviceSn) {
+        delDeviceOnline(deviceSn);
+        delDeviceOsd(deviceSn);
+        delHmsKeysBySn(deviceSn);
+        capacityCameraService.deleteCapacityCameraByDeviceSn(deviceSn);
     }
 }

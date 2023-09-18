@@ -1,5 +1,7 @@
 package com.dji.sample.manage.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -9,7 +11,6 @@ import java.util.Arrays;
  * @version 1.2
  * @date 2022/8/15
  */
-@Getter
 public enum DeviceFirmwareStatusEnum {
 
     /**
@@ -36,10 +37,16 @@ public enum DeviceFirmwareStatusEnum {
 
     int val;
 
+    @JsonValue
+    public int getVal() {
+        return val;
+    }
+
     DeviceFirmwareStatusEnum(int val) {
         this.val = val;
     }
 
+    @JsonCreator
     public static DeviceFirmwareStatusEnum find(int val) {
         return Arrays.stream(DeviceFirmwareStatusEnum.values())
                 .filter(firmwareStatus -> firmwareStatus.val == val)
