@@ -67,22 +67,22 @@ cloud-sdk:
 
 url:
   manage:
-    prefix: /manage
+    prefix: manage
     version: /api/v1
   map:
-    prefix: /map
+    prefix: map
     version: /api/v1
   media:
-    prefix: /media
+    prefix: media
     version: /api/v1
   wayline:
-    prefix: /wayline
+    prefix: wayline
     version: /api/v1
   storage:
-    prefix: /storage
+    prefix: storage
     version: /api/v1
   control:
-    prefix: /control
+    prefix: control
     version: /api/v1
 
 # Tutorial: https://www.alibabacloud.com/help/en/object-storage-service/latest/use-a-temporary-credential-provided-by-sts-to-access-oss
