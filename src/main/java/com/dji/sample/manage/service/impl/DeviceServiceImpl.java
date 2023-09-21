@@ -330,7 +330,7 @@ public class DeviceServiceImpl implements IDeviceService {
      * @return
      */
     public Boolean saveOrUpdateDevice(DeviceDTO device) {
-        int count = mapper.selectCount(
+        long count = mapper.selectCount(
                 new LambdaQueryWrapper<DeviceEntity>()
                         .eq(DeviceEntity::getDeviceSn, device.getDeviceSn()));
         return count > 0 ? updateDevice(device) : saveDevice(device) > 0;

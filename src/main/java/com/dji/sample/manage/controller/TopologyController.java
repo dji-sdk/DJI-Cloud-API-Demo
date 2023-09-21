@@ -5,11 +5,11 @@ import com.dji.sdk.cloudapi.tsa.TopologyList;
 import com.dji.sdk.cloudapi.tsa.TopologyResponse;
 import com.dji.sdk.cloudapi.tsa.api.IHttpTsaService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**

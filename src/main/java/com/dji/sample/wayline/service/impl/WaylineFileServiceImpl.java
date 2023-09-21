@@ -1,5 +1,7 @@
 package com.dji.sample.wayline.service.impl;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import org.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -17,10 +19,10 @@ import com.dji.sdk.cloudapi.wayline.GetWaylineListResponse;
 import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
 import com.dji.sdk.common.Pagination;
 import com.dji.sdk.common.PaginationData;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.Node;
+import org.dom4j.*;
 import org.dom4j.io.SAXReader;
+import org.json.JSONPointer;
+import org.json.XML;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -194,14 +196,16 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                     nextEntry = unzipFile.getNextEntry();
                     continue;
                 }
+
                 SAXReader reader = new SAXReader();
                 Document document = reader.read(unzipFile);
                 if (!StandardCharsets.UTF_8.name().equals(document.getXMLEncoding())) {
                     throw new RuntimeException("The file encoding format is incorrect.");
                 }
+                Node droneNode =document.selectSingleNode( "//"+ KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_INFO);;
 
-                Node droneNode = document.selectSingleNode("//" + KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_INFO);
-                Node payloadNode = document.selectSingleNode("//" + KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_INFO);
+                Node payloadNode = document.selectSingleNode("//"+KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_INFO );;
+
                 if (Objects.isNull(droneNode) || Objects.isNull(payloadNode)) {
                     throw new RuntimeException("The file format is incorrect.");
                 }

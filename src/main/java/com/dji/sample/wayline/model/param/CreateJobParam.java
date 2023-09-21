@@ -3,11 +3,11 @@ package com.dji.sample.wayline.model.param;
 import com.dji.sdk.cloudapi.wayline.OutOfControlActionEnum;
 import com.dji.sdk.cloudapi.wayline.TaskTypeEnum;
 import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 /**

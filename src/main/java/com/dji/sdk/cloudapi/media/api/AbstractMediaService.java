@@ -14,10 +14,10 @@ import com.dji.sdk.mqtt.requests.TopicRequestsResponse;
 import com.dji.sdk.mqtt.services.ServicesPublish;
 import com.dji.sdk.mqtt.services.ServicesReplyData;
 import com.dji.sdk.mqtt.services.TopicServicesResponse;
+import jakarta.annotation.Resource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
 
 /**
  * @author sean

@@ -6,16 +6,15 @@ import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttGatewayPublish;
 import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +35,7 @@ public class StatusRouter {
 
     @Bean
     public IntegrationFlow statusRouterFlow() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.INBOUND_STATUS)
                 .transform(Message.class, source -> {
                     try {
@@ -56,7 +55,7 @@ public class StatusRouter {
 
     @Bean
     public IntegrationFlow replySuccessStatus() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.OUTBOUND_STATUS)
                 .handle(this::publish)
                 .nullChannel();

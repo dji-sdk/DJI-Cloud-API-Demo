@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -29,7 +31,7 @@ import java.util.Objects;
 public class MinIOServiceImpl implements IOssService {
 
     private MinioClient client;
-    
+
     @Override
     public OssTypeEnum getOssType() {
         return OssTypeEnum.MINIO;
@@ -52,15 +54,15 @@ public class MinIOServiceImpl implements IOssService {
     @Override
     public URL getObjectUrl(String bucket, String objectKey) {
         try {
-            return new URL(
+            return new URI(
                     client.getPresignedObjectUrl(
                                     GetPresignedObjectUrlArgs.builder()
                                             .method(Method.GET)
                                             .bucket(bucket)
                                             .object(objectKey)
                                             .expiry(Math.toIntExact(OssConfiguration.expire))
-                                            .build()));
-        } catch (ErrorResponseException | InsufficientDataException | InternalException |
+                                            .build())).toURL();
+        } catch (ErrorResponseException | URISyntaxException | InsufficientDataException | InternalException |
                 InvalidKeyException | InvalidResponseException | IOException |
                 NoSuchAlgorithmException | XmlParserException | ServerException e) {
             throw new RuntimeException("The file does not exist on the OssConfiguration.");

@@ -2,9 +2,9 @@ package com.dji.sdk.mqtt.property;
 
 import com.dji.sdk.mqtt.MqttGatewayPublish;
 import com.dji.sdk.mqtt.TopicConst;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.Objects;
 import java.util.UUID;
 

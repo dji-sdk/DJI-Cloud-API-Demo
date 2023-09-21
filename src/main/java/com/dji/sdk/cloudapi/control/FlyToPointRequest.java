@@ -1,9 +1,9 @@
 package com.dji.sdk.cloudapi.control;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 
-import javax.validation.Valid;
-import javax.validation.constraints.*;
 import java.util.List;
 
 /**

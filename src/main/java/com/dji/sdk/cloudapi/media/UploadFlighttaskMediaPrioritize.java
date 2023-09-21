@@ -1,9 +1,9 @@
 package com.dji.sdk.cloudapi.media;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 /**
  * @author sean

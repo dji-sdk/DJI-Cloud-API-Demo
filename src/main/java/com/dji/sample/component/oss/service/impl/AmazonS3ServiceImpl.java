@@ -16,10 +16,10 @@ import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.IOssService;
 import com.dji.sdk.cloudapi.storage.CredentialsToken;
 import com.dji.sdk.cloudapi.storage.OssTypeEnum;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import java.util.Objects;
 public class AmazonS3ServiceImpl implements IOssService {
 
     private AmazonS3 client;
-    
+
     @Override
     public OssTypeEnum getOssType() {
         return OssTypeEnum.AWS;
@@ -120,6 +120,6 @@ public class AmazonS3ServiceImpl implements IOssService {
 
         client.setBucketCrossOriginConfiguration(OssConfiguration.bucket,
                 new BucketCrossOriginConfiguration().withRules(rule));
-        
+
     }
 }

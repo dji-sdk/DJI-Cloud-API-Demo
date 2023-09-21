@@ -1,8 +1,8 @@
 package com.dji.sdk.cloudapi.organization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

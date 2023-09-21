@@ -1,14 +1,14 @@
 package com.dji.sample.control.model.param;
 
 import com.dji.sample.component.redis.RedisConst;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Range;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 
 /**
  * @author sean

@@ -1,9 +1,9 @@
 package com.dji.sdk.cloudapi.property;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * The state of the drone's limited distance

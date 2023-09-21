@@ -1,0 +1,66 @@
+name: dji-cloud-sample
+services:
+  mysql:
+    container_name: "dji-mysql"
+    image: mysql:latest
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: dji2023
+      MYSQL_DATABASE: cloud_sample
+      MYSQL_USER: dji
+      MYSQL_PASSWORD: dji2023
+    ports:
+      - '127.0.0.1:3306:3306'
+    restart: always
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: "dji-redis"
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:6379:6379'
+    environment:
+      - REDIS_ARGS=--requirepass dji2023 --appendonly yes --save 900 1
+      - SET_CONTAINER_TIMEZONE=true
+    volumes:
+      - redis_data:/data
+  minio:
+    image: minio/minio
+    container_name: "dji-minio"
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin2023
+      - MINIO_SECRET_KEY=minioadmin2023
+    command: server /data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+  minio-client:
+    image: minio/mc
+    container_name: "dji-minio-client"
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio  http://dji-minio:9000 minioadmin2023 minioadmin2023;
+      /usr/bin/mc mb myminio/cloud-bucket;
+      /usr/bin/mc policy set authorized  myminio/cloud-bucket;
+      "
+volumes:
+  mysql_data:
+  redis_data:
+  minio_data:

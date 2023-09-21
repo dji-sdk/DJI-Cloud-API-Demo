@@ -4,12 +4,12 @@ import com.dji.sample.common.model.CustomClaim;
 import com.dji.sample.manage.model.dto.WorkspaceDTO;
 import com.dji.sample.manage.service.IWorkspaceService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;

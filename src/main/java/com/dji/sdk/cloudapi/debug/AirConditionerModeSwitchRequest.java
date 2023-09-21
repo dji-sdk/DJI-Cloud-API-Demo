@@ -1,8 +1,8 @@
 package com.dji.sdk.cloudapi.debug;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

@@ -9,14 +9,14 @@ import com.dji.sdk.cloudapi.map.GetMapElementsResponse;
 import com.dji.sdk.cloudapi.map.UpdateMapElementRequest;
 import com.dji.sdk.cloudapi.map.api.IHttpMapService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
@@ -73,7 +73,7 @@ public class WorkspaceElementController implements IHttpMapService {
      */
     @Override
     public HttpResultResponse<CreateMapElementResponse> createMapElement(String workspaceId, String groupId,
-                     @Valid CreateMapElementRequest elementCreate, HttpServletRequest req, HttpServletResponse rsp) {
+                 @Valid CreateMapElementRequest elementCreate, HttpServletRequest req, HttpServletResponse rsp) {
         CustomClaim claims = (CustomClaim) req.getAttribute(TOKEN_CLAIM);
         // Set the creator of the element
         elementCreate.getResource().setUsername(claims.getUsername());

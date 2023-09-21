@@ -1,10 +1,10 @@
 package com.dji.sample.control.model.param;
 
 import com.dji.sample.control.model.enums.PayloadCommandsEnum;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

@@ -5,13 +5,12 @@ import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttGatewayPublish;
+import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
@@ -29,7 +28,7 @@ public class RequestsRouter {
 
     @Bean
     public IntegrationFlow requestsMethodRouterFlow() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.INBOUND_REQUESTS)
                 .<byte[], TopicRequestsRequest>transform(payload -> {
                     try {
@@ -48,7 +47,7 @@ public class RequestsRouter {
 
     @Bean
     public IntegrationFlow replyRequestsMethod() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.OUTBOUND_REQUESTS)
                 .handle(this::publish)
                 .nullChannel();

@@ -2,9 +2,9 @@ package com.dji.sdk.cloudapi.device;
 
 import com.dji.sdk.common.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

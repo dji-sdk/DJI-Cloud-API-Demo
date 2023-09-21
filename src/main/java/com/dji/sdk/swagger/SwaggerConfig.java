@@ -1,6 +1,7 @@
 package com.dji.sdk.swagger;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -11,6 +12,7 @@ import org.springdoc.core.GroupedOpenApi;
 import org.springdoc.core.SpringDocConfigProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 /**
  * @author sean
@@ -46,11 +48,4 @@ public class SwaggerConfig {
                 .packagesToScan("com.dji").build();
     }
 
-    @Bean
-    public SpringDocConfigProperties springDocConfigProperties(SpringDocConfigProperties properties) {
-        properties.setDefaultFlatParamObject(false);
-        properties.setDefaultSupportFormData(true);
-        properties.setDefaultProducesMediaType("application/json");
-        return properties;
-    }
 }

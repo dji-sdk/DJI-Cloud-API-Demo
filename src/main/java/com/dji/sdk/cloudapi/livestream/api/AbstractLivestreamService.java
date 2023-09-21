@@ -8,11 +8,11 @@ import com.dji.sdk.mqtt.services.ServicesReplyData;
 import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import com.dji.sdk.mqtt.state.TopicStateRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.annotation.Resource;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
 
 /**
  * @author sean

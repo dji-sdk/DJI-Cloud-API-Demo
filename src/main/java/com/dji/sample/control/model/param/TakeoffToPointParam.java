@@ -5,12 +5,12 @@ import com.dji.sdk.cloudapi.control.CommanderModeLostActionEnum;
 import com.dji.sdk.cloudapi.device.ExitWaylineWhenRcLostEnum;
 import com.dji.sdk.cloudapi.device.RcLostActionEnum;
 import com.dji.sdk.cloudapi.wayline.RthModeEnum;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean
