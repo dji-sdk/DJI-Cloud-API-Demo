@@ -78,7 +78,7 @@ public class DeviceRedisServiceImpl implements IDeviceRedisService {
 
     @Override
     public void addEndHmsKeys(String sn, String... keys) {
-        RedisOpsUtils.listRPush(RedisConst.HMS_PREFIX + sn, keys);
+        RedisOpsUtils.listRPush(RedisConst.HMS_PREFIX + sn, (Object[]) keys);
     }
 
     @Override

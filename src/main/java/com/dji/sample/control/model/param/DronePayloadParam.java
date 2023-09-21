@@ -3,11 +3,10 @@ package com.dji.sample.control.model.param;
 import com.dji.sdk.cloudapi.control.CameraTypeEnum;
 import com.dji.sdk.cloudapi.control.GimbalResetModeEnum;
 import com.dji.sdk.cloudapi.device.CameraModeEnum;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
-
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 
 /**
  * @author sean

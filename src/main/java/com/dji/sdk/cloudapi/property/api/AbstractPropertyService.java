@@ -11,9 +11,9 @@ import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.property.PropertySetPublish;
 import com.dji.sdk.mqtt.property.PropertySetReplyResultEnum;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;

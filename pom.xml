@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.12</version>
+        <version>3.1.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -15,19 +15,20 @@
     <name>cloud-api-sample</name>
 
     <properties>
-        <java.version>11</java.version>
-        <mybatis-plus.version>3.4.2</mybatis-plus.version>
-        <druid.version>1.2.6</druid.version>
+        <java.version>21</java.version>
+        <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
+        <druid.version>1.2.18</druid.version>
         <jwt.version>3.12.1</jwt.version>
-        <mqtt.version>5.5.5</mqtt.version>
-        <minio.version>8.3.7</minio.version>
-        <okhttp3.version>4.9.1</okhttp3.version>
-        <aliyun-sdk-sts.version>3.1.0</aliyun-sdk-sts.version>
-        <aliyun-oss.version>3.12.0</aliyun-oss.version>
-        <javax-activation.version>1.1.1</javax-activation.version>
-        <glassfish-jaxb.version>2.3.3</glassfish-jaxb.version>
-        <log4j2.version>2.15.0</log4j2.version>
-        <javax-jaxb.version>2.3.0</javax-jaxb.version>
+        <mqtt.version>6.1.2</mqtt.version>
+        <minio.version>8.5.4</minio.version>
+        <okhttp3.version>4.11.0</okhttp3.version>
+        <aliyun-sdk-sts.version>3.1.1</aliyun-sdk-sts.version>
+        <aliyun-oss.version>3.17.1</aliyun-oss.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <mysql-connector-j.version>8.1.0</mysql-connector-j.version>
+        <lombok.version>1.18.30</lombok.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <jetbrains.annotations.version>24.0.1</jetbrains.annotations.version>
     </properties>
 
     <dependencies>
@@ -35,16 +36,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
+        <!-- yml解析器 -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.31</version>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -59,10 +61,17 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
+
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
+            <artifactId>druid-spring-boot-3-starter</artifactId>
             <version>${druid.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>${mysql-connector-j.version}</version>
         </dependency>
 
         <dependency>
@@ -81,10 +90,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>RELEASE</version>
+            <version>${jetbrains.annotations.version}</version>
             <scope>compile</scope>
         </dependency>
 
@@ -113,22 +123,6 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>activation</artifactId>
-            <version>${javax-activation.version}</version>
-        </dependency>
-        <!-- no more than 2.3.3-->
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>${glassfish-jaxb.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
@@ -140,12 +134,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.261</version>
+            <version>1.12.528</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-sts</artifactId>
-            <version>1.12.261</version>
+            <version>1.12.528</version>
         </dependency>
 
         <dependency>
@@ -159,20 +153,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-            <version>2.1.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.69</version>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.76</version>
         </dependency>
 
         <dependency>
@@ -180,11 +163,31 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
             <version>1.7.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-docker-compose</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>2.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20230618</version>
         </dependency>
 
     </dependencies>

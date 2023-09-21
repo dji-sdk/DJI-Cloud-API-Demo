@@ -5,29 +5,38 @@ spring:
     allow-bean-definition-overriding: true
   application:
     name: cloud-api-sample
+  docker:
+    compose:
+      enabled: true
+      file: ./docker/docker-compose.yml
+      lifecycle-management: start_and_stop
+      readiness:
+        tcp:
+          connect-timeout: 10s
+          read-timeout: 5s
   datasource:
     druid:
-      type: com.alibaba.druid.pool.DruidDataSource
+      enable: true
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://cloud_api_sample_mysql:3306/cloud_sample?useSSL=false&allowPublicKeyRetrieval=true
-      username: root
-      password: root
+      url: jdbc:mysql://127.0.0.1:3306/cloud_sample?useSSL=false&allowPublicKeyRetrieval=true
+      username: dji
+      password: dji2023
       initial-size: 10
       min-idle: 10
       max-active: 20
       max-wait: 60000
-
-  redis:
-    host: cloud_api_sample_redis
-    port: 6379
-    database: 0
-    username: # if you enable
-    password:
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      username: # if you enable
+      password: dji2023
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
   servlet:
     multipart:
@@ -85,19 +94,29 @@ url:
     prefix: control
     version: /api/v1
 
-# Tutorial: https://www.alibabacloud.com/help/en/object-storage-service/latest/use-a-temporary-credential-provided-by-sts-to-access-oss
 oss:
-  enable: false
-  provider: ALIYUN # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
-  endpoint: https://oss-cn-hangzhou.aliyuncs.com
-  access-key: Please enter your access key.
-  secret-key: Please enter your secret key.
+  enable: true
+  provider: minio
+  endpoint: http://127.0.0.1:9000
+  access-key: minioadmin2023
+  secret-key: minioadmin2023
+  bucket: cloud-bucket
   expire: 3600
-  region: Please enter your oss region. # cn-hangzhou
-  role-session-name: cloudApi
-  role-arn: Please enter your role arn. # acs:ram::123456789:role/stsrole
-  bucket: Please enter your bucket name.
-  object-dir-prefix: Please enter a folder name.
+  object-dir-prefix: wayline
+
+# Tutorial: https://www.alibabacloud.com/help/en/object-storage-service/latest/use-a-temporary-credential-provided-by-sts-to-access-oss
+#oss:
+#  enable: false
+#  provider: ALIYUN # @see com.dji.sample.component.OssConfiguration.model.enums.OssTypeEnum
+#  endpoint: https://oss-cn-hangzhou.aliyuncs.com
+#  access-key: Please enter your access key.
+#  secret-key: Please enter your secret key.
+#  expire: 3600
+#  region: Please enter your oss region. # cn-hangzhou
+#  role-session-name: cloudApi
+#  role-arn: Please enter your role arn. # acs:ram::123456789:role/stsrole
+#  bucket: Please enter your bucket name.
+#  object-dir-prefix: Please enter a folder name.
 
 #oss:
 #  enable: true
@@ -139,3 +158,8 @@ cloud-api:
     id: Please enter the app id.
     key: Please enter the app key.
     license: Please enter the app license.
+
+springdoc:
+  default-flat-param-object: false
+  default-support-form-data: true
+  default-produces-media-type: application/json

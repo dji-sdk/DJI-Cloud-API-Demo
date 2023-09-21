@@ -4,13 +4,13 @@ import com.dji.sample.media.service.IMediaService;
 import com.dji.sdk.cloudapi.media.*;
 import com.dji.sdk.cloudapi.media.api.IHttpMediaService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.util.List;
 
 /**

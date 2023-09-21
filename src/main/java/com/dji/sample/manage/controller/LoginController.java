@@ -5,6 +5,8 @@ import com.dji.sample.manage.model.dto.UserDTO;
 import com.dji.sample.manage.model.dto.UserLoginDTO;
 import com.dji.sample.manage.service.IUserService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 
 import static com.dji.sample.component.AuthInterceptor.PARAM_TOKEN;

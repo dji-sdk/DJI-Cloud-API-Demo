@@ -5,9 +5,9 @@ import com.dji.sdk.mqtt.MqttGatewayPublish;
 import com.dji.sdk.mqtt.TopicConst;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.Objects;
 import java.util.UUID;
 

@@ -7,12 +7,12 @@ import com.dji.sample.control.model.param.DrcModeParam;
 import com.dji.sample.control.service.IDrcService;
 import com.dji.sdk.cloudapi.control.DrcModeMqttBroker;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
 
 import static com.dji.sample.component.AuthInterceptor.TOKEN_CLAIM;
 

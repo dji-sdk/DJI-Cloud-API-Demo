@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 
@@ -33,7 +32,7 @@ public class OsdRouter {
 
     @Bean
     public IntegrationFlow osdRouterFlow() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.INBOUND_OSD)
                 .transform(Message.class, source -> {
                     try {

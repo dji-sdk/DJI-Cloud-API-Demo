@@ -1,7 +1,8 @@
 package com.dji.sdk.cloudapi.firmware;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * @author sean

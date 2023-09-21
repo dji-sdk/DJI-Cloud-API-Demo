@@ -6,7 +6,6 @@ import com.dji.sdk.mqtt.ChannelName;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.messaging.Message;
 
 import java.io.IOException;
@@ -22,7 +21,7 @@ public class DrcUpRouter {
 
     @Bean
     public IntegrationFlow drcUpRouterFlow() {
-        return IntegrationFlows
+        return IntegrationFlow
                 .from(ChannelName.INBOUND_DRC_UP)
                 .transform(Message.class, source -> {
                     try {

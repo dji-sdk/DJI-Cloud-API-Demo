@@ -1,10 +1,10 @@
 package com.dji.sdk.cloudapi.control;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

@@ -4,11 +4,11 @@ import com.dji.sample.storage.service.IStorageService;
 import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
 import com.dji.sdk.cloudapi.storage.api.IHttpStorageService;
 import com.dji.sdk.common.HttpResultResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author sean
