@@ -28,8 +28,10 @@ public class DrcModeParam {
     private String dockSn;
 
     @Range(min = 1800, max = 86400)
+    @Builder.Default
     private long expireSec = RedisConst.DRC_MODE_ALIVE_SECOND;
 
     @Valid
+    @Builder.Default
     private DeviceDrcInfoParam deviceInfo = new DeviceDrcInfoParam();
 }

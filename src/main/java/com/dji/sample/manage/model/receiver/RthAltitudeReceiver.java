@@ -1,5 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,7 +19,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class RthAltitudeReceiver extends BasicDeviceProperty {
 
-    private Integer value;
+    private Integer rthAltitude;
 
     private static final int RTH_ALTITUDE_MAX = 500;
 
@@ -26,7 +27,11 @@ public class RthAltitudeReceiver extends BasicDeviceProperty {
 
     @Override
     public boolean valid() {
-        return  Objects.nonNull(this.value) && this.value >= RTH_ALTITUDE_MIN && this.value <= RTH_ALTITUDE_MAX;
+        return Objects.nonNull(rthAltitude) && rthAltitude >= RTH_ALTITUDE_MIN && rthAltitude <= RTH_ALTITUDE_MAX;
     }
 
+    @Override
+    public boolean canPublish(OsdDockDrone osd) {
+        return rthAltitude != osd.getRthAltitude().intValue();
+    }
 }

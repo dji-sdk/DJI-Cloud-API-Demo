@@ -1,20 +1,15 @@
 package com.dji.sample.manage.controller;
 
-import com.dji.sample.common.error.CommonErrorEnum;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.ChannelName;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.component.mqtt.model.CommonTopicResponse;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.dto.DeviceFirmwareUpgradeDTO;
-import com.dji.sample.manage.model.enums.DeviceSetPropertyEnum;
-import com.dji.sample.manage.model.receiver.StatusGatewayReceiver;
 import com.dji.sample.manage.service.IDeviceService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
+import com.dji.sdk.exception.CloudSDKErrorEnum;
+import com.dji.sdk.mqtt.property.PropertySetReplyResultEnum;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,55 +29,15 @@ public class DeviceController {
     private IDeviceService deviceService;
 
     /**
-     * Handles the message that the drone goes online.
-     * @param receiver  The drone information is not empty.
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATUS_ONLINE, outputChannel = ChannelName.OUTBOUND)
-    public void deviceOnline(CommonTopicReceiver<StatusGatewayReceiver> receiver) {
-        boolean online = deviceService.deviceOnline(receiver.getData());
-        if (online) {
-            // Notify pilot that the drone is online successfully.
-            deviceService.publishStatusReply(receiver.getData().getSn(),
-                    CommonTopicResponse.builder()
-                            .tid(receiver.getTid())
-                            .bid(receiver.getBid())
-                            .timestamp(System.currentTimeMillis())
-                            .method(receiver.getMethod())
-                            .build());
-        }
-    }
-
-    /**
-     * Handles the message that the drone goes offline.
-     * @param receiver  The drone information is empty.
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATUS_OFFLINE, outputChannel = ChannelName.OUTBOUND)
-    public void deviceOffline(CommonTopicReceiver<StatusGatewayReceiver> receiver) {
-
-        boolean offline = deviceService.deviceOffline(receiver.getData());
-        if (offline) {
-            // Notify pilot that the device is offline successfully.
-            deviceService.publishStatusReply(receiver.getData().getSn(),
-                    CommonTopicResponse.builder()
-                            .tid(receiver.getTid())
-                            .bid(receiver.getBid())
-                            .timestamp(System.currentTimeMillis())
-                            .method(receiver.getMethod())
-                            .build());
-
-        }
-    }
-
-    /**
      * Get the topology list of all online devices in one workspace.
      * @param workspaceId
      * @return
      */
     @GetMapping("/{workspace_id}/devices")
-    public ResponseResult<List<DeviceDTO>> getDevices(@PathVariable("workspace_id") String workspaceId) {
+    public HttpResultResponse<List<DeviceDTO>> getDevices(@PathVariable("workspace_id") String workspaceId) {
         List<DeviceDTO> devicesList = deviceService.getDevicesTopoForWeb(workspaceId);
 
-        return ResponseResult.success(devicesList);
+        return HttpResultResponse.success(devicesList);
     }
 
     /**
@@ -92,10 +47,10 @@ public class DeviceController {
      * @return
      */
     @PostMapping("/{device_sn}/binding")
-    public ResponseResult bindDevice(@RequestBody DeviceDTO device, @PathVariable("device_sn") String deviceSn) {
+    public HttpResultResponse bindDevice(@RequestBody DeviceDTO device, @PathVariable("device_sn") String deviceSn) {
         device.setDeviceSn(deviceSn);
         boolean isUpd = deviceService.bindDevice(device);
-        return isUpd ? ResponseResult.success() : ResponseResult.error();
+        return isUpd ? HttpResultResponse.success() : HttpResultResponse.error();
     }
 
     /**
@@ -105,10 +60,10 @@ public class DeviceController {
      * @return
      */
     @GetMapping("/{workspace_id}/devices/{device_sn}")
-    public ResponseResult getDevice(@PathVariable("workspace_id") String workspaceId,
-                                               @PathVariable("device_sn") String deviceSn) {
+    public HttpResultResponse getDevice(@PathVariable("workspace_id") String workspaceId,
+                                        @PathVariable("device_sn") String deviceSn) {
         Optional<DeviceDTO> deviceOpt = deviceService.getDeviceBySn(deviceSn);
-        return deviceOpt.isEmpty() ? ResponseResult.error("device not found.") : ResponseResult.success(deviceOpt.get());
+        return deviceOpt.isEmpty() ? HttpResultResponse.error("device not found.") : HttpResultResponse.success(deviceOpt.get());
     }
 
     /**
@@ -119,13 +74,13 @@ public class DeviceController {
      * @return
      */
     @GetMapping("/{workspace_id}/devices/bound")
-    public ResponseResult<PaginationData<DeviceDTO>> getBoundDevicesWithDomain(
+    public HttpResultResponse<PaginationData<DeviceDTO>> getBoundDevicesWithDomain(
             @PathVariable("workspace_id") String workspaceId, Integer domain,
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(value = "page_size", defaultValue = "50") Long pageSize) {
         PaginationData<DeviceDTO> devices = deviceService.getBoundDevicesWithDomain(workspaceId, page, pageSize, domain);
 
-        return ResponseResult.success(devices);
+        return HttpResultResponse.success(devices);
     }
 
     /**
@@ -134,9 +89,9 @@ public class DeviceController {
      * @return
      */
     @DeleteMapping("/{device_sn}/unbinding")
-    public ResponseResult unbindingDevice(@PathVariable("device_sn") String deviceSn) {
+    public HttpResultResponse unbindingDevice(@PathVariable("device_sn") String deviceSn) {
         deviceService.unbindDevice(deviceSn);
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 
     /**
@@ -147,12 +102,12 @@ public class DeviceController {
      * @return
      */
     @PutMapping("/{workspace_id}/devices/{device_sn}")
-    public ResponseResult updateDevice(@RequestBody DeviceDTO device,
-                                       @PathVariable("workspace_id") String workspaceId,
-                                       @PathVariable("device_sn") String deviceSn) {
+    public HttpResultResponse updateDevice(@RequestBody DeviceDTO device,
+                                           @PathVariable("workspace_id") String workspaceId,
+                                           @PathVariable("device_sn") String deviceSn) {
         device.setDeviceSn(deviceSn);
         boolean isUpd = deviceService.updateDevice(device);
-        return isUpd ? ResponseResult.success() : ResponseResult.error();
+        return isUpd ? HttpResultResponse.success() : HttpResultResponse.error();
     }
 
     /**
@@ -162,8 +117,8 @@ public class DeviceController {
      * @return
      */
     @PostMapping("/{workspace_id}/devices/ota")
-    public ResponseResult createOtaJob(@PathVariable("workspace_id") String workspaceId,
-                                       @RequestBody List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
+    public HttpResultResponse createOtaJob(@PathVariable("workspace_id") String workspaceId,
+                                           @RequestBody List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
         return deviceService.createDeviceOtaJob(workspaceId, upgradeDTOS);
     }
 
@@ -175,18 +130,15 @@ public class DeviceController {
      * @return
      */
     @PutMapping("/{workspace_id}/devices/{device_sn}/property")
-    public ResponseResult devicePropertySet(@PathVariable("workspace_id") String workspaceId,
-                                            @PathVariable("device_sn") String dockSn,
-                                            @RequestBody JsonNode param) {
+    public HttpResultResponse devicePropertySet(@PathVariable("workspace_id") String workspaceId,
+                                                @PathVariable("device_sn") String dockSn,
+                                                @RequestBody JsonNode param) {
         if (param.size() != 1) {
-            return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+            return HttpResultResponse.error(CloudSDKErrorEnum.INVALID_PARAMETER);
         }
-        String property = param.fieldNames().next();
-        Optional<DeviceSetPropertyEnum> propertyEnumOpt = DeviceSetPropertyEnum.find(property);
-        if (propertyEnumOpt.isEmpty()) {
-            return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
-        }
-        deviceService.devicePropertySet(workspaceId, dockSn, propertyEnumOpt.get(), param.get(property));
-        return ResponseResult.success();
+
+        int result = deviceService.devicePropertySet(workspaceId, dockSn, param);
+        return PropertySetReplyResultEnum.SUCCESS.getResult() == result ?
+                HttpResultResponse.success() : HttpResultResponse.error(result, String.valueOf(result));
     }
 }

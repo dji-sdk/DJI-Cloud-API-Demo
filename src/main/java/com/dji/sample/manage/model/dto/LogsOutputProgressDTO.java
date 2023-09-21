@@ -1,5 +1,6 @@
 package com.dji.sample.manage.model.dto;
 
+import com.dji.sdk.cloudapi.log.FileUploadStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +21,7 @@ public class LogsOutputProgressDTO {
 
     private String logsId;
 
-    private String status;
+    private FileUploadStatusEnum status;
 
     private List<LogsProgressDTO> files;
 }

@@ -1,10 +1,8 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.StateSwitchEnum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
+import com.dji.sdk.cloudapi.device.SwitchActionEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.Objects;
 
@@ -13,16 +11,22 @@ import java.util.Objects;
  * @version 1.3
  * @date 2022/11/25
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class NightLightsStateReceiver extends BasicDeviceProperty {
 
-    private Integer value;
+    private SwitchActionEnum nightLightsState;
+
+    @JsonCreator
+    public NightLightsStateReceiver(Integer nightLightsState) {
+        this.nightLightsState = SwitchActionEnum.find(nightLightsState);
+    }
 
     @Override
     public boolean valid() {
-        return Objects.nonNull(value) && StateSwitchEnum.find(value).isPresent();
+        return Objects.nonNull(nightLightsState);
+    }
+
+    @Override
+    public boolean canPublish(OsdDockDrone osd) {
+        return nightLightsState != osd.getNightLightsState();
     }
 }

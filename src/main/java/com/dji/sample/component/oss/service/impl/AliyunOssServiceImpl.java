@@ -13,9 +13,9 @@ import com.aliyuncs.profile.DefaultProfile;
 import com.aliyuncs.sts.model.v20150401.AssumeRoleRequest;
 import com.aliyuncs.sts.model.v20150401.AssumeRoleResponse;
 import com.dji.sample.component.oss.model.OssConfiguration;
-import com.dji.sample.component.oss.model.enums.OssTypeEnum;
 import com.dji.sample.component.oss.service.IOssService;
-import com.dji.sample.media.model.CredentialsDTO;
+import com.dji.sdk.cloudapi.storage.CredentialsToken;
+import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -36,12 +36,12 @@ public class AliyunOssServiceImpl implements IOssService {
     private OSS ossClient;
     
     @Override
-    public String getOssType() {
-        return OssTypeEnum.ALIYUN.getType();
+    public OssTypeEnum getOssType() {
+        return OssTypeEnum.ALIYUN;
     }
 
     @Override
-    public CredentialsDTO getCredentials() {
+    public CredentialsToken getCredentials() {
 
         try {
             DefaultProfile profile = DefaultProfile.getProfile(
@@ -54,7 +54,7 @@ public class AliyunOssServiceImpl implements IOssService {
             request.setRoleSessionName(OssConfiguration.roleSessionName);
 
             AssumeRoleResponse response = client.getAcsResponse(request);
-            return new CredentialsDTO(response.getCredentials(), OssConfiguration.expire);
+            return new CredentialsToken(response.getCredentials(), OssConfiguration.expire);
 
         } catch (ClientException e) {
             log.debug("Failed to obtain sts.");
@@ -95,7 +95,7 @@ public class AliyunOssServiceImpl implements IOssService {
             throw new RuntimeException("The filename already exists.");
         }
         PutObjectResult objectResult = ossClient.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
-        log.info("Upload File: {}", objectResult.getETag());
+        log.info("Upload FlighttaskCreateFile: {}", objectResult.getETag());
     }
 
     public void createClient() {

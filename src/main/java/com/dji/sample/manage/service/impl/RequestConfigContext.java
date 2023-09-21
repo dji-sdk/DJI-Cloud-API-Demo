@@ -1,14 +1,15 @@
 package com.dji.sample.manage.service.impl;
 
-import com.dji.sample.common.util.SpringBeanUtils;
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
-import com.dji.sample.manage.model.receiver.RequestConfigReceiver;
-import com.dji.sample.manage.service.IRequestsConfigService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.mqtt.support.MqttHeaders;
+import com.dji.sample.common.error.CommonErrorEnum;
+import com.dji.sample.common.util.SpringBeanUtilsTest;
+import com.dji.sample.manage.model.dto.ProductConfigDTO;
+import com.dji.sample.manage.model.enums.CustomizeConfigScopeEnum;
+import com.dji.sdk.cloudapi.config.ProductConfigResponse;
+import com.dji.sdk.cloudapi.config.RequestsConfigRequest;
+import com.dji.sdk.cloudapi.config.api.AbstractConfigService;
+import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.requests.TopicRequestsRequest;
+import com.dji.sdk.mqtt.requests.TopicRequestsResponse;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 
@@ -20,37 +21,22 @@ import java.util.Optional;
  * @date 2022/11/10
  */
 @Service
-public class RequestConfigContext {
+public class RequestConfigContext extends AbstractConfigService {
 
-    @Autowired
-    private IMessageSenderService messageSenderService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-
-    /**
-     * Handles the config method of the requests topic.
-     * @param receiver
-     * @param headers
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_REQUESTS_CONFIG, outputChannel = ChannelName.OUTBOUND)
-    void handleConfig(CommonTopicReceiver receiver, MessageHeaders headers) {
-        RequestConfigReceiver configReceiver = objectMapper.convertValue(receiver.getData(), RequestConfigReceiver.class);
-        Optional<ConfigScopeEnum> scopeEnumOpt = ConfigScopeEnum.find(configReceiver.getConfigScope());
-        String topic = headers.get(MqttHeaders.RECEIVED_TOPIC) + TopicConst._REPLY_SUF;
-        CommonTopicResponse.CommonTopicResponseBuilder<Object> build = CommonTopicResponse.builder()
-                .tid(receiver.getTid())
-                .bid(receiver.getBid())
-                .timestamp(System.currentTimeMillis())
-                .method(receiver.getMethod());
+    @Override
+    public TopicRequestsResponse<ProductConfigResponse> requestsConfig(TopicRequestsRequest<RequestsConfigRequest> request, MessageHeaders headers) {
+        RequestsConfigRequest configReceiver = request.getData();
+        Optional<CustomizeConfigScopeEnum> scopeEnumOpt = CustomizeConfigScopeEnum.find(configReceiver.getConfigScope().getScope());
         if (scopeEnumOpt.isEmpty()) {
-            messageSenderService.publish(topic, build.build());
-            return;
+            return new TopicRequestsResponse().setData(MqttReply.error(CommonErrorEnum.ILLEGAL_ARGUMENT));
         }
 
-        IRequestsConfigService requestsConfigService = SpringBeanUtils.getBean(scopeEnumOpt.get().getClazz());
-        build.data(requestsConfigService.getConfig());
-        messageSenderService.publish(topic, build.build());
+        ProductConfigDTO config = (ProductConfigDTO) SpringBeanUtilsTest.getBean(scopeEnumOpt.get().getClazz()).getConfig();
+        return new TopicRequestsResponse<ProductConfigResponse>().setData(
+                new ProductConfigResponse()
+                        .setNtpServerHost(config.getNtpServerHost())
+                        .setAppId(config.getAppId())
+                        .setAppKey(config.getAppKey())
+                        .setAppLicense(config.getAppLicense()));
     }
 }

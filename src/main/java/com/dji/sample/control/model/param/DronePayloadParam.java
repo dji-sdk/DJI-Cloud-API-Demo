@@ -1,8 +1,8 @@
 package com.dji.sample.control.model.param;
 
-import com.dji.sample.control.model.enums.CameraModeEnum;
-import com.dji.sample.control.model.enums.CameraTypeEnum;
-import com.dji.sample.control.model.enums.GimbalResetModeEnum;
+import com.dji.sdk.cloudapi.control.CameraTypeEnum;
+import com.dji.sdk.cloudapi.control.GimbalResetModeEnum;
+import com.dji.sdk.cloudapi.device.CameraModeEnum;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 

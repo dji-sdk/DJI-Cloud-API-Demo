@@ -4,10 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.dji.sample.manage.dao.ILogsFileIndexMapper;
 import com.dji.sample.manage.model.dto.LogsFileDTO;
+import com.dji.sample.manage.model.dto.LogsFileUploadDTO;
 import com.dji.sample.manage.model.entity.LogsFileIndexEntity;
-import com.dji.sample.manage.model.receiver.LogsFile;
-import com.dji.sample.manage.model.receiver.LogsFileUpload;
 import com.dji.sample.manage.service.ILogsFileIndexService;
+import com.dji.sdk.cloudapi.log.LogFileIndex;
+import com.dji.sdk.cloudapi.log.LogModuleEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +33,11 @@ public class LogsFileIndexServiceImpl implements ILogsFileIndexService {
     private ILogsFileIndexMapper mapper;
 
     @Override
-    public Boolean insertFileIndex(LogsFile file, String deviceSn, Integer domain, String fileId) {
-        if (Objects.isNull(file)) {
+    public Boolean insertFileIndex(LogFileIndex file, String deviceSn, Integer domain, String fileId) {
+        LogsFileIndexEntity entity = this.logsFile2Entity(file);
+        if (Objects.isNull(entity)) {
             return false;
         }
-        LogsFileIndexEntity entity = this.logsFile2Entity(file);
         entity.setDomain(domain);
         entity.setDeviceSn(deviceSn);
         entity.setFileId(fileId);
@@ -45,10 +46,10 @@ public class LogsFileIndexServiceImpl implements ILogsFileIndexService {
     }
 
     @Override
-    public List<LogsFileUpload> getFileIndexByFileIds(List<LogsFileDTO> files) {
-        List<LogsFileUpload> list = new ArrayList<>();
+    public List<LogsFileUploadDTO> getFileIndexByFileIds(List<LogsFileDTO> files) {
+        List<LogsFileUploadDTO> list = new ArrayList<>();
         files.forEach(file -> {
-            Optional<LogsFileUpload> fileOpt = this.getFileIndexByFileId(file.getFileId());
+            Optional<LogsFileUploadDTO> fileOpt = this.getFileIndexByFileId(file.getFileId());
             fileOpt.ifPresent(fileUpload -> {
                 fileUpload.setObjectKey(file.getStatus() ? file.getObjectKey() : null);
                 list.add(fileUpload);
@@ -64,37 +65,36 @@ public class LogsFileIndexServiceImpl implements ILogsFileIndexService {
     }
 
     @Override
-    public Optional<LogsFileUpload> getFileIndexByFileId(String fileId) {
+    public Optional<LogsFileUploadDTO> getFileIndexByFileId(String fileId) {
         List<LogsFileIndexEntity> logsFileIndexList = mapper.selectList(
                 new LambdaQueryWrapper<LogsFileIndexEntity>().eq(LogsFileIndexEntity::getFileId, fileId));
         if (CollectionUtils.isEmpty(logsFileIndexList)) {
             return Optional.empty();
         }
         LogsFileIndexEntity entity = logsFileIndexList.get(0);
-        List<LogsFile> logsFileList = logsFileIndexList.stream().map(this::entity2LogsFile).collect(Collectors.toList());
-        return Optional.of(LogsFileUpload.builder()
+        List<LogFileIndex> logsFileList = logsFileIndexList.stream().map(this::entity2LogsFile).collect(Collectors.toList());
+        return Optional.of(LogsFileUploadDTO.builder()
                 .deviceSn(entity.getDeviceSn())
-                .deviceModelDomain(String.valueOf(entity.getDomain()))
+                .deviceModelDomain(LogModuleEnum.find(String.valueOf(entity.getDomain())))
                 .list(logsFileList)
                 .fileId(fileId)
                 .build());
 
     }
 
-    private LogsFile entity2LogsFile(LogsFileIndexEntity entity) {
+    private LogFileIndex entity2LogsFile(LogsFileIndexEntity entity) {
         if (Objects.isNull(entity)) {
             return null;
         }
-        return LogsFile.builder()
-                .bootIndex(entity.getBootIndex())
-                .startTime(entity.getStartTime())
-                .endTime(entity.getEndTime())
-                .size(entity.getSize())
-                .build();
+        return new LogFileIndex()
+                .setBootIndex(entity.getBootIndex())
+                .setStartTime(entity.getStartTime())
+                .setEndTime(entity.getEndTime())
+                .setSize(entity.getSize());
 
     }
 
-    private LogsFileIndexEntity logsFile2Entity(LogsFile file) {
+    private LogsFileIndexEntity logsFile2Entity(LogFileIndex file) {
         if (Objects.isNull(file)) {
             return null;
         }

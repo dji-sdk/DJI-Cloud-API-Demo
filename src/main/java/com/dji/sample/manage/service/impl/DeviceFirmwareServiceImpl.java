@@ -4,34 +4,36 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.impl.MessageSenderServiceImpl;
+import com.dji.sample.component.mqtt.model.EventsReceiver;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.IWebSocketManageService;
-import com.dji.sample.component.websocket.service.impl.SendMessageServiceImpl;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.manage.dao.IDeviceFirmwareMapper;
 import com.dji.sample.manage.model.dto.*;
 import com.dji.sample.manage.model.entity.DeviceFirmwareEntity;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.model.param.DeviceFirmwareQueryParam;
 import com.dji.sample.manage.model.param.DeviceFirmwareUploadParam;
-import com.dji.sample.manage.model.param.DeviceOtaCreateParam;
-import com.dji.sample.manage.model.receiver.FirmwareProgressExtReceiver;
 import com.dji.sample.manage.service.IDeviceFirmwareService;
 import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IFirmwareModelService;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.dji.sdk.cloudapi.firmware.FirmwareUpgradeTypeEnum;
+import com.dji.sdk.cloudapi.firmware.OtaCreateDevice;
+import com.dji.sdk.cloudapi.firmware.OtaProgress;
+import com.dji.sdk.cloudapi.firmware.OtaProgressStatusEnum;
+import com.dji.sdk.cloudapi.firmware.api.AbstractFirmwareService;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
+import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.events.EventsDataRequest;
+import com.dji.sdk.mqtt.events.TopicEventsRequest;
+import com.dji.sdk.mqtt.events.TopicEventsResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -58,22 +60,16 @@ import java.util.zip.ZipInputStream;
  */
 @Service
 @Slf4j
-public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
+public class DeviceFirmwareServiceImpl extends AbstractFirmwareService implements IDeviceFirmwareService {
 
     @Autowired
     private IDeviceFirmwareMapper mapper;
 
     @Autowired
-    private MessageSenderServiceImpl messageSenderService;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
-    private SendMessageServiceImpl webSocketMessageService;
-
-    @Autowired
-    private IWebSocketManageService webSocketManageService;
+    private IWebSocketMessageService webSocketMessageService;
 
     @Autowired
     private OssServiceContext ossServiceContext;
@@ -104,8 +100,8 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
     }
 
     @Override
-    public List<DeviceOtaCreateParam> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
-        List<DeviceOtaCreateParam> deviceOtaList = new ArrayList<>();
+    public List<OtaCreateDevice> getDeviceOtaFirmware(String workspaceId, List<DeviceFirmwareUpgradeDTO> upgradeDTOS) {
+        List<OtaCreateDevice> deviceOtaList = new ArrayList<>();
         upgradeDTOS.forEach(upgradeDevice -> {
             boolean exist = deviceRedisService.checkDeviceOnline(upgradeDevice.getSn());
             if (!exist) {
@@ -116,28 +112,29 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
             if (firmwareOpt.isEmpty()) {
                 throw new IllegalArgumentException("This firmware version does not exist or is not available.");
             }
-            DeviceOtaCreateParam ota = dto2OtaCreateDto(firmwareOpt.get());
+            OtaCreateDevice ota = dto2OtaCreateDto(firmwareOpt.get());
             ota.setSn(upgradeDevice.getSn());
-            ota.setFirmwareUpgradeType(upgradeDevice.getFirmwareUpgradeType());
+            ota.setFirmwareUpgradeType(FirmwareUpgradeTypeEnum.find(upgradeDevice.getFirmwareUpgradeType()));
             deviceOtaList.add(ota);
         });
         return deviceOtaList;
     }
 
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_OTA_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleOtaProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String sn  = receiver.getGateway();
+    @Override
+    public TopicEventsResponse<MqttReply> otaProgress(TopicEventsRequest<EventsDataRequest<OtaProgress>> request, MessageHeaders headers) {
+        String sn  = request.getGateway();
 
-        EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>> eventsReceiver = objectMapper.convertValue(receiver.getData(),
-                new TypeReference<EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>>(){});
-        eventsReceiver.setBid(receiver.getBid());
+        EventsReceiver<OtaProgress> eventsReceiver = new EventsReceiver<OtaProgress>()
+                .setBid(request.getBid())
+                .setOutput(request.getData().getOutput())
+                .setResult(request.getData().getResult());
 
-        EventsOutputProgressReceiver<FirmwareProgressExtReceiver> output = eventsReceiver.getOutput();
+
         log.info("SN: {}, {} ===> Upgrading progress: {}",
-                sn, receiver.getMethod(), output.getProgress().toString());
+                sn, request.getMethod(), eventsReceiver.getOutput().getProgress());
 
-        if (eventsReceiver.getResult() != ResponseResult.CODE_SUCCESS) {
-            log.error("SN: {}, {} ===> Error code: {}", sn, receiver.getMethod(), eventsReceiver.getResult());
+        if (!eventsReceiver.getResult().isSuccess()) {
+            log.error("SN: {}, {} ===> Error: {}", sn, request.getMethod(), eventsReceiver.getResult());
         }
 
         Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(sn);
@@ -145,16 +142,15 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
             return null;
         }
 
-        EventsResultStatusEnum statusEnum = EventsResultStatusEnum.find(output.getStatus());
+        OtaProgressStatusEnum statusEnum = eventsReceiver.getOutput().getStatus();
         DeviceDTO device = deviceOpt.get();
-        handleProgress(device.getWorkspaceId(), sn, eventsReceiver, statusEnum.getEnd());
-        handleProgress(device.getWorkspaceId(), device.getChildDeviceSn(), eventsReceiver, statusEnum.getEnd());
+        handleProgress(device.getWorkspaceId(), sn, eventsReceiver, statusEnum.isEnd());
+        handleProgress(device.getWorkspaceId(), device.getChildDeviceSn(), eventsReceiver, statusEnum.isEnd());
 
-        return receiver;
+        return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
     }
 
-    private void handleProgress(String workspaceId, String sn,
-                    EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>> events, boolean isEnd) {
+    private void handleProgress(String workspaceId, String sn, EventsReceiver<OtaProgress> events, boolean isEnd) {
         boolean upgrade = deviceRedisService.getFirmwareUpgradingProgress(sn).isPresent();
         if (!upgrade) {
             return;
@@ -343,16 +339,15 @@ public class DeviceFirmwareServiceImpl implements IDeviceFirmwareService {
                 .build();
     }
 
-    private DeviceOtaCreateParam dto2OtaCreateDto(DeviceFirmwareDTO dto) {
+    private OtaCreateDevice dto2OtaCreateDto(DeviceFirmwareDTO dto) {
         if (dto == null) {
             return null;
         }
-        return DeviceOtaCreateParam.builder()
-                .fileSize(dto.getFileSize())
-                .fileUrl(ossServiceContext.getObjectUrl(OssConfiguration.bucket, dto.getObjectKey()).toString())
-                .fileName(dto.getFileName())
-                .md5(dto.getFileMd5())
-                .productVersion(dto.getProductVersion())
-                .build();
+        return new OtaCreateDevice()
+                .setFileSize(dto.getFileSize())
+                .setFileUrl(ossServiceContext.getObjectUrl(OssConfiguration.bucket, dto.getObjectKey()).toString())
+                .setFileName(dto.getFileName())
+                .setMd5(dto.getFileMd5())
+                .setProductVersion(dto.getProductVersion());
     }
 }

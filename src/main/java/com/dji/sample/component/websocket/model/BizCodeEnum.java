@@ -15,7 +15,7 @@ public enum BizCodeEnum {
 
     DEVICE_OSD("device_osd"),
 
-    GATEWAY_OSD("gateway_osd"),
+    RC_OSD("gateway_osd"),
 
     DOCK_OSD("dock_osd"),
 

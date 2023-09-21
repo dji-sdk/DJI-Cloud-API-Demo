@@ -1,8 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.dji.sdk.cloudapi.device.PayloadIndex;
 import lombok.Data;
 
 import java.util.List;
@@ -13,16 +11,14 @@ import java.util.List;
  * @version 0.1
  */
 @Data
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class CapacityCameraReceiver {
 
     private Integer availableVideoNumber;
 
     private Integer coexistVideoNumberMax;
 
-    private String cameraIndex;
+    private PayloadIndex cameraIndex;
 
-    @JsonProperty(value = "video_list")
-    private List<CapacityVideoReceiver> videosList;
+    private List<CapacityVideoReceiver> videoList;
 
 }

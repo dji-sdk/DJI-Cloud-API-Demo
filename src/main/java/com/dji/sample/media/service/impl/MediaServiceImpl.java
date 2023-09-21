@@ -1,35 +1,31 @@
 package com.dji.sample.media.service.impl;
 
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.ChannelName;
-import com.dji.sample.component.mqtt.model.CommonTopicReceiver;
-import com.dji.sample.component.mqtt.model.MapKeyConst;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
-import com.dji.sample.component.redis.RedisConst;
-import com.dji.sample.component.redis.RedisOpsUtils;
+import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.ISendMessageService;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.media.model.FileUploadCallback;
-import com.dji.sample.media.model.FileUploadDTO;
 import com.dji.sample.media.model.MediaFileCountDTO;
 import com.dji.sample.media.model.MediaFileDTO;
 import com.dji.sample.media.service.IFileService;
+import com.dji.sample.media.service.IMediaRedisService;
 import com.dji.sample.media.service.IMediaService;
-import com.dji.sample.wayline.model.dto.WaylineJobDTO;
 import com.dji.sample.wayline.service.IWaylineJobService;
+import com.dji.sdk.cloudapi.media.*;
+import com.dji.sdk.cloudapi.media.api.AbstractMediaService;
+import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.events.TopicEventsRequest;
+import com.dji.sdk.mqtt.events.TopicEventsResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,7 +37,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class MediaServiceImpl implements IMediaService {
+public class MediaServiceImpl extends AbstractMediaService implements IMediaService {
 
     @Autowired
     private IFileService fileService;
@@ -53,16 +49,16 @@ public class MediaServiceImpl implements IMediaService {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private IMessageSenderService messageSenderService;
-
-    @Autowired
     private IDeviceService deviceService;
 
     @Autowired
-    private ISendMessageService sendMessageService;
+    private IWebSocketMessageService webSocketMessageService;
 
     @Autowired
     private IDeviceRedisService deviceRedisService;
+
+    @Autowired
+    private IMediaRedisService mediaRedisService;
 
     @Override
     public Boolean fastUpload(String workspaceId, String fingerprint) {
@@ -70,7 +66,7 @@ public class MediaServiceImpl implements IMediaService {
     }
 
     @Override
-    public Integer saveMediaFile(String workspaceId, FileUploadDTO file) {
+    public Integer saveMediaFile(String workspaceId, MediaUploadCallbackRequest file) {
         return fileService.saveFile(workspaceId, file);
     }
 
@@ -92,133 +88,129 @@ public class MediaServiceImpl implements IMediaService {
 
     }
 
-    /**
-     * Handle media files messages reported by dock.
-     * @param receiver
-     * @return
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_FILE_UPLOAD_CALLBACK, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleFileUploadCallBack(CommonTopicReceiver receiver) {
-        FileUploadCallback callback = objectMapper.convertValue(receiver.getData(), FileUploadCallback.class);
+    @Override
+    public TopicEventsResponse<MqttReply> fileUploadCallback(TopicEventsRequest<FileUploadCallback> request, MessageHeaders headers) {
+        FileUploadCallback callback = request.getData();
 
-        if (callback.getResult() != ResponseResult.CODE_SUCCESS) {
+        if (MqttReply.CODE_SUCCESS != callback.getResult()) {
             log.error("Media file upload failed!");
             return null;
         }
 
         String jobId = callback.getFile().getExt().getFlightId();
 
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(receiver.getGateway());
-        MediaFileCountDTO mediaFileCount = (MediaFileCountDTO) RedisOpsUtils.hashGet(RedisConst.MEDIA_FILE_PREFIX + receiver.getGateway(), jobId);
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getGateway());
+        MediaFileCountDTO mediaFileCount = mediaRedisService.getMediaCount(request.getGateway(), jobId);
         // duplicate data
         if (deviceOpt.isEmpty()
-                || (Objects.nonNull(mediaFileCount) && receiver.getBid().equals(mediaFileCount.getBid())
-                && receiver.getTid().equals(mediaFileCount.getTid()))) {
-            return receiver;
+                || (Objects.nonNull(mediaFileCount) && request.getBid().equals(mediaFileCount.getBid())
+                && request.getTid().equals(mediaFileCount.getTid()))) {
+            return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
         }
-
 
         DeviceDTO device = deviceOpt.get();
-        Optional<WaylineJobDTO> jobOpt = waylineJobService.getJobByJobId(device.getWorkspaceId(), jobId);
-        if (jobOpt.isPresent()) {
-            boolean isSave = parseMediaFile(callback, jobOpt.get());
-            if (!isSave) {
-                log.error("Failed to save the file to the database, please check the data manually.");
-                return null;
-            }
+        boolean isSave = parseMediaFile(callback, device);
+        if (!isSave) {
+            log.error("Failed to save the file to the database, please check the data manually.");
+            return null;
         }
 
-        notifyUploadedCount(mediaFileCount, receiver, jobId, device);
-        return receiver;
+        notifyUploadedCount(mediaFileCount, request, jobId, device);
+        return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
     }
 
-    /**
-     * update the uploaded count and notify web side
-     * @param mediaFileCount
-     * @param receiver
-     * @param jobId
-     */
-    private void notifyUploadedCount(MediaFileCountDTO mediaFileCount, CommonTopicReceiver receiver, String jobId, DeviceDTO dock) {
+    @Override
+    public TopicEventsResponse<MqttReply> highestPriorityUploadFlightTaskMedia(
+            TopicEventsRequest<HighestPriorityUploadFlightTaskMedia> request, MessageHeaders headers) {
+        String jobId = request.getData().getFlightId();
+        if (!StringUtils.hasText(jobId)) {
+            return null;
+        }
+
+        MediaFileCountDTO countDTO = mediaRedisService.getMediaHighestPriority(request.getGateway());
+        if (Objects.nonNull(countDTO)) {
+            if (jobId.equals(countDTO.getJobId())) {
+                mediaRedisService.setMediaHighestPriority(request.getGateway(), countDTO);
+                return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
+            }
+            countDTO.setPreJobId(countDTO.getJobId());
+        }
+        countDTO.setJobId(jobId);
+        mediaRedisService.setMediaHighestPriority(request.getGateway(), countDTO);
+
+        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(request.getGateway());
+        if (deviceOpt.isEmpty()) {
+            return null;
+        }
+
+        webSocketMessageService.sendBatch(deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(),
+                BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode(), countDTO);
+
+        return new TopicEventsResponse<MqttReply>().setData(MqttReply.success());
+    }
+
+    private Boolean parseMediaFile(FileUploadCallback callback, DeviceDTO device) {
+        MediaUploadCallbackRequest file = convert2callbackRequest(callback.getFile());
+        // Set the drone sn that shoots the media
+        file.getExt().setSn(device.getChildDeviceSn());
+
+        // set path
+        String objectKey = file.getObjectKey();
+        file.setPath(objectKey.substring(Optional.of(objectKey.indexOf(OssConfiguration.objectDirPrefix))
+                .filter(index -> index > 0).map(index -> index++).orElse(0),
+                objectKey.lastIndexOf("/")));
+
+        return fileService.saveFile(device.getWorkspaceId(), file) > 0;
+    }
+
+    private void notifyUploadedCount(MediaFileCountDTO mediaFileCount, TopicEventsRequest<FileUploadCallback> request, String jobId, DeviceDTO dock) {
         // Do not notify when files that do not belong to the route are uploaded.
         if (Objects.isNull(mediaFileCount)) {
             return;
         }
-        mediaFileCount.setBid(receiver.getBid());
-        mediaFileCount.setTid(receiver.getTid());
+        mediaFileCount.setBid(request.getBid());
+        mediaFileCount.setTid(request.getTid());
         mediaFileCount.setUploadedCount(mediaFileCount.getUploadedCount() + 1);
 
-        String key = RedisConst.MEDIA_FILE_PREFIX + receiver.getGateway();
         // After all the files of the job are uploaded, delete the media file key.
         if (mediaFileCount.getUploadedCount() >= mediaFileCount.getMediaCount()) {
-            RedisOpsUtils.hashDel(key, new String[]{jobId});
+            mediaRedisService.delMediaCount(request.getGateway(), jobId);
 
             // After uploading, delete the key with the highest priority.
-            String highestKey = RedisConst.MEDIA_HIGHEST_PRIORITY_PREFIX + receiver.getGateway();
-            if (RedisOpsUtils.checkExist(highestKey) &&
-                    jobId.equals(((MediaFileCountDTO) RedisOpsUtils.get(highestKey)).getJobId())) {
-                RedisOpsUtils.del(highestKey);
-            }
-
-            if (RedisOpsUtils.hashLen(key) == 0) {
-                RedisOpsUtils.del(key);
+            MediaFileCountDTO fileCount = mediaRedisService.getMediaHighestPriority(request.getGateway());
+            if (Objects.nonNull(fileCount) && jobId.equals(fileCount.getJobId())) {
+                mediaRedisService.delMediaHighestPriority(request.getGateway());
             }
         } else {
-            RedisOpsUtils.hashSet(key, jobId, mediaFileCount);
+            mediaRedisService.setMediaCount(request.getGateway(), jobId, mediaFileCount);
         }
 
-        sendMessageService.sendBatch(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
-                        BizCodeEnum.FILE_UPLOAD_CALLBACK.getCode(), mediaFileCount);
+        webSocketMessageService.sendBatch(dock.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
+                BizCodeEnum.FILE_UPLOAD_CALLBACK.getCode(), mediaFileCount);
     }
 
-    private Boolean parseMediaFile(FileUploadCallback callback, WaylineJobDTO job) {
-        // Set the drone sn that shoots the media
-        Optional<DeviceDTO> dockDTO = deviceService.getDeviceBySn(job.getDockSn());
-        dockDTO.ifPresent(dock -> callback.getFile().getExt().setSn(dock.getChildDeviceSn()));
-
-        // set path
-        String objectKey = callback.getFile().getObjectKey();
-        callback.getFile().setPath(objectKey.substring(objectKey.indexOf("/") + 1, objectKey.lastIndexOf("/")));
-
-        return fileService.saveFile(job.getWorkspaceId(), callback.getFile()) > 0;
-    }
-
-    /**
-     * Handles the highest priority message about media uploads.
-     * @param receiver
-     * @param headers
-     * @return
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleHighestPriorityUploadFlightTaskMedia(CommonTopicReceiver receiver, MessageHeaders headers) {
-        Map map = objectMapper.convertValue(receiver.getData(), Map.class);
-        if (map.isEmpty() || !map.containsKey(MapKeyConst.FLIGHT_ID)) {
+    private MediaUploadCallbackRequest convert2callbackRequest(FileUploadCallbackFile file) {
+        if (Objects.isNull(file)) {
             return null;
         }
-
-        String dockSn = receiver.getGateway();
-        String jobId = map.get(MapKeyConst.FLIGHT_ID).toString();
-        String key = RedisConst.MEDIA_HIGHEST_PRIORITY_PREFIX + dockSn;
-        MediaFileCountDTO countDTO = new MediaFileCountDTO();
-        if (RedisOpsUtils.checkExist(key)) {
-            countDTO = (MediaFileCountDTO) RedisOpsUtils.get(key);
-            if (jobId.equals(countDTO.getJobId())) {
-                RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
-                return null;
-            }
-
-            countDTO.setPreJobId(countDTO.getJobId());
-        }
-        countDTO.setJobId(jobId);
-
-        RedisOpsUtils.setWithExpire(key, countDTO, RedisConst.DEVICE_ALIVE_SECOND * 5);
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(receiver.getGateway());
-        if (deviceOpt.isEmpty()) {
-            return null;
-        }
-        sendMessageService.sendBatch(deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(),
-                        BizCodeEnum.HIGHEST_PRIORITY_UPLOAD_FLIGHT_TASK_MEDIA.getCode(), countDTO);
-
-        return receiver;
+        return new MediaUploadCallbackRequest()
+                .setExt(Optional.ofNullable(file.getExt())
+                        .map(ext -> new MediaFileExtension()
+                                .setDroneModelKey(ext.getDroneModelKey())
+                                .setFileGroupId(ext.getFlightId())
+                                .setOriginal(ext.getOriginal())
+                                .setPayloadModelKey(ext.getPayloadModelKey()))
+                        .orElse(new MediaFileExtension()))
+                .setMetadata(Optional.ofNullable(file.getMetadata())
+                        .map(data -> new MediaFileMetadata()
+                                .setAbsoluteAltitude(data.getAbsoluteAltitude())
+                                .setGimbalYawDegree(data.getGimbalYawDegree())
+                                .setRelativeAltitude(data.getRelativeAltitude())
+                                .setShootPosition(data.getShootPosition())
+                                .setCreatedTime(data.getCreatedTime()))
+                        .get())
+                .setName(file.getName())
+                .setObjectKey(file.getObjectKey())
+                .setPath(file.getPath());
     }
 }

@@ -1,6 +1,8 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.dji.sample.manage.model.enums.StateSwitchEnum;
+import com.dji.sdk.cloudapi.device.DockDistanceLimitStatus;
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
+import com.dji.sdk.cloudapi.device.SwitchActionEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,7 +22,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class DistanceLimitStatusReceiver extends BasicDeviceProperty {
 
-    private Integer state;
+    private SwitchActionEnum state;
 
     private Integer distanceLimit;
 
@@ -30,30 +32,20 @@ public class DistanceLimitStatusReceiver extends BasicDeviceProperty {
 
     @Override
     public boolean valid() {
-        boolean valid = Objects.nonNull(state) || Objects.nonNull(distanceLimit);
-        if (Objects.nonNull(state)) {
-            valid = StateSwitchEnum.find(state).isPresent();
+        if (Objects.isNull(state) && Objects.isNull(distanceLimit)) {
+            return false;
         }
         if (Objects.nonNull(distanceLimit)) {
-            valid &= distanceLimit >= DISTANCE_MIN && distanceLimit <= DISTANCE_MAX;
+            return distanceLimit >= DISTANCE_MIN && distanceLimit <= DISTANCE_MAX;
         }
-        return valid;
+        return true;
     }
 
     @Override
-    public boolean canPublish(String fieldName, OsdSubDeviceReceiver osd) {
-        DistanceLimitStatusReceiver distanceLimitStatus = osd.getDistanceLimitStatus();
-        switch (fieldName) {
-            case "state":
-                return Objects.isNull(distanceLimitStatus.getState()) ||
-                        Objects.nonNull(distanceLimitStatus.getState()) &&
-                                distanceLimitStatus.getState().intValue() != this.state;
-            case "distance_limit":
-                return Objects.isNull(distanceLimitStatus.getDistanceLimit()) ||
-                        Objects.nonNull(distanceLimitStatus.getDistanceLimit()) &&
-                                distanceLimitStatus.getDistanceLimit().intValue() != this.distanceLimit;
-            default:
-                throw new RuntimeException("Property " + fieldName + " does not exist.");
-        }
+    public boolean canPublish(OsdDockDrone osd) {
+        DockDistanceLimitStatus distanceLimitStatus = osd.getDistanceLimitStatus();
+        return (Objects.nonNull(distanceLimitStatus.getState()) && distanceLimitStatus.getState() != this.state)
+                || (Objects.nonNull(distanceLimitStatus.getDistanceLimit())
+                        && distanceLimitStatus.getDistanceLimit().intValue() != this.distanceLimit);
     }
 }

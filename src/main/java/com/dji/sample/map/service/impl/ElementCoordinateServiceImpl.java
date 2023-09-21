@@ -3,9 +3,9 @@ package com.dji.sample.map.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.dji.sample.map.dao.IElementCoordinateMapper;
-import com.dji.sample.map.model.dto.ElementCoordinateDTO;
 import com.dji.sample.map.model.entity.ElementCoordinateEntity;
 import com.dji.sample.map.service.IElementCoordinateService;
+import com.dji.sdk.cloudapi.map.ElementCoordinate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +26,7 @@ public class ElementCoordinateServiceImpl implements IElementCoordinateService {
     private IElementCoordinateMapper mapper;
 
     @Override
-    public List<ElementCoordinateDTO> getCoordinateByElementId(String elementId) {
+    public List<ElementCoordinate> getCoordinateByElementId(String elementId) {
         return mapper.selectList(
                 new LambdaQueryWrapper<ElementCoordinateEntity>()
                         .eq(ElementCoordinateEntity::getElementId, elementId))
@@ -36,8 +36,8 @@ public class ElementCoordinateServiceImpl implements IElementCoordinateService {
     }
 
     @Override
-    public Boolean saveCoordinate(List<ElementCoordinateDTO> coordinateList, String elementId) {
-        for (ElementCoordinateDTO coordinate : coordinateList) {
+    public Boolean saveCoordinate(List<ElementCoordinate> coordinateList, String elementId) {
+        for (ElementCoordinate coordinate : coordinateList) {
             ElementCoordinateEntity entity = this.dtoConvertToEntity(coordinate);
             entity.setElementId(elementId);
 
@@ -60,17 +60,15 @@ public class ElementCoordinateServiceImpl implements IElementCoordinateService {
      * @param entity
      * @return
      */
-    private ElementCoordinateDTO entityConvertToDto(ElementCoordinateEntity entity) {
-        ElementCoordinateDTO.ElementCoordinateDTOBuilder builder = ElementCoordinateDTO.builder();
+    private ElementCoordinate entityConvertToDto(ElementCoordinateEntity entity) {
         if (entity == null) {
-            return builder.build();
+            return null;
         }
 
-        return builder
-                .longitude(entity.getLongitude())
-                .latitude(entity.getLatitude())
-                .altitude(entity.getAltitude())
-                .build();
+        return new ElementCoordinate()
+                .setLongitude(entity.getLongitude())
+                .setLatitude(entity.getLatitude())
+                .setAltitude(entity.getAltitude());
     }
 
     /**
@@ -78,9 +76,8 @@ public class ElementCoordinateServiceImpl implements IElementCoordinateService {
      * @param coordinate
      * @return
      */
-    private ElementCoordinateEntity dtoConvertToEntity(ElementCoordinateDTO coordinate) {
+    private ElementCoordinateEntity dtoConvertToEntity(ElementCoordinate coordinate) {
         ElementCoordinateEntity.ElementCoordinateEntityBuilder builder = ElementCoordinateEntity.builder();
-
         if (coordinate == null) {
             return builder.build();
         }

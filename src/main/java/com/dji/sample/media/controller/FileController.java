@@ -1,9 +1,9 @@
 package com.dji.sample.media.controller;
 
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.media.model.MediaFileDTO;
 import com.dji.sample.media.service.IFileService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,11 +29,11 @@ public class FileController {
      * @return
      */
     @GetMapping("/{workspace_id}/files")
-    public ResponseResult<PaginationData<MediaFileDTO>> getFilesList(@RequestParam(defaultValue = "1") Long page,
-                               @RequestParam(name = "page_size", defaultValue = "10") Long pageSize,
-                               @PathVariable(name = "workspace_id") String workspaceId) {
+    public HttpResultResponse<PaginationData<MediaFileDTO>> getFilesList(@RequestParam(defaultValue = "1") Long page,
+                                                                         @RequestParam(name = "page_size", defaultValue = "10") Long pageSize,
+                                                                         @PathVariable(name = "workspace_id") String workspaceId) {
         PaginationData<MediaFileDTO> filesList = fileService.getMediaFilesPaginationByWorkspaceId(workspaceId, page, pageSize);
-        return ResponseResult.success(filesList);
+        return HttpResultResponse.success(filesList);
     }
 
     /**

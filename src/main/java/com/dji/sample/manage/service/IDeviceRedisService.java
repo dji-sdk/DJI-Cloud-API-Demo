@@ -1,9 +1,8 @@
 package com.dji.sample.manage.service;
 
-import com.dji.sample.component.mqtt.model.EventsOutputProgressReceiver;
 import com.dji.sample.component.mqtt.model.EventsReceiver;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.receiver.FirmwareProgressExtReceiver;
+import com.dji.sdk.cloudapi.firmware.OtaProgress;
 
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +42,14 @@ public interface IDeviceRedisService {
     Boolean delDeviceOnline(String sn);
 
     /**
+     * Save the device's osd real-time data.
+     * @param sn
+     * @param data
+     * @return
+     */
+    void setDeviceOsd(String sn, Object data);
+
+    /**
      * Get the device's osd real-time data.
      * @param sn
      * @param clazz
@@ -50,20 +57,26 @@ public interface IDeviceRedisService {
      * @return
      */
     <T> Optional<T> getDeviceOsd(String sn, Class<T> clazz);
+    /**
+     * Delete the device's osd real-time data.
+     * @param sn
+     * @return
+     */
+    Boolean delDeviceOsd(String sn);
 
     /**
      * Save the firmware update progress of the device in redis.
      * @param sn
      * @param events
      */
-    void setFirmwareUpgrading(String sn, EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>> events);
+    void setFirmwareUpgrading(String sn, EventsReceiver<OtaProgress> events);
 
     /**
      * Query the firmware update progress of the device in redis.
      * @param sn
      * @return
      */
-    Optional<EventsReceiver<EventsOutputProgressReceiver<FirmwareProgressExtReceiver>>> getFirmwareUpgradingProgress(String sn);
+    Optional<EventsReceiver<OtaProgress>> getFirmwareUpgradingProgress(String sn);
 
     /**
      * Delete the firmware update progress of the device in redis.
@@ -92,4 +105,8 @@ public interface IDeviceRedisService {
      * @return
      */
     Boolean delHmsKeysBySn(String sn);
+
+    void gatewayOffline(String gatewaySn);
+
+    void subDeviceOffline(String deviceSn);
 }

@@ -1,6 +1,6 @@
 package com.dji.sample.media.service;
 
-import com.dji.sample.media.model.FileUploadDTO;
+import com.dji.sdk.cloudapi.media.MediaUploadCallbackRequest;
 
 import java.util.List;
 
@@ -25,7 +25,7 @@ public interface IMediaService {
      * @param file
      * @return
      */
-    Integer saveMediaFile(String workspaceId, FileUploadDTO file);
+    Integer saveMediaFile(String workspaceId, MediaUploadCallbackRequest file);
 
     /**
      * Query tiny fingerprints about all files in this workspace based on the workspace id.

@@ -1,7 +1,5 @@
 package com.dji.sample.manage.model.receiver;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import java.util.List;
@@ -12,7 +10,6 @@ import java.util.List;
  * @version 0.1
  */
 @Data
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class CapacityDeviceReceiver {
 
     private String sn;
@@ -22,4 +19,5 @@ public class CapacityDeviceReceiver {
     private Integer coexistVideoNumberMax;
 
     private List<CapacityCameraReceiver> cameraList;
+
 }

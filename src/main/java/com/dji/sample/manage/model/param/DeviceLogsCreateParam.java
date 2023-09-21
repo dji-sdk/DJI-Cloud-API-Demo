@@ -1,6 +1,6 @@
 package com.dji.sample.manage.model.param;
 
-import com.dji.sample.manage.model.receiver.LogsFileUpload;
+import com.dji.sdk.cloudapi.log.FileUploadStartFile;
 import lombok.Data;
 
 import java.util.List;
@@ -17,5 +17,5 @@ public class DeviceLogsCreateParam {
 
     private Long happenTime;
 
-    private List<LogsFileUpload> files;
+    private List<FileUploadStartFile> files;
 }

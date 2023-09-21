@@ -1,6 +1,6 @@
 package com.dji.sample.component.websocket.service;
 
-import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
+import com.dji.sample.component.websocket.config.MyConcurrentWebSocketSession;
 
 import java.util.Collection;
 
@@ -11,13 +11,13 @@ import java.util.Collection;
  */
 public interface IWebSocketManageService {
 
-    void put(String key, ConcurrentWebSocketSession val);
+    void put(String key, MyConcurrentWebSocketSession val);
 
     void remove(String key, String sessionId);
 
-    Collection<ConcurrentWebSocketSession> getValueWithWorkspace(String workspaceId);
+    Collection<MyConcurrentWebSocketSession> getValueWithWorkspace(String workspaceId);
 
-    Collection<ConcurrentWebSocketSession> getValueWithWorkspaceAndUserType(String workspaceId, Integer userType);
+    Collection<MyConcurrentWebSocketSession> getValueWithWorkspaceAndUserType(String workspaceId, Integer userType);
 
     Long getConnectedCount();
 }

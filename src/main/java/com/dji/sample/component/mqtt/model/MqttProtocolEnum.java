@@ -12,7 +12,7 @@ public enum MqttProtocolEnum {
 
     MQTT("tcp"),
 
-    MQTTS("tcp"),
+    MQTTS("ssl"),
 
     WS("ws"),
 

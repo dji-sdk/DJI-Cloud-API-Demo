@@ -2,7 +2,7 @@ package com.dji.sample.component.websocket.service.impl;
 
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
-import com.dji.sample.component.websocket.config.ConcurrentWebSocketSession;
+import com.dji.sample.component.websocket.config.MyConcurrentWebSocketSession;
 import com.dji.sample.component.websocket.service.IWebSocketManageService;
 import com.dji.sample.manage.model.enums.UserTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 @Service
 public class WebSocketManageServiceImpl implements IWebSocketManageService {
 
-    private static final ConcurrentHashMap<String, ConcurrentWebSocketSession> SESSIONS = new ConcurrentHashMap<>(16);
-    
+    private static final ConcurrentHashMap<String, MyConcurrentWebSocketSession> SESSIONS = new ConcurrentHashMap<>(16);
+
     @Override
-    public void put(String key, ConcurrentWebSocketSession val) {
+    public void put(String key, MyConcurrentWebSocketSession val) {
         String[] name = key.split("/");
         if (name.length != 3) {
             log.debug("The key is out of format. [{workspaceId}/{userType}/{userId}]");
@@ -56,7 +56,7 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
     }
 
     @Override
-    public Collection<ConcurrentWebSocketSession> getValueWithWorkspace(String workspaceId) {
+    public Collection<MyConcurrentWebSocketSession> getValueWithWorkspace(String workspaceId) {
         if (!StringUtils.hasText(workspaceId)) {
             return Collections.emptySet();
         }
@@ -70,12 +70,12 @@ public class WebSocketManageServiceImpl implements IWebSocketManageService {
     }
 
     @Override
-    public Collection<ConcurrentWebSocketSession> getValueWithWorkspaceAndUserType(String workspaceId, Integer userType) {
+    public Collection<MyConcurrentWebSocketSession> getValueWithWorkspaceAndUserType(String workspaceId, Integer userType) {
         String key = RedisConst.WEBSOCKET_PREFIX + UserTypeEnum.find(userType).getDesc();
         return RedisOpsUtils.hashKeys(key)
                 .stream()
                 .map(SESSIONS::get)
-                .filter(this.getValueWithWorkspace(workspaceId)::contains)
+                .filter(getValueWithWorkspace(workspaceId)::contains)
                 .collect(Collectors.toSet());
     }
 

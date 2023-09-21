@@ -1,10 +1,10 @@
 package com.dji.sample.manage.controller;
 
 import com.dji.sample.common.model.CustomClaim;
-import com.dji.sample.common.model.PaginationData;
-import com.dji.sample.common.model.ResponseResult;
 import com.dji.sample.manage.model.dto.UserListDTO;
 import com.dji.sample.manage.service.IUserService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.PaginationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/current")
-    public ResponseResult getCurrentUserInfo(HttpServletRequest request) {
+    public HttpResultResponse getCurrentUserInfo(HttpServletRequest request) {
         CustomClaim customClaim = (CustomClaim)request.getAttribute(TOKEN_CLAIM);
         return userService.getUserByUsername(customClaim.getUsername(), customClaim.getWorkspaceId());
     }
@@ -39,11 +39,11 @@ public class UserController {
      * @return
      */
     @GetMapping("/{workspace_id}/users")
-    public ResponseResult<PaginationData<UserListDTO>> getUsers(@RequestParam(defaultValue = "1") Long page,
-                                    @RequestParam(value = "page_size", defaultValue = "50") Long pageSize,
-                                    @PathVariable("workspace_id") String workspaceId) {
+    public HttpResultResponse<PaginationData<UserListDTO>> getUsers(@RequestParam(defaultValue = "1") Long page,
+                                                                    @RequestParam(value = "page_size", defaultValue = "50") Long pageSize,
+                                                                    @PathVariable("workspace_id") String workspaceId) {
         PaginationData<UserListDTO> paginationData = userService.getUsersByWorkspaceId(page, pageSize, workspaceId);
-        return ResponseResult.success(paginationData);
+        return HttpResultResponse.success(paginationData);
     }
 
     /**
@@ -54,11 +54,11 @@ public class UserController {
      * @return
      */
     @PutMapping("/{workspace_id}/users/{user_id}")
-    public ResponseResult updateUser(@RequestBody UserListDTO user,
-                                  @PathVariable("workspace_id") String workspaceId,
-                                  @PathVariable("user_id") String userId) {
+    public HttpResultResponse updateUser(@RequestBody UserListDTO user,
+                                         @PathVariable("workspace_id") String workspaceId,
+                                         @PathVariable("user_id") String userId) {
 
         userService.updateUser(workspaceId, userId, user);
-        return ResponseResult.success();
+        return HttpResultResponse.success();
     }
 }

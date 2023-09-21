@@ -3,18 +3,20 @@ package com.dji.sample.wayline.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.dji.sample.common.model.Pagination;
-import com.dji.sample.common.model.PaginationData;
 import com.dji.sample.component.oss.model.OssConfiguration;
 import com.dji.sample.component.oss.service.impl.OssServiceContext;
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
 import com.dji.sample.wayline.dao.IWaylineFileMapper;
 import com.dji.sample.wayline.model.dto.KmzFileProperties;
 import com.dji.sample.wayline.model.dto.WaylineFileDTO;
 import com.dji.sample.wayline.model.entity.WaylineFileEntity;
-import com.dji.sample.wayline.model.enums.WaylineTemplateTypeEnum;
-import com.dji.sample.wayline.model.param.WaylineQueryParam;
 import com.dji.sample.wayline.service.IWaylineFileService;
+import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
+import com.dji.sdk.cloudapi.device.DeviceEnum;
+import com.dji.sdk.cloudapi.wayline.GetWaylineListRequest;
+import com.dji.sdk.cloudapi.wayline.GetWaylineListResponse;
+import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
+import com.dji.sdk.common.Pagination;
+import com.dji.sdk.common.PaginationData;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Node;
@@ -55,23 +57,23 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
     private OssServiceContext ossService;
 
     @Override
-    public PaginationData<WaylineFileDTO> getWaylinesByParam(String workspaceId, WaylineQueryParam param) {
+    public PaginationData<GetWaylineListResponse> getWaylinesByParam(String workspaceId, GetWaylineListRequest param) {
         // Paging Query
         Page<WaylineFileEntity> page = mapper.selectPage(
                 new Page<WaylineFileEntity>(param.getPage(), param.getPageSize()),
                 new LambdaQueryWrapper<WaylineFileEntity>()
                         .eq(WaylineFileEntity::getWorkspaceId, workspaceId)
-                        .eq(param.isFavorited(), WaylineFileEntity::getFavorited, param.isFavorited())
+                        .eq(Objects.nonNull(param.getFavorited()), WaylineFileEntity::getFavorited, param.getFavorited())
                         .and(param.getTemplateType() != null, wrapper ->  {
-                                for (Integer type : param.getTemplateType()) {
-                                    wrapper.like(WaylineFileEntity::getTemplateTypes, type).or();
+                                for (WaylineTypeEnum type : param.getTemplateType()) {
+                                    wrapper.like(WaylineFileEntity::getTemplateTypes, type.getValue()).or();
                                 }
                         })
                         // There is a risk of SQL injection
                         .last(StringUtils.hasText(param.getOrderBy()), " order by " + param.getOrderBy()));
 
         // Wrap the results of a paging query into a custom paging object.
-        List<WaylineFileDTO> records = page.getRecords()
+        List<GetWaylineListResponse> records = page.getRecords()
                 .stream()
                 .map(this::entityConvertToDTO)
                 .collect(Collectors.toList());
@@ -80,7 +82,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
     }
 
     @Override
-    public Optional<WaylineFileDTO> getWaylineByWaylineId(String workspaceId, String waylineId) {
+    public Optional<GetWaylineListResponse> getWaylineByWaylineId(String workspaceId, String waylineId) {
         return Optional.ofNullable(
                 this.entityConvertToDTO(
                         mapper.selectOne(
@@ -91,7 +93,7 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
 
     @Override
     public URL getObjectUrl(String workspaceId, String waylineId) throws SQLException {
-        Optional<WaylineFileDTO> waylineOpt = this.getWaylineByWaylineId(workspaceId, waylineId);
+        Optional<GetWaylineListResponse> waylineOpt = this.getWaylineByWaylineId(workspaceId, waylineId);
         if (waylineOpt.isEmpty()) {
             throw new SQLException(waylineId + " does not exist.");
         }
@@ -145,11 +147,11 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
 
     @Override
     public Boolean deleteByWaylineId(String workspaceId, String waylineId) {
-        Optional<WaylineFileDTO> waylineOpt = this.getWaylineByWaylineId(workspaceId, waylineId);
+        Optional<GetWaylineListResponse> waylineOpt = this.getWaylineByWaylineId(workspaceId, waylineId);
         if (waylineOpt.isEmpty()) {
             return true;
         }
-        WaylineFileDTO wayline = waylineOpt.get();
+        GetWaylineListResponse wayline = waylineOpt.get();
         boolean isDel = mapper.delete(new LambdaUpdateWrapper<WaylineFileEntity>()
                     .eq(WaylineFileEntity::getWorkspaceId, workspaceId)
                     .eq(WaylineFileEntity::getWaylineId, waylineId))
@@ -169,7 +171,6 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
 
         try {
             WaylineFileDTO waylineFile = waylineFileOpt.get();
-            waylineFile.setWaylineId(workspaceId);
             waylineFile.setUsername(creator);
 
             ossService.putObject(OssConfiguration.bucket, waylineFile.getObjectKey(), file.getInputStream());
@@ -218,12 +219,12 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                 }
 
                 return Optional.of(WaylineFileDTO.builder()
-                        .droneModelKey(String.format("%s-%s-%s", DeviceDomainEnum.SUB_DEVICE.getVal(), type, subType))
-                        .payloadModelKeys(List.of(String.format("%s-%s-%s",DeviceDomainEnum.PAYLOAD.getVal(), payloadType, payloadSubType)))
+                        .droneModelKey(String.format("%s-%s-%s", DeviceDomainEnum.DRONE.getDomain(), type, subType))
+                        .payloadModelKeys(List.of(String.format("%s-%s-%s",DeviceDomainEnum.PAYLOAD.getDomain(), payloadType, payloadSubType)))
                         .objectKey(OssConfiguration.objectDirPrefix + File.separator + filename)
                         .name(filename.substring(0, filename.lastIndexOf(WAYLINE_FILE_SUFFIX)))
                         .sign(DigestUtils.md5DigestAsHex(file.getInputStream()))
-                        .templateTypes(List.of(WaylineTemplateTypeEnum.find(templateType).map(WaylineTemplateTypeEnum::getVal).orElse(-1)))
+                        .templateTypes(List.of(WaylineTypeEnum.find(templateType).getValue()))
                         .build());
             }
 
@@ -237,25 +238,24 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
      * @param entity
      * @return
      */
-    private WaylineFileDTO entityConvertToDTO(WaylineFileEntity entity) {
+    private GetWaylineListResponse entityConvertToDTO(WaylineFileEntity entity) {
         if (entity == null) {
             return null;
         }
-        return WaylineFileDTO.builder()
-                .droneModelKey(entity.getDroneModelKey())
-                .favorited(entity.getFavorited())
-                .name(entity.getName())
-                .payloadModelKeys(entity.getPayloadModelKeys() != null ?
-                        Arrays.asList(entity.getPayloadModelKeys().split(",")) : null)
-                .templateTypes(Arrays.stream(entity.getTemplateTypes().split(","))
-                        .map(Integer::parseInt)
+        return new GetWaylineListResponse()
+                .setDroneModelKey(DeviceEnum.find(entity.getDroneModelKey()))
+                .setFavorited(entity.getFavorited())
+                .setName(entity.getName())
+                .setPayloadModelKeys(entity.getPayloadModelKeys() != null ?
+                        Arrays.stream(entity.getPayloadModelKeys().split(",")).map(DeviceEnum::find).collect(Collectors.toList()) : null)
+                .setTemplateTypes(Arrays.stream(entity.getTemplateTypes().split(","))
+                        .map(Integer::parseInt).map(WaylineTypeEnum::find)
                         .collect(Collectors.toList()))
-                .username(entity.getUsername())
-                .objectKey(entity.getObjectKey())
-                .sign(entity.getSign())
-                .updateTime(entity.getUpdateTime())
-                .waylineId(entity.getWaylineId())
-                .build();
+                .setUsername(entity.getUsername())
+                .setObjectKey(entity.getObjectKey())
+                .setSign(entity.getSign())
+                .setUpdateTime(entity.getUpdateTime())
+                .setId(entity.getWaylineId());
 
     }
 

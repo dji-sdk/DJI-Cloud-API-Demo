@@ -1,35 +1,33 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.common.error.CommonErrorEnum;
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
-import com.dji.sample.component.redis.RedisConst;
-import com.dji.sample.component.redis.RedisOpsUtils;
-import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.ISendMessageService;
-import com.dji.sample.control.model.dto.FlyToProgressReceiver;
-import com.dji.sample.control.model.dto.ResultNotifyDTO;
-import com.dji.sample.control.model.dto.TakeoffProgressReceiver;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
 import com.dji.sample.control.model.enums.DroneAuthorityEnum;
-import com.dji.sample.control.model.enums.DroneControlMethodEnum;
 import com.dji.sample.control.model.enums.RemoteDebugMethodEnum;
 import com.dji.sample.control.model.param.*;
 import com.dji.sample.control.service.IControlService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.enums.DeviceModeCodeEnum;
-import com.dji.sample.manage.model.enums.DockModeCodeEnum;
-import com.dji.sample.manage.model.enums.UserTypeEnum;
 import com.dji.sample.manage.service.IDevicePayloadService;
 import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.wayline.model.enums.WaylineErrorCodeEnum;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.dji.sdk.cloudapi.control.FlyToPointRequest;
+import com.dji.sdk.cloudapi.control.PayloadAuthorityGrabRequest;
+import com.dji.sdk.cloudapi.control.TakeoffToPointRequest;
+import com.dji.sdk.cloudapi.control.api.AbstractControlService;
+import com.dji.sdk.cloudapi.debug.DebugMethodEnum;
+import com.dji.sdk.cloudapi.debug.api.AbstractDebugService;
+import com.dji.sdk.cloudapi.device.DockModeCodeEnum;
+import com.dji.sdk.cloudapi.device.DroneModeCodeEnum;
+import com.dji.sdk.cloudapi.device.PayloadIndex;
+import com.dji.sdk.cloudapi.wayline.api.AbstractWaylineService;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.SDKManager;
+import com.dji.sdk.exception.CloudSDKErrorEnum;
+import com.dji.sdk.mqtt.services.ServicesReplyData;
+import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.MessageHeaders;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -46,10 +44,7 @@ import java.util.UUID;
 public class ControlServiceImpl implements IControlService {
 
     @Autowired
-    private IMessageSenderService messageSenderService;
-
-    @Autowired
-    private ISendMessageService webSocketMessageService;
+    private IWebSocketMessageService webSocketMessageService;
 
     @Autowired
     private IDeviceService deviceService;
@@ -63,6 +58,16 @@ public class ControlServiceImpl implements IControlService {
     @Autowired
     private IDevicePayloadService devicePayloadService;
 
+    @Autowired
+    private AbstractControlService abstractControlService;
+
+    @Autowired
+    private AbstractDebugService abstractDebugService;
+
+    @Autowired
+    @Qualifier("SDKWaylineService")
+    private AbstractWaylineService abstractWaylineService;
+
     private RemoteDebugHandler checkDebugCondition(String sn, RemoteDebugParam param, RemoteDebugMethodEnum controlMethodEnum) {
         RemoteDebugHandler handler = Objects.nonNull(controlMethodEnum.getClazz()) ?
                 mapper.convertValue(Objects.nonNull(param) ? param : new Object(), controlMethodEnum.getClazz())
@@ -70,81 +75,35 @@ public class ControlServiceImpl implements IControlService {
         if (!handler.canPublish(sn)) {
             throw new RuntimeException("The current state of the dock does not support this function.");
         }
-        if (Objects.nonNull(param) && !handler.valid()) {
-            throw new RuntimeException(CommonErrorEnum.ILLEGAL_ARGUMENT.getErrorMsg());
-        }
         return handler;
     }
 
     @Override
-    public ResponseResult controlDockDebug(String sn, String serviceIdentifier, RemoteDebugParam param) {
-        RemoteDebugMethodEnum controlMethodEnum = RemoteDebugMethodEnum.find(serviceIdentifier);
-        if (RemoteDebugMethodEnum.UNKNOWN == controlMethodEnum) {
-            return ResponseResult.error("The " + serviceIdentifier + " method does not exist.");
-        }
-
+    public HttpResultResponse controlDockDebug(String sn, RemoteDebugMethodEnum controlMethodEnum, RemoteDebugParam param) {
+        DebugMethodEnum methodEnum = controlMethodEnum.getDebugMethodEnum();
         RemoteDebugHandler data = checkDebugCondition(sn, param, controlMethodEnum);
 
         boolean isExist = deviceRedisService.checkDeviceOnline(sn);
         if (!isExist) {
-            return ResponseResult.error("The dock is offline.");
+            return HttpResultResponse.error("The dock is offline.");
         }
-        String bid = UUID.randomUUID().toString();
-        ServiceReply serviceReply = messageSenderService.publishServicesTopic(sn, serviceIdentifier, data, bid);
-
-        if (ResponseResult.CODE_SUCCESS != serviceReply.getResult()) {
-            return ResponseResult.error(serviceReply.getResult(),
-                    "error: " + serviceIdentifier + serviceReply.getResult());
+        TopicServicesResponse response;
+        switch (controlMethodEnum) {
+            case RETURN_HOME:
+                response = abstractWaylineService.returnHome(SDKManager.getDeviceSDK(sn));
+                break;
+            case RETURN_HOME_CANCEL:
+                response = abstractWaylineService.returnHomeCancel(SDKManager.getDeviceSDK(sn));
+                break;
+            default:
+                response = abstractDebugService.remoteDebug(SDKManager.getDeviceSDK(sn), methodEnum,
+                        Objects.nonNull(methodEnum.getClazz()) ? mapper.convertValue(data, methodEnum.getClazz()) : null);
         }
-        if (controlMethodEnum.getProgress()) {
-            RedisOpsUtils.setWithExpire(serviceIdentifier + RedisConst.DELIMITER +  bid, sn,
-                    RedisConst.DEVICE_ALIVE_SECOND * RedisConst.DEVICE_ALIVE_SECOND);
+        ServicesReplyData serviceReply = (ServicesReplyData) response.getData();
+        if (!serviceReply.getResult().isSuccess()) {
+            return HttpResultResponse.error(serviceReply.getResult());
         }
-        return ResponseResult.success();
-    }
-
-    /**
-     * Handles multi-state command progress information.
-     * @param receiver
-     * @param headers
-     * @return
-     */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_CONTROL_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleControlProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String key = receiver.getMethod() + RedisConst.DELIMITER + receiver.getBid();
-        if (RedisOpsUtils.getExpire(key) <= 0) {
-            return receiver;
-        }
-        String sn = RedisOpsUtils.get(key).toString();
-
-        EventsReceiver<EventsOutputProgressReceiver> eventsReceiver = mapper.convertValue(receiver.getData(),
-                new TypeReference<EventsReceiver<EventsOutputProgressReceiver>>(){});
-        eventsReceiver.setBid(receiver.getBid());
-        eventsReceiver.setSn(sn);
-
-        log.info("SN: {}, {} ===> Control progress: {}",
-                sn, receiver.getMethod(), eventsReceiver.getOutput().getProgress().toString());
-
-        if (eventsReceiver.getResult() != ResponseResult.CODE_SUCCESS) {
-            log.error("SN: {}, {} ===> Error code: {}", sn, receiver.getMethod(), eventsReceiver.getResult());
-        }
-
-        if (eventsReceiver.getOutput().getProgress().getPercent() == 100 ||
-                EventsResultStatusEnum.find(eventsReceiver.getOutput().getStatus()).getEnd()) {
-            RedisOpsUtils.del(key);
-        }
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(sn);
-
-        if (deviceOpt.isEmpty()) {
-            throw new RuntimeException("The device is offline.");
-        }
-
-        DeviceDTO device = deviceOpt.get();
-        webSocketMessageService.sendBatch(device.getWorkspaceId(), UserTypeEnum.WEB.getVal(),
-                receiver.getMethod(), eventsReceiver);
-
-        return receiver;
+        return HttpResultResponse.success();
     }
 
     private void checkFlyToCondition(String dockSn) {
@@ -154,55 +113,38 @@ public class ControlServiceImpl implements IControlService {
             throw new RuntimeException("The dock is offline, please restart the dock.");
         }
 
-        DeviceModeCodeEnum deviceMode = deviceService.getDeviceMode(dockOpt.get().getChildDeviceSn());
-        if (DeviceModeCodeEnum.MANUAL != deviceMode) {
+        DroneModeCodeEnum deviceMode = deviceService.getDeviceMode(dockOpt.get().getChildDeviceSn());
+        if (DroneModeCodeEnum.MANUAL != deviceMode) {
             throw new RuntimeException("The current state of the drone does not support this function, please try again later.");
         }
 
-        ResponseResult result = seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
-        if (ResponseResult.CODE_SUCCESS != result.getCode()) {
+        HttpResultResponse result = seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
+        if (HttpResultResponse.CODE_SUCCESS != result.getCode()) {
             throw new IllegalArgumentException(result.getMessage());
         }
     }
 
     @Override
-    public ResponseResult flyToPoint(String sn, FlyToPointParam param) {
+    public HttpResultResponse flyToPoint(String sn, FlyToPointParam param) {
         checkFlyToCondition(sn);
 
         param.setFlyToId(UUID.randomUUID().toString());
-        ServiceReply reply = messageSenderService.publishServicesTopic(sn, DroneControlMethodEnum.FLY_TO_POINT.getMethod(), param, param.getFlyToId());
-        return ResponseResult.CODE_SUCCESS != reply.getResult() ?
-                ResponseResult.error("Flying to the target point failed." + reply.getResult())
-                : ResponseResult.success();
+        TopicServicesResponse<ServicesReplyData> response = abstractControlService.flyToPoint(
+                SDKManager.getDeviceSDK(sn), mapper.convertValue(param, FlyToPointRequest.class));
+        ServicesReplyData reply = response.getData();
+        return reply.getResult().isSuccess() ?
+                HttpResultResponse.success()
+                : HttpResultResponse.error("Flying to the target point failed. " + reply.getResult());
     }
 
     @Override
-    public ResponseResult flyToPointStop(String sn) {
-        ServiceReply reply = messageSenderService.publishServicesTopic(sn, DroneControlMethodEnum.FLY_TO_POINT_STOP.getMethod(), null);
-        return ResponseResult.CODE_SUCCESS != reply.getResult() ?
-                ResponseResult.error("The drone flying to the target point failed to stop. " + reply.getResult())
-                : ResponseResult.success();
-    }
+    public HttpResultResponse flyToPointStop(String sn) {
+        TopicServicesResponse<ServicesReplyData> response = abstractControlService.flyToPointStop(SDKManager.getDeviceSDK(sn));
+        ServicesReplyData reply = response.getData();
 
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_FLY_TO_POINT_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleFlyToPointProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String dockSn  = receiver.getGateway();
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(dockSn);
-        if (deviceOpt.isEmpty()) {
-            log.error("The dock is offline.");
-            return null;
-        }
-
-        FlyToProgressReceiver eventsReceiver = mapper.convertValue(receiver.getData(), new TypeReference<FlyToProgressReceiver>(){});
-        webSocketMessageService.sendBatch(deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(),
-                BizCodeEnum.FLY_TO_POINT_PROGRESS.getCode(),
-                ResultNotifyDTO.builder().sn(dockSn)
-                        .message(WaylineErrorCodeEnum.SUCCESS == eventsReceiver.getResult() ?
-                                eventsReceiver.getStatus().getMessage() : eventsReceiver.getResult().getErrorMsg())
-                        .result(eventsReceiver.getResult().getErrorCode())
-                        .build());
-        return receiver;
+        return reply.getResult().isSuccess() ?
+                HttpResultResponse.success()
+                : HttpResultResponse.error("The drone flying to the target point failed to stop. " + reply.getResult());
     }
 
     private void checkTakeoffCondition(String dockSn) {
@@ -211,69 +153,51 @@ public class ControlServiceImpl implements IControlService {
             throw new RuntimeException("The current state does not support takeoff.");
         }
 
-        ResponseResult result = seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
-        if (ResponseResult.CODE_SUCCESS != result.getCode()) {
+        HttpResultResponse result = seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
+        if (HttpResultResponse.CODE_SUCCESS != result.getCode()) {
             throw new IllegalArgumentException(result.getMessage());
         }
 
     }
 
     @Override
-    public ResponseResult takeoffToPoint(String sn, TakeoffToPointParam param) {
+    public HttpResultResponse takeoffToPoint(String sn, TakeoffToPointParam param) {
         checkTakeoffCondition(sn);
 
         param.setFlightId(UUID.randomUUID().toString());
-        ServiceReply reply = messageSenderService.publishServicesTopic(sn, DroneControlMethodEnum.TAKE_OFF_TO_POINT.getMethod(), param, param.getFlightId());
-        return ResponseResult.CODE_SUCCESS != reply.getResult() ?
-                ResponseResult.error("The drone failed to take off. " + reply.getResult())
-                : ResponseResult.success();
-    }
-
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_TAKE_OFF_TO_POINT_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleTakeoffToPointProgress(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String dockSn  = receiver.getGateway();
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(dockSn);
-        if (deviceOpt.isEmpty()) {
-            log.error("The dock is offline.");
-            return null;
-        }
-        TakeoffProgressReceiver eventsReceiver = mapper.convertValue(receiver.getData(), new TypeReference<TakeoffProgressReceiver>(){});
-
-        webSocketMessageService.sendBatch(deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(),
-                BizCodeEnum.TAKE_OFF_TO_POINT_PROGRESS.getCode(),
-                ResultNotifyDTO.builder().sn(dockSn)
-                        .message(WaylineErrorCodeEnum.SUCCESS == eventsReceiver.getResult() ?
-                                eventsReceiver.getStatus().getMessage() : eventsReceiver.getResult().getErrorMsg())
-                        .result(eventsReceiver.getResult().getErrorCode())
-                        .build());
-
-        return receiver;
+        TopicServicesResponse<ServicesReplyData> response = abstractControlService.takeoffToPoint(
+                SDKManager.getDeviceSDK(sn), mapper.convertValue(param, TakeoffToPointRequest.class));
+        ServicesReplyData reply = response.getData();
+        return reply.getResult().isSuccess() ?
+                HttpResultResponse.success()
+                : HttpResultResponse.error("The drone failed to take off. " + reply.getResult());
     }
 
     @Override
-    public ResponseResult seizeAuthority(String sn, DroneAuthorityEnum authority, DronePayloadParam param) {
-        String method;
+    public HttpResultResponse seizeAuthority(String sn, DroneAuthorityEnum authority, DronePayloadParam param) {
+        TopicServicesResponse<ServicesReplyData> response;
         switch (authority) {
             case FLIGHT:
                 if (deviceService.checkAuthorityFlight(sn)) {
-                    return ResponseResult.success();
+                    return HttpResultResponse.success();
                 }
-                method = DroneControlMethodEnum.FLIGHT_AUTHORITY_GRAB.getMethod();
+                response = abstractControlService.flightAuthorityGrab(SDKManager.getDeviceSDK(sn));
                 break;
             case PAYLOAD:
                 if (checkPayloadAuthority(sn, param.getPayloadIndex())) {
-                    return ResponseResult.success();
+                    return HttpResultResponse.success();
                 }
-                method = DroneControlMethodEnum.PAYLOAD_AUTHORITY_GRAB.getMethod();
+                response = abstractControlService.payloadAuthorityGrab(SDKManager.getDeviceSDK(sn),
+                        new PayloadAuthorityGrabRequest().setPayloadIndex(new PayloadIndex(param.getPayloadIndex())));
                 break;
             default:
-                return ResponseResult.error(CommonErrorEnum.ILLEGAL_ARGUMENT);
+                return HttpResultResponse.error(CloudSDKErrorEnum.INVALID_PARAMETER);
         }
-        ServiceReply serviceReply = messageSenderService.publishServicesTopic(sn, method, param);
-        return ResponseResult.CODE_SUCCESS != serviceReply.getResult() ?
-                ResponseResult.error(serviceReply.getResult(), "Method: " + method + " Error Code:" + serviceReply.getResult())
-                : ResponseResult.success();
+
+        ServicesReplyData serviceReply = response.getData();
+        return serviceReply.getResult().isSuccess() ?
+                HttpResultResponse.success()
+                : HttpResultResponse.error(serviceReply.getResult());
     }
 
     private Boolean checkPayloadAuthority(String sn, String payloadIndex) {
@@ -284,18 +208,20 @@ public class ControlServiceImpl implements IControlService {
         return devicePayloadService.checkAuthorityPayload(dockOpt.get().getChildDeviceSn(), payloadIndex);
     }
 
-
     @Override
-    public ResponseResult payloadCommands(PayloadCommandsParam param) throws Exception {
+    public HttpResultResponse payloadCommands(PayloadCommandsParam param) throws Exception {
         param.getCmd().getClazz()
                 .getDeclaredConstructor(DronePayloadParam.class)
                 .newInstance(param.getData())
                 .checkCondition(param.getSn());
 
-        ServiceReply serviceReply = messageSenderService.publishServicesTopic(param.getSn(), param.getCmd().getCmd(), param.getData());
-        return ResponseResult.CODE_SUCCESS != serviceReply.getResult() ?
-                ResponseResult.error(serviceReply.getResult(), " Error Code:" + serviceReply.getResult())
-                : ResponseResult.success();
-    }
+        TopicServicesResponse<ServicesReplyData> response = abstractControlService.payloadControl(
+                SDKManager.getDeviceSDK(param.getSn()), param.getCmd().getCmd(),
+                mapper.convertValue(param.getData(), param.getCmd().getCmd().getClazz()));
 
+        ServicesReplyData serviceReply = response.getData();
+        return serviceReply.getResult().isSuccess() ?
+                HttpResultResponse.success()
+                : HttpResultResponse.error(serviceReply.getResult());
+    }
 }

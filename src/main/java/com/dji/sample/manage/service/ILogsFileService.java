@@ -1,8 +1,9 @@
 package com.dji.sample.manage.service;
 
 import com.dji.sample.manage.model.dto.LogsFileDTO;
-import com.dji.sample.manage.model.receiver.LogsExtFileReceiver;
-import com.dji.sample.manage.model.receiver.LogsFileUpload;
+import com.dji.sample.manage.model.dto.LogsFileUploadDTO;
+import com.dji.sdk.cloudapi.log.FileUploadProgressFile;
+import com.dji.sdk.cloudapi.log.FileUploadStartFile;
 
 import java.net.URL;
 import java.util.List;
@@ -26,7 +27,7 @@ public interface ILogsFileService {
      * @param logsId
      * @return
      */
-    List<LogsFileUpload> getLogsFileByLogsId(String logsId);
+    List<LogsFileUploadDTO> getLogsFileByLogsId(String logsId);
 
     /**
      * Added logs file.
@@ -34,7 +35,7 @@ public interface ILogsFileService {
      * @param logsId
      * @return
      */
-    Boolean insertFile(LogsFileUpload file, String logsId);
+    Boolean insertFile(FileUploadStartFile file, String logsId);
 
     /**
      * Delete logs files.
@@ -47,7 +48,7 @@ public interface ILogsFileService {
      * @param logsId
      * @param fileReceiver
      */
-    void updateFile(String logsId, LogsExtFileReceiver fileReceiver);
+    void updateFile(String logsId, FileUploadProgressFile fileReceiver);
 
     /**
      * Update file upload status.

@@ -1,16 +1,12 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.common.model.ResponseResult;
-import com.dji.sample.component.mqtt.config.MqttConfiguration;
-import com.dji.sample.component.mqtt.model.*;
-import com.dji.sample.component.mqtt.service.IMessageSenderService;
+import com.dji.sample.component.mqtt.config.MqttPropertyConfiguration;
+import com.dji.sample.component.mqtt.model.EventsReceiver;
+import com.dji.sample.component.mqtt.model.MapKeyConst;
 import com.dji.sample.component.redis.RedisConst;
 import com.dji.sample.component.redis.RedisOpsUtils;
-import com.dji.sample.component.websocket.model.BizCodeEnum;
-import com.dji.sample.component.websocket.service.ISendMessageService;
-import com.dji.sample.control.model.dto.*;
-import com.dji.sample.control.model.enums.DrcMethodEnum;
-import com.dji.sample.control.model.enums.DrcStatusErrorEnum;
+import com.dji.sample.component.websocket.service.IWebSocketMessageService;
+import com.dji.sample.control.model.dto.JwtAclDTO;
 import com.dji.sample.control.model.enums.DroneAuthorityEnum;
 import com.dji.sample.control.model.enums.MqttAclAccessEnum;
 import com.dji.sample.control.model.param.DrcConnectParam;
@@ -18,23 +14,29 @@ import com.dji.sample.control.model.param.DrcModeParam;
 import com.dji.sample.control.service.IControlService;
 import com.dji.sample.control.service.IDrcService;
 import com.dji.sample.manage.model.dto.DeviceDTO;
-import com.dji.sample.manage.model.enums.DockModeCodeEnum;
-import com.dji.sample.manage.model.enums.UserTypeEnum;
-import com.dji.sample.manage.model.receiver.OsdSubDeviceReceiver;
 import com.dji.sample.manage.service.IDeviceRedisService;
 import com.dji.sample.manage.service.IDeviceService;
-import com.dji.sample.wayline.model.dto.WaylineTaskProgressReceiver;
 import com.dji.sample.wayline.model.enums.WaylineJobStatusEnum;
 import com.dji.sample.wayline.model.enums.WaylineTaskStatusEnum;
 import com.dji.sample.wayline.model.param.UpdateJobParam;
+import com.dji.sample.wayline.service.IFlightTaskService;
 import com.dji.sample.wayline.service.IWaylineJobService;
 import com.dji.sample.wayline.service.IWaylineRedisService;
+import com.dji.sdk.cloudapi.control.DrcModeEnterRequest;
+import com.dji.sdk.cloudapi.control.DrcModeMqttBroker;
+import com.dji.sdk.cloudapi.control.api.AbstractControlService;
+import com.dji.sdk.cloudapi.device.DockModeCodeEnum;
+import com.dji.sdk.cloudapi.device.OsdDockDrone;
+import com.dji.sdk.cloudapi.wayline.FlighttaskProgress;
+import com.dji.sdk.common.HttpResultResponse;
+import com.dji.sdk.common.SDKManager;
+import com.dji.sdk.mqtt.TopicConst;
+import com.dji.sdk.mqtt.services.ServicesReplyData;
+import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -53,13 +55,13 @@ import java.util.Optional;
 public class DrcServiceImpl implements IDrcService {
 
     @Autowired
-    private IMessageSenderService messageSenderService;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
     private IWaylineJobService waylineJobService;
+
+    @Autowired
+    private IFlightTaskService flighttaskService;
 
     @Autowired
     private IDeviceService deviceService;
@@ -68,7 +70,7 @@ public class DrcServiceImpl implements IDrcService {
     private ObjectMapper mapper;
     
     @Autowired
-    private ISendMessageService webSocketMessageService;
+    private IWebSocketMessageService webSocketMessageService;
 
     @Autowired
     private IControlService controlService;
@@ -78,6 +80,9 @@ public class DrcServiceImpl implements IDrcService {
 
     @Autowired
     private IWaylineRedisService waylineRedisService;
+
+    @Autowired
+    private AbstractControlService abstractControlService;
 
     @Override
     public void setDrcModeInRedis(String dockSn, String clientId) {
@@ -95,7 +100,7 @@ public class DrcServiceImpl implements IDrcService {
     }
 
     @Override
-    public MqttBrokerDTO userDrcAuth(String workspaceId, String userId, String username, DrcConnectParam param) {
+    public DrcModeMqttBroker userDrcAuth(String workspaceId, String userId, String username, DrcConnectParam param) {
 
         // refresh token
         String clientId = param.getClientId();
@@ -110,7 +115,7 @@ public class DrcServiceImpl implements IDrcService {
         try {
             RedisOpsUtils.expireKey(key, RedisConst.DRC_MODE_ALIVE_SECOND);
 
-            return MqttConfiguration.getMqttBrokerWithDrc(
+            return MqttPropertyConfiguration.getMqttBrokerWithDrc(
                     clientId, username, param.getExpireSec(), Collections.emptyMap());
         } catch (RuntimeException e) {
             RedisOpsUtils.del(key);
@@ -119,16 +124,16 @@ public class DrcServiceImpl implements IDrcService {
     }
 
     private void checkDrcModeCondition(String workspaceId, String dockSn) {
-        Optional<EventsReceiver<WaylineTaskProgressReceiver>> runningOpt = waylineRedisService.getRunningWaylineJob(dockSn);
+        Optional<EventsReceiver<FlighttaskProgress>> runningOpt = waylineRedisService.getRunningWaylineJob(dockSn);
         if (runningOpt.isPresent() && WaylineJobStatusEnum.IN_PROGRESS == waylineJobService.getWaylineState(dockSn)) {
-            waylineJobService.updateJobStatus(workspaceId, runningOpt.get().getBid(),
+            flighttaskService.updateJobStatus(workspaceId, runningOpt.get().getBid(),
                     UpdateJobParam.builder().status(WaylineTaskStatusEnum.PAUSE).build());
         }
 
         DockModeCodeEnum dockMode = deviceService.getDockMode(dockSn);
         Optional<DeviceDTO> dockOpt = deviceRedisService.getDeviceOnline(dockSn);
         if (dockOpt.isPresent() && (DockModeCodeEnum.IDLE == dockMode || DockModeCodeEnum.WORKING == dockMode)) {
-            Optional<OsdSubDeviceReceiver> deviceOsd = deviceRedisService.getDeviceOsd(dockOpt.get().getChildDeviceSn(), OsdSubDeviceReceiver.class);
+            Optional<OsdDockDrone> deviceOsd = deviceRedisService.getDeviceOsd(dockOpt.get().getChildDeviceSn(), OsdDockDrone.class);
             if (deviceOsd.isEmpty() || deviceOsd.get().getElevation() <= 0) {
                 throw new RuntimeException("The drone is not in the sky and cannot enter command flight mode.");
             }
@@ -136,8 +141,8 @@ public class DrcServiceImpl implements IDrcService {
             throw new RuntimeException("The current state of the dock does not support entering command flight mode.");
         }
 
-        ResponseResult result = controlService.seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
-        if (ResponseResult.CODE_SUCCESS != result.getCode()) {
+        HttpResultResponse result = controlService.seizeAuthority(dockSn, DroneAuthorityEnum.FLIGHT, null);
+        if (HttpResultResponse.CODE_SUCCESS != result.getCode()) {
             throw new IllegalArgumentException(result.getMessage());
         }
 
@@ -158,19 +163,20 @@ public class DrcServiceImpl implements IDrcService {
 
         checkDrcModeCondition(workspaceId, param.getDockSn());
 
-        ServiceReply reply = messageSenderService.publishServicesTopic(
-                param.getDockSn(), DrcMethodEnum.DRC_MODE_ENTER.getMethod(),
-                DrcModeDTO.builder()
-                    .mqttBroker(MqttConfiguration.getMqttBrokerWithDrc(param.getDockSn() + "-" + System.currentTimeMillis(), param.getDockSn(),
-                            RedisConst.DRC_MODE_ALIVE_SECOND.longValue(),
-                            Map.of(MapKeyConst.ACL, objectMapper.convertValue(JwtAclDTO.builder()
-                                    .pub(List.of(subTopic))
-                                    .sub(List.of(pubTopic))
-                                    .build(), new TypeReference<Map<String, ?>>() {}))))
-                    .build());
+        TopicServicesResponse<ServicesReplyData> reply = abstractControlService.drcModeEnter(
+                SDKManager.getDeviceSDK(param.getDockSn()),
+                new DrcModeEnterRequest()
+                        .setMqttBroker(MqttPropertyConfiguration.getMqttBrokerWithDrc(param.getDockSn() + "-" + System.currentTimeMillis(), param.getDockSn(),
+                                RedisConst.DRC_MODE_ALIVE_SECOND.longValue(),
+                                Map.of(MapKeyConst.ACL, objectMapper.convertValue(JwtAclDTO.builder()
+                                        .pub(List.of(subTopic))
+                                        .sub(List.of(pubTopic))
+                                        .build(), new TypeReference<Map<String, ?>>() {}))))
+                        .setHsiFrequency(1).setOsdFrequency(10));
 
-        if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
-            throw new RuntimeException("SN: " + param.getDockSn() + "; Error Code:" + reply.getResult() + "; Failed to enter command flight control mode, please try again later!");
+        if (!reply.getData().getResult().isSuccess()) {
+            throw new RuntimeException("SN: " + param.getDockSn() + "; Error:" + reply.getData().getResult() +
+                    "; Failed to enter command flight control mode, please try again later!");
         }
 
         refreshAcl(param.getDockSn(), param.getClientId(), pubTopic, subTopic);
@@ -185,6 +191,7 @@ public class DrcServiceImpl implements IDrcService {
         String key = RedisConst.MQTT_ACL_PREFIX + clientId;
         RedisOpsUtils.hashSet(key, pubTopic, MqttAclAccessEnum.PUB.getValue());
         RedisOpsUtils.hashSet(key, subTopic, MqttAclAccessEnum.SUB.getValue());
+        RedisOpsUtils.expireKey(key, RedisConst.DRC_MODE_ALIVE_SECOND);
     }
 
     @Override
@@ -192,58 +199,20 @@ public class DrcServiceImpl implements IDrcService {
         if (!deviceService.checkDockDrcMode(param.getDockSn())) {
             throw new RuntimeException("The dock is not in flight control mode.");
         }
-        ServiceReply reply = messageSenderService.publishServicesTopic(
-                param.getDockSn(), DrcMethodEnum.DRC_MODE_EXIT.getMethod(), "");
-        if (ResponseResult.CODE_SUCCESS != reply.getResult()) {
-            throw new RuntimeException("SN: " + param.getDockSn() + "; Error Code:" +
-                    reply.getResult() + "; Failed to exit command flight control mode, please try again later!");
+        TopicServicesResponse<ServicesReplyData> reply =
+                abstractControlService.drcModeExit(SDKManager.getDeviceSDK(param.getDockSn()));
+        if (!reply.getData().getResult().isSuccess()) {
+            throw new RuntimeException("SN: " + param.getDockSn() + "; Error:" +
+                    reply.getData().getResult() + "; Failed to exit command flight control mode, please try again later!");
         }
 
         String jobId = waylineRedisService.getPausedWaylineJobId(param.getDockSn());
         if (StringUtils.hasText(jobId)) {
-            waylineJobService.updateJobStatus(workspaceId, jobId, UpdateJobParam.builder().status(WaylineTaskStatusEnum.RESUME).build());
+            flighttaskService.updateJobStatus(workspaceId, jobId, UpdateJobParam.builder().status(WaylineTaskStatusEnum.RESUME).build());
         }
 
         this.delDrcModeInRedis(param.getDockSn());
         RedisOpsUtils.del(RedisConst.MQTT_ACL_PREFIX + param.getClientId());
-    }
-
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_DRC_STATUS_NOTIFY, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleDrcStatusNotify(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String dockSn  = receiver.getGateway();
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(dockSn);
-        if (deviceOpt.isEmpty()) {
-            return null;
-        }
-
-        DrcStatusNotifyReceiver eventsReceiver = mapper.convertValue(receiver.getData(), new TypeReference<DrcStatusNotifyReceiver>(){});
-        if (DrcStatusErrorEnum.SUCCESS != eventsReceiver.getResult()) {
-            webSocketMessageService.sendBatch(
-                    deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(), BizCodeEnum.DRC_STATUS_NOTIFY.getCode(),
-                    ResultNotifyDTO.builder().sn(dockSn)
-                            .message(eventsReceiver.getResult().getErrorMsg())
-                            .result(eventsReceiver.getResult().getErrorCode()).build());
-        }
-        return receiver;
-    }
-
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_DRC_MODE_EXIT_NOTIFY, outputChannel = ChannelName.OUTBOUND_EVENTS)
-    public CommonTopicReceiver handleDrcModeExitNotify(CommonTopicReceiver receiver, MessageHeaders headers) {
-        String dockSn  = receiver.getGateway();
-
-        Optional<DeviceDTO> deviceOpt = deviceRedisService.getDeviceOnline(dockSn);
-        if (deviceOpt.isEmpty()) {
-            return null;
-        }
-
-        DrcModeReasonReceiver eventsReceiver = mapper.convertValue(receiver.getData(), new TypeReference<DrcModeReasonReceiver>(){});
-        webSocketMessageService.sendBatch(
-                deviceOpt.get().getWorkspaceId(), UserTypeEnum.WEB.getVal(), BizCodeEnum.JOYSTICK_INVALID_NOTIFY.getCode(),
-                        ResultNotifyDTO.builder().sn(dockSn)
-                                .message(eventsReceiver.getReason().getMessage())
-                                .result(eventsReceiver.getReason().getVal()).build());
-        return receiver;
     }
 
 }

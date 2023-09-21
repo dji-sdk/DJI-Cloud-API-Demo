@@ -1,7 +1,5 @@
 package com.dji.sample.component.redis;
 
-import com.dji.sample.manage.model.enums.DeviceDomainEnum;
-
 /**
  * @author sean
  * @version 1.0
@@ -21,9 +19,7 @@ public final class RedisConst {
 
     public static final Integer WEBSOCKET_ALIVE_SECOND = 60 * 60 * 24;
 
-    public static final String ONLINE_PREFIX = "online" + DELIMITER;
-
-    public static final String DEVICE_ONLINE_PREFIX = ONLINE_PREFIX + DeviceDomainEnum.SUB_DEVICE + DELIMITER;
+    public static final String DEVICE_ONLINE_PREFIX = "online" + DELIMITER;
 
     public static final String WEBSOCKET_PREFIX = "webSocket" + DELIMITER;
 
@@ -37,9 +33,11 @@ public final class RedisConst {
 
     public static final String LOGS_FILE_PREFIX = "logs_file" + DELIMITER;
 
-    public static final String WAYLINE_JOB_PREPARED = "wayline_job_prepared";
+    public static final String WAYLINE_JOB_TIMED_EXECUTE = "wayline_job_timed_execute";
 
-    public static final String WAYLINE_JOB_CONDITION_PREFIX = "wayline_job_condition" + DELIMITER;
+    public static final String WAYLINE_JOB_CONDITION_PREPARE = "wayline_job_condition_prepare";
+
+    public static final String WAYLINE_JOB_CONDITION_PREFIX = WAYLINE_JOB_CONDITION_PREPARE + DELIMITER;
 
     public static final String WAYLINE_JOB_BLOCK_PREFIX = "wayline_job_block" + DELIMITER;
 

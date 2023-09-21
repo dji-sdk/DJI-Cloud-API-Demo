@@ -1,7 +1,7 @@
 package com.dji.sample.manage.model.dto;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.dji.sdk.cloudapi.device.ControlSourceEnum;
+import com.dji.sdk.cloudapi.device.PayloadIndex;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class DevicePayloadDTO {
 
     private String payloadSn;
@@ -27,7 +26,7 @@ public class DevicePayloadDTO {
 
     private String payloadDesc;
 
-    private String controlSource;
+    private ControlSourceEnum controlSource;
 
-    private String payloadIndex;
+    private PayloadIndex payloadIndex;
 }

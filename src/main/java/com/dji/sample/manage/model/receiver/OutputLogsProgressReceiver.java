@@ -1,5 +1,6 @@
 package com.dji.sample.manage.model.receiver;
 
+import com.dji.sdk.cloudapi.log.FileUploadProgressExt;
 import lombok.Data;
 
 /**
@@ -10,7 +11,7 @@ import lombok.Data;
 @Data
 public class OutputLogsProgressReceiver {
 
-    private OutputLogsExtReceiver ext;
+    private FileUploadProgressExt ext;
 
     private String status;
 }

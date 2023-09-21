@@ -1,9 +1,6 @@
 package com.dji.sample.map.model.enums;
 
-import com.dji.sample.map.model.dto.ElementLineStringDTO;
-import com.dji.sample.map.model.dto.ElementPointDTO;
-import com.dji.sample.map.model.dto.ElementPolygonDTO;
-import com.dji.sample.map.model.dto.ElementType;
+import com.dji.sdk.cloudapi.map.*;
 
 import java.util.Optional;
 
@@ -14,56 +11,51 @@ import java.util.Optional;
  */
 public enum ElementTypeEnum {
 
-    POINT(0, "Point"),
+    POINT(ElementResourceTypeEnum.POINT),
 
-    LINE_STRING(1, "LineString"),
+    LINE_STRING(ElementResourceTypeEnum.LINE_STRING),
 
-    POLYGON(2, "Polygon"),
+    POLYGON(ElementResourceTypeEnum.POLYGON);
 
-    UNKNOWN(-1, "Unknown");
+    private ElementResourceTypeEnum typeEnum;
 
-    private int val;
-
-    private String desc;
-
-    ElementTypeEnum(int val, String desc) {
-        this.val = val;
-        this.desc = desc;
+    ElementTypeEnum(ElementResourceTypeEnum typeEnum) {
+        this.typeEnum = typeEnum;
     }
 
-    public static Optional<ElementType> findType(int val) {
-        if (POINT.val == val) {
-            return Optional.of(new ElementPointDTO());
+    public static Optional<ElementGeometryType> findType(int val) {
+        if (POINT.typeEnum.getType() == val) {
+            return Optional.of(new ElementPointGeometry());
         }
 
-        if (LINE_STRING.val == val) {
-            return Optional.of(new ElementLineStringDTO());
+        if (LINE_STRING.typeEnum.getType() == val) {
+            return Optional.of(new ElementLineStringGeometry());
         }
 
-        if (POLYGON.val == val) {
-            return Optional.of(new ElementPolygonDTO());
+        if (POLYGON.typeEnum.getType() == val) {
+            return Optional.of(new ElementPolygonGeometry());
         }
 
         return Optional.empty();
     }
 
     public String getDesc() {
-        return desc;
+        return typeEnum.getTypeName();
     }
 
     public static int findVal(String desc) {
-        if (POINT.desc.equals(desc)) {
-            return POINT.val;
+        if (POINT.typeEnum.getTypeName().equals(desc)) {
+            return POINT.typeEnum.getType();
         }
 
-        if (LINE_STRING.desc.equals(desc)) {
-            return LINE_STRING.val;
+        if (LINE_STRING.typeEnum.getTypeName().equals(desc)) {
+            return LINE_STRING.typeEnum.getType();
         }
 
-        if (POLYGON.desc.equals(desc)) {
-            return POLYGON.val;
+        if (POLYGON.typeEnum.getTypeName().equals(desc)) {
+            return POLYGON.typeEnum.getType();
         }
 
-        return UNKNOWN.val;
+        throw new RuntimeException("unknown type:" + desc);
     }
 }

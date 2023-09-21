@@ -1,7 +1,7 @@
 package com.dji.sample.control.service.impl;
 
-import com.dji.sample.control.model.enums.CameraStateEnum;
 import com.dji.sample.control.model.param.DronePayloadParam;
+import com.dji.sdk.cloudapi.device.CameraStateEnum;
 
 /**
  * @author sean

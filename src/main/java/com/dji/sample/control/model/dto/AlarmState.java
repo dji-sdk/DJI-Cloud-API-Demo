@@ -1,13 +1,11 @@
 package com.dji.sample.control.model.dto;
 
 import com.dji.sample.control.service.impl.RemoteDebugHandler;
-import com.dji.sample.manage.model.enums.StateSwitchEnum;
+import com.dji.sdk.cloudapi.device.SwitchActionEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.Objects;
 
 /**
  * @author sean
@@ -20,10 +18,6 @@ import java.util.Objects;
 @NoArgsConstructor
 public class AlarmState extends RemoteDebugHandler {
 
-    private Integer action;
+    private SwitchActionEnum action;
 
-    @Override
-    public boolean valid() {
-        return Objects.nonNull(action) && StateSwitchEnum.find(action).isPresent();
-    }
 }
