@@ -17,7 +17,7 @@
     <properties>
         <java.version>21</java.version>
         <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
-        <druid.version>1.2.18</druid.version>
+        <druid.version>1.2.19</druid.version>
         <jwt.version>3.12.1</jwt.version>
         <mqtt.version>6.1.2</mqtt.version>
         <minio.version>8.5.4</minio.version>
