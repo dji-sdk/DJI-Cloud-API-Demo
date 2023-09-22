@@ -8,6 +8,7 @@ import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +29,14 @@ public class SDKManager {
         }
         throw new CloudSDKException(CloudSDKErrorEnum.NOT_REGISTERED,
                 "The device has not been registered, please call the 'SDKManager.registerDevice()' method to register the device first.");
+    }
+
+    public static Optional<GatewayManager> findDeviceSDK(String gatewaySn) {
+        if(SDK_MAP.containsKey(gatewaySn)){
+            return Optional.of(SDK_MAP.get(gatewaySn));
+        }else {
+            return Optional.empty();
+        }
     }
 
     public static GatewayManager registerDevice(String gatewaySn, String droneSn,
