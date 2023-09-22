@@ -3,6 +3,7 @@ package com.dji.sdk.mqtt.services;
 import com.dji.sdk.cloudapi.log.FileUploadListResponse;
 import com.dji.sdk.cloudapi.log.LogMethodEnum;
 import com.dji.sdk.common.Common;
+import com.dji.sdk.common.PublishBarrier;
 import com.dji.sdk.mqtt.Chan;
 import com.dji.sdk.mqtt.ChannelName;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,6 +11,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -20,6 +22,9 @@ import java.util.Objects;
  */
 @Component
 public class ServicesReplyHandler {
+
+    @Resource
+    PublishBarrier barrier;
 
     /**
      * Handle the reply message from topic "/services_reply".
@@ -32,14 +37,19 @@ public class ServicesReplyHandler {
 
         TopicServicesResponse<ServicesReplyReceiver> receiver = Common.getObjectMapper()
                 .readValue(payload, new TypeReference<TopicServicesResponse<ServicesReplyReceiver>>() {});
-        Chan chan = Chan.getInstance(receiver.getTid(), false);
-        if (Objects.isNull(chan)) {
+        //fix: use Barrier instead witcom@2023.09.22
+//        Chan chan = Chan.getInstance(receiver.getTid(), false);
+//        if (Objects.isNull(chan)) {
+//            return;
+//        }
+        if(!barrier.hasIdentity(receiver.getTid())){
             return;
         }
         if (LogMethodEnum.FILE_UPLOAD_LIST.getMethod().equals(receiver.getMethod())) {
             receiver.getData().setOutput(Common.getObjectMapper().convertValue(receiver.getData(),
                     new TypeReference<FileUploadListResponse>() {}));
         }
-        chan.put(receiver);
+        barrier.put(receiver.getTid(), receiver);
+        //chan.put(receiver);
     }
 }
