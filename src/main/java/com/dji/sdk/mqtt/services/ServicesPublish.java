@@ -94,6 +94,16 @@ public class ServicesPublish {
          */
     }
 
+    /**
+     * Remark by witcom@2023.09.22
+     * TODO: 在贡献的版本到这里就不再往下修改了,需要修改所有AbstractXXXService和AOP，改动量很大
+     * 主要思想是
+     * 1.提供异步支持
+     * 2.Chan的实现可由用户自定义
+     * 3.提供发送选项参数
+     * 4.提供发送前，接收后钩子用于记录请求和返回接近最原始的记录
+     */
+
     public <T> CompletableFuture<TopicServicesResponse<ServicesReplyData<T>>> publish(TypeReference<T> clazz, String sn, String method, Object data, Consumer<PublishOption> options){
         String topic = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + Objects.requireNonNull(sn) + TopicConst.SERVICES_SUF;
         return gatewayPublish.publishWithReply(ServicesReplyReceiver.class, topic, new TopicServicesRequest<>()

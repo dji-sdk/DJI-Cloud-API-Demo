@@ -41,7 +41,9 @@ public class MqttGatewayPublish {
 
     public void publish(String topic, int qos, CommonTopicRequest request) {
         try {
-            log.debug("send topic: {}, payload: {}", topic, request.toString());
+            if(log.isDebugEnabled()) {
+                log.debug("send topic: {}, payload: {}", topic, request.toString());
+            }
             byte[] payload = Common.getObjectMapper().writeValueAsBytes(request);
             messageGateway.publish(topic, payload, qos);
         } catch (JsonProcessingException e) {
@@ -52,7 +54,9 @@ public class MqttGatewayPublish {
 
     public void publish(String topic, int qos, CommonTopicResponse response) {
         try {
-            log.debug("send topic: {}, payload: {}", topic, response.toString());
+            if(log.isDebugEnabled()) {
+                log.debug("send topic: {}, payload: {}", topic, response.toString());
+            }
             byte[] payload = Common.getObjectMapper().writeValueAsBytes(response);
             messageGateway.publish(topic, payload, qos);
         } catch (JsonProcessingException e) {
