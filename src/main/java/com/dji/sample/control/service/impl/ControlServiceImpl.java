@@ -68,6 +68,9 @@ public class ControlServiceImpl implements IControlService {
     @Qualifier("SDKWaylineService")
     private AbstractWaylineService abstractWaylineService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     private RemoteDebugHandler checkDebugCondition(String sn, RemoteDebugParam param, RemoteDebugMethodEnum controlMethodEnum) {
         RemoteDebugHandler handler = Objects.nonNull(controlMethodEnum.getClazz()) ?
                 mapper.convertValue(Objects.nonNull(param) ? param : new Object(), controlMethodEnum.getClazz())

@@ -15,9 +15,24 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author sean
  * @version 1.7
  * @date 2023/5/19
+ *
+ * fix: 改接口,由客户决定Gateway管理策略 witcom@2023.09.25
  */
-public class SDKManager {
+public interface SDKManager {
 
+    GatewayManager getDeviceSDK(String gatewaySn);
+
+    Optional<GatewayManager> findDeviceSDK(String gatewaySn);
+    GatewayManager registerDevice(String gatewaySn, String droneSn,
+                                  DeviceDomainEnum domain, DeviceTypeEnum type, DeviceSubTypeEnum subType, String gatewayThingVersion, String droneThingVersion);
+
+    GatewayManager registerDevice(String gatewaySn, String droneSn, GatewayTypeEnum type, String gatewayThingVersion, String droneThingVersion);
+
+    GatewayManager registerDevice(GatewayManager gateway);
+
+    void logoutDevice(String gatewaySn);
+
+/*
     private SDKManager() {
     }
 
@@ -56,4 +71,6 @@ public class SDKManager {
     public static void logoutDevice(String gatewaySn) {
         SDK_MAP.remove(gatewaySn);
     }
+
+ */
 }

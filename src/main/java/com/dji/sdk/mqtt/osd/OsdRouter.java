@@ -14,6 +14,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.*;
 
@@ -29,7 +30,7 @@ import static com.dji.sdk.mqtt.TopicConst.*;
 public class OsdRouter {
 
     @Bean
-    public IntegrationFlow osdRouterFlow() {
+    public IntegrationFlow osdRouterFlow(SDKManager sdkManager) {
         return IntegrationFlows
                 .from(ChannelName.INBOUND_OSD)
                 .transform(Message.class, source -> {
@@ -45,7 +46,7 @@ public class OsdRouter {
 
                     // fix: getDeviceSDK抛出异常导致在设备未注册的情况下报osd时产生大量日志 witcom@2023.09.22
                     //GatewayManager gateway = SDKManager.getDeviceSDK(response.getGateway());
-                    return SDKManager.findDeviceSDK(response.getGateway())
+                    return sdkManager.findDeviceSDK(response.getGateway())
                             .map(gateway-> {
 
                                 OsdDeviceTypeEnum typeEnum = OsdDeviceTypeEnum.find(gateway.getType(), response.getFrom().equals(response.getGateway()));

@@ -1,6 +1,7 @@
 package com.dji.sdk.mqtt.state;
 
 import com.dji.sdk.common.Common;
+import com.dji.sdk.common.GatewayTypeEnum;
 import com.dji.sdk.common.SDKManager;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
@@ -13,6 +14,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 
+import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
@@ -28,6 +30,9 @@ import static com.dji.sdk.mqtt.TopicConst.*;
  */
 @Configuration
 public class StateRouter {
+
+    @Resource
+    SDKManager sdkManager;
 
     @Bean
     public IntegrationFlow stateDataRouterFlow() {
@@ -51,13 +56,14 @@ public class StateRouter {
 
     private Class getTypeReference(String gatewaySn, Object data) {
         Set<String> keys = ((Map<String, Object>) data).keySet();
-        switch (SDKManager.getDeviceSDK(gatewaySn).getType()) {
+        GatewayTypeEnum type = sdkManager.getDeviceSDK(gatewaySn).getType();
+        switch (type) {
             case RC:
                 return RcStateDataKeyEnum.find(keys).getClassType();
             case DOCK:
                 return DockStateDataKeyEnum.find(keys).getClassType();
             default:
-                throw new CloudSDKException(CloudSDKErrorEnum.WRONG_DATA, "Unexpected value: " + SDKManager.getDeviceSDK(gatewaySn).getType());
+                throw new CloudSDKException(CloudSDKErrorEnum.WRONG_DATA, "Unexpected value: " + type);
         }
     }
 }
