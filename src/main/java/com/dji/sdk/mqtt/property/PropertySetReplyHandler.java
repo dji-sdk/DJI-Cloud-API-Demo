@@ -42,13 +42,14 @@ public class PropertySetReplyHandler {
 //        if (Objects.isNull(chan)) {
 //            return;
 //        }
-        if(!barrier.hasIdentity(receiver.getTid())) {
+        String identity = barrier.generateIdentity(receiver);
+        if(!barrier.hasIdentity(identity)) {
             return;
         }
         receiver.setData(PropertySetReplyResultEnum.find(
                 Common.getObjectMapper().convertValue(receiver.getData(), JsonNode.class).findValue(RESULT_KEY).intValue()));
         // Put the message to the chan object.
         //chan.put(receiver);
-        barrier.put(receiver.getTid(), receiver);
+        barrier.put(identity, receiver);
     }
 }

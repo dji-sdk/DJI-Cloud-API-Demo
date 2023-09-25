@@ -12,6 +12,10 @@ import com.dji.sdk.mqtt.CommonTopicResponse;
 
 public interface PublishBarrier {
 
+    //构建栅栏标识方法
+    String generateIdentity(CommonTopicRequest requestData);
+    String generateIdentity(CommonTopicResponse receiveData);
+
     void put(String identity, CommonTopicResponse receiveData);
 
     void registerRequest(String identity, CommonTopicRequest requestData);

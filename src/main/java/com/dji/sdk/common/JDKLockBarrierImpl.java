@@ -22,6 +22,16 @@ public class JDKLockBarrierImpl implements PublishBarrier{
     private final ConcurrentHashMap<String, JDKHolder> container = new ConcurrentHashMap<>();
 
     @Override
+    public String generateIdentity(CommonTopicRequest requestData) {
+        return requestData.getTid();
+    }
+
+    @Override
+    public String generateIdentity(CommonTopicResponse receiveData) {
+        return receiveData.getTid();
+    }
+
+    @Override
     public void put(String identity, CommonTopicResponse receiveData) {
         if(hasIdentity(identity)){
             container.get(identity).setData(receiveData);

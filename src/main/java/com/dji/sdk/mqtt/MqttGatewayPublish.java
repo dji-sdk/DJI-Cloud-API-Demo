@@ -122,7 +122,7 @@ public class MqttGatewayPublish {
         config.invokeBeforePublishHook(request);
 
         //注册barrier
-        String identity = request.getTid(); //提供栅栏标识
+        String identity = publishBarrier.generateIdentity(request); //提供栅栏标识
         publishBarrier.registerRequest(identity, request);
 
         return CompletableFuture.supplyAsync(()->{

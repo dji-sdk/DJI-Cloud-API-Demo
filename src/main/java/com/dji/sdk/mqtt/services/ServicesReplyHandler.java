@@ -42,14 +42,15 @@ public class ServicesReplyHandler {
 //        if (Objects.isNull(chan)) {
 //            return;
 //        }
-        if(!barrier.hasIdentity(receiver.getTid())){
+        String identity = barrier.generateIdentity(receiver);
+        if(!barrier.hasIdentity(identity)){
             return;
         }
         if (LogMethodEnum.FILE_UPLOAD_LIST.getMethod().equals(receiver.getMethod())) {
             receiver.getData().setOutput(Common.getObjectMapper().convertValue(receiver.getData(),
                     new TypeReference<FileUploadListResponse>() {}));
         }
-        barrier.put(receiver.getTid(), receiver);
+        barrier.put(identity, receiver);
         //chan.put(receiver);
     }
 }

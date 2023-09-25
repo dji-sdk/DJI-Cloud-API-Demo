@@ -14,6 +14,16 @@ import java.util.Objects;
 
 public class ChanBarrierAdapter implements PublishBarrier {
     @Override
+    public String generateIdentity(CommonTopicRequest requestData) {
+        return requestData.getTid();
+    }
+
+    @Override
+    public String generateIdentity(CommonTopicResponse receiveData) {
+        return receiveData.getTid();
+    }
+
+    @Override
     public void put(String identity, CommonTopicResponse receiveData) {
         Chan instance = Chan.getInstance(identity, false);
         if(Objects.nonNull(instance)){
