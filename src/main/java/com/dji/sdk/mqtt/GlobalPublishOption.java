@@ -8,6 +8,7 @@
 package com.dji.sdk.mqtt;
 
 import com.dji.sdk.common.PublishBarrierResult;
+import com.dji.sdk.common.PublishRequest;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -17,7 +18,7 @@ public interface GlobalPublishOption {
     Supplier<String> defaultTransactionId();
     Supplier<String> defaultBizId();
 
-    Consumer<CommonTopicRequest> defaultBeforePublishHook();
-    BiConsumer<CommonTopicRequest, PublishBarrierResult> defaultAfterPublishHook();
+    Consumer<PublishRequest> defaultBeforePublishHook();
+    BiConsumer<PublishRequest, PublishBarrierResult> defaultAfterPublishHook();
 
 }

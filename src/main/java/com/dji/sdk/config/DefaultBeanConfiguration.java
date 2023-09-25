@@ -9,8 +9,8 @@ package com.dji.sdk.config;
 
 import com.dji.sdk.common.*;
 import com.dji.sdk.mqtt.ChanBarrierAdapter;
-import com.dji.sdk.mqtt.CommonTopicRequest;
 import com.dji.sdk.mqtt.GlobalPublishOption;
+import com.dji.sdk.common.PublishRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,12 +42,12 @@ public class DefaultBeanConfiguration {
             }
 
             @Override
-            public Consumer<CommonTopicRequest> defaultBeforePublishHook() {
+            public Consumer<PublishRequest> defaultBeforePublishHook() {
                 return null;
             }
 
             @Override
-            public BiConsumer<CommonTopicRequest, PublishBarrierResult> defaultAfterPublishHook() {
+            public BiConsumer<PublishRequest, PublishBarrierResult> defaultAfterPublishHook() {
                 return null;
             }
         };

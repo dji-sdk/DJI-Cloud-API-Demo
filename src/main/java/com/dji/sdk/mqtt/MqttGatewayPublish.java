@@ -16,7 +16,6 @@ import javax.annotation.Resource;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -119,7 +118,9 @@ public class MqttGatewayPublish {
         request.setTid(config.getTid());
 
         //use to log request data or the last chance to change some data
-        config.invokeBeforePublishHook(request);
+        //CommonTopicRequest丢失了一些需要记录的内容,把这些内容封到PublishRequest交出去
+        PublishRequest wrapRequest = new CommonTopicRequestWrapper<T>(clazz,topic, request, config);
+        config.invokeBeforePublishHook(wrapRequest);
 
         //注册barrier
         String identity = publishBarrier.generateIdentity(request); //提供栅栏标识
@@ -130,7 +131,7 @@ public class MqttGatewayPublish {
 
            if(log.isDebugEnabled()){ log.debug("等待{}指令返回",identity); };
            PublishBarrierResult result = publishBarrier.await(identity,config.getTimeout());
-           config.invokeAfterPublishReplyHook(request, result);
+           config.invokeAfterPublishReplyHook(wrapRequest, result);
 
            if(result.isTimeout()){
                throw new CloudSDKException("Timeout"); //TODO: 换个更明确的异常更好
@@ -162,5 +163,37 @@ public class MqttGatewayPublish {
             config.setAfterPublishReplyHook(globalOptions.defaultAfterPublishHook());
         }
         return config;
+    }
+
+    static class CommonTopicRequestWrapper<T> implements PublishRequest{
+        final CommonTopicRequest request;
+        final String topic;
+        final Class<T> clazz;
+
+        final ReadonlyPublishConfiguration config;
+
+        public  CommonTopicRequestWrapper(Class<T> clazz, String topic,CommonTopicRequest request, PublishConfiguration config) {
+            this.clazz = clazz;
+            this.request = request;
+            this.topic = topic;
+            this.config = config;
+        }
+
+        @Override
+        public String getTopic() {
+            return topic;
+        }
+
+        @Override
+        public CommonTopicRequest getOriginRequest() {
+            return request;
+        }
+
+        @Override
+        public ReadonlyPublishConfiguration getConfiguration() {
+            return config;
+        }
+
+
     }
 }

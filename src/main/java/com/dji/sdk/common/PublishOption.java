@@ -7,8 +7,6 @@
  **************************************************/
 package com.dji.sdk.common;
 
-import com.dji.sdk.mqtt.CommonTopicRequest;
-import com.dji.sdk.mqtt.CommonTopicResponse;
 import com.google.common.base.Strings;
 
 import java.util.Objects;
@@ -44,13 +42,13 @@ public class PublishOption {
         return this;
     }
 
-    public PublishOption beforePublish(Consumer<CommonTopicRequest> callback){
+    public PublishOption beforePublish(Consumer<PublishRequest> callback){
         if(Objects.nonNull(callback)){
             configuration.setBeforePublishHook(callback);
         }
         return this;
     }
-    public PublishOption afterPublishReply(BiConsumer<CommonTopicRequest, PublishBarrierResult> callback){
+    public PublishOption afterPublishReply(BiConsumer<PublishRequest, PublishBarrierResult> callback){
         if(Objects.nonNull(callback)){
             configuration.setAfterPublishReplyHook(callback);
         }

@@ -7,13 +7,11 @@
  **************************************************/
 package com.dji.sdk.common;
 
-import com.dji.sdk.mqtt.CommonTopicRequest;
-
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class PublishConfiguration {
+public class PublishConfiguration implements ReadonlyPublishConfiguration {
 
     String bid;
     String tid;
@@ -21,9 +19,9 @@ public class PublishConfiguration {
     //默认超时
     int timeout = 3;
     //请求发送前调用
-    Consumer<CommonTopicRequest> beforePublishHook = null;
+    Consumer<PublishRequest> beforePublishHook = null;
     //收到请求回信后调用
-    BiConsumer<CommonTopicRequest, PublishBarrierResult> afterPublishHook = null;
+    BiConsumer<PublishRequest, PublishBarrierResult> afterPublishHook = null;
 
 
     public String getBid() {
@@ -50,15 +48,15 @@ public class PublishConfiguration {
         this.timeout = timeout;
     }
 
-    public void setBeforePublishHook(Consumer<CommonTopicRequest> callback) {
+    public void setBeforePublishHook(Consumer<PublishRequest> callback) {
         beforePublishHook = callback;
     }
 
-    public void setAfterPublishReplyHook(BiConsumer<CommonTopicRequest, PublishBarrierResult> callback) {
+    public void setAfterPublishReplyHook(BiConsumer<PublishRequest, PublishBarrierResult> callback) {
         afterPublishHook = callback;
     }
 
-    public void invokeBeforePublishHook(CommonTopicRequest req){
+    public void invokeBeforePublishHook(PublishRequest req){
         if(Objects.nonNull(beforePublishHook)){
             try {
                 beforePublishHook.accept(req);
@@ -69,7 +67,7 @@ public class PublishConfiguration {
         }
     }
 
-    public void invokeAfterPublishReplyHook(CommonTopicRequest req, PublishBarrierResult result){
+    public void invokeAfterPublishReplyHook(PublishRequest req, PublishBarrierResult result){
         if(Objects.nonNull(afterPublishHook)){
             try{
                 afterPublishHook.accept(req,result);

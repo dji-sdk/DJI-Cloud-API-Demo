@@ -9,7 +9,7 @@ package com.dji.sdk.common;
 
 import com.dji.sdk.mqtt.CommonTopicResponse;
 
-public class PublishBarrierResult {
+public class PublishBarrierResult implements PublishResult {
 
     public static PublishBarrierResult EMPTY = new PublishBarrierResult();
 
@@ -35,7 +35,7 @@ public class PublishBarrierResult {
         return timeout;
     }
 
-    public <T> CommonTopicResponse<T> getData(){
+    public CommonTopicResponse getData(){
         return data;
     }
 }
