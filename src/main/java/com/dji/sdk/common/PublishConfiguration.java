@@ -21,9 +21,9 @@ public class PublishConfiguration {
     //默认超时
     int timeout = 3;
     //请求发送前调用
-    Consumer<CommonTopicRequest> beforePublishHook = (e)->{};
+    Consumer<CommonTopicRequest> beforePublishHook = null;
     //收到请求回信后调用
-    BiConsumer<CommonTopicRequest, PublishBarrierResult> afterPublishHook = (req,rsp) ->{};
+    BiConsumer<CommonTopicRequest, PublishBarrierResult> afterPublishHook = null;
 
 
     public String getBid() {
@@ -78,5 +78,13 @@ public class PublishConfiguration {
                 //业务层的异常不理会
             }
         }
+    }
+
+    public boolean noneBeforePublishHook() {
+        return Objects.isNull(beforePublishHook);
+    }
+
+    public boolean noneAfterPublishHook() {
+        return Objects.isNull(afterPublishHook);
     }
 }

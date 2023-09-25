@@ -39,6 +39,9 @@ public class MqttGatewayPublish {
     @Resource
     private PublishBarrier publishBarrier;
 
+    @Resource
+    private GlobalPublishOption globalOptions;
+
     public void publish(String topic, int qos, CommonTopicRequest request) {
         try {
             if(log.isDebugEnabled()) {
@@ -144,11 +147,19 @@ public class MqttGatewayPublish {
         options.accept(option);
 
         if(Strings.isNullOrEmpty(config.getBid())){
-            config.setBizId(UUID.randomUUID().toString());
+            config.setBizId(globalOptions.defaultBizId().get());
         }
 
         if(Strings.isNullOrEmpty(config.getTid())){
-            config.setTransactionId(UUID.randomUUID().toString());
+            config.setTransactionId(globalOptions.defaultTransactionId().get());
+        }
+
+        if(config.noneBeforePublishHook()){
+            config.setBeforePublishHook(globalOptions.defaultBeforePublishHook());
+        }
+
+        if(config.noneAfterPublishHook()){
+            config.setAfterPublishReplyHook(globalOptions.defaultAfterPublishHook());
         }
         return config;
     }
