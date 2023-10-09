@@ -6,6 +6,7 @@ import com.dji.sdk.common.SDKManager;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
+import com.dji.sdk.mqtt.FlowTransformWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -36,29 +37,38 @@ public class StateRouter {
 
     @Bean
     public IntegrationFlow stateDataRouterFlow() {
+        ObjectMapper objectMapper = Common.getObjectMapper();
         return IntegrationFlows
                 .from(ChannelName.INBOUND_STATE)
                 .transform(Message.class, source -> {
-                    ObjectMapper objectMapper = Common.getObjectMapper();
                     try {
-                        TopicStateRequest response = objectMapper.readValue((byte[]) source.getPayload(), new TypeReference<TopicStateRequest>() {
-                        });
+                        TopicStateRequest response = objectMapper.readValue(
+                                (byte[]) source.getPayload(),
+                                new TypeReference<TopicStateRequest>() {});
                         String topic = String.valueOf(source.getHeaders().get(MqttHeaders.RECEIVED_TOPIC));
                         String from = topic.substring((THING_MODEL_PRE + PRODUCT).length(), topic.indexOf(STATE_SUF));
-                        //fix: 修复设备未注册前设备推送state导致产生大量日志的问题 witcom@2023.10.08
+
+                        return FlowTransformWrapper.ok(response.setFrom(from));
+                    } catch (Exception ex) {
+                        log.warn("[StateRouter]"+ex.getMessage());
+                        return FlowTransformWrapper.error();
+                    }
+                }, null)
+                .filter(FlowTransformWrapper::continuee)
+                .<FlowTransformWrapper>handle((wrapper, headers) -> {
+
+                    TopicStateRequest response = (TopicStateRequest)wrapper.getRequest();
+
+                    //fix: 修复设备未注册前设备推送state导致产生大量日志的问题 witcom@2023.10.08
+                    try {
                         return getTypeReference(response.getGateway(), response.getData())
-                                .map(clazz -> response.setFrom(from).setData(objectMapper.convertValue(response.getData(), clazz)))
+                                .map(clazz -> response.setData(objectMapper.convertValue(response.getData(), clazz)))
                                 .orElse(null);
-//                        return response.setFrom(from)
-//                                .setData(objectMapper.convertValue(response.getData(), typeReference));
-                    } /*catch (IOException e) {
-                        //witcom: Which part will throw IOException???
-                        throw new CloudSDKException(e);
-                    }*/ catch (Exception ex) {
+                    }catch (CloudSDKException ex){
                         log.warn("[StateRouter]"+ex.getMessage());
                         return null;
                     }
-                }, null)
+                })
                 .filter(Objects::nonNull)
                 .<TopicStateRequest, StateDataKeyEnum>route(response -> StateDataKeyEnum.find(response.getData().getClass()),
                         mapping -> Arrays.stream(StateDataKeyEnum.values()).forEach(key -> mapping.channelMapping(key, key.getChannelName())))
