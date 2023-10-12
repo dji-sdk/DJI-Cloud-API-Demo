@@ -20,13 +20,21 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public interface SDKManager {
 
-    GatewayManager getDeviceSDK(String gatewaySn);
+    default GatewayManager getDeviceSDK(String gatewaySn){
+        return findDeviceSDK(gatewaySn)
+                .orElseThrow(()-> new CloudSDKException(CloudSDKErrorEnum.NOT_REGISTERED,
+                        "The device has not been registered, please call the 'SDKManager.registerDevice()' method to register the device first."));
+    }
 
     Optional<GatewayManager> findDeviceSDK(String gatewaySn);
-    GatewayManager registerDevice(String gatewaySn, String droneSn,
-                                  DeviceDomainEnum domain, DeviceTypeEnum type, DeviceSubTypeEnum subType, String gatewayThingVersion, String droneThingVersion);
+    default GatewayManager registerDevice(String gatewaySn, String droneSn,
+                                          DeviceDomainEnum domain, DeviceTypeEnum type, DeviceSubTypeEnum subType, String gatewayThingVersion, String droneThingVersion){
+        return registerDevice(gatewaySn, droneSn, GatewayTypeEnum.find(DeviceEnum.find(domain, type, subType)), gatewayThingVersion, droneThingVersion);
+    }
 
-    GatewayManager registerDevice(String gatewaySn, String droneSn, GatewayTypeEnum type, String gatewayThingVersion, String droneThingVersion);
+    default GatewayManager registerDevice(String gatewaySn, String droneSn, GatewayTypeEnum type, String gatewayThingVersion, String droneThingVersion){
+        return registerDevice(new GatewayManager(Objects.requireNonNull(gatewaySn), droneSn, type, gatewayThingVersion, droneThingVersion));
+    }
 
     GatewayManager registerDevice(GatewayManager gateway);
 
