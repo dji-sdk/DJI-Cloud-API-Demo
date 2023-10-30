@@ -45,7 +45,10 @@ public enum DroneModeCodeEnum {
 
     APAS(15),
 
-    VIRTUAL_JOYSTICK(16);
+    VIRTUAL_JOYSTICK(16),
+
+    //witcom: 飞机报这个号上来报异常
+    UNKNOWN_1(17);
 
     private final int code;
 

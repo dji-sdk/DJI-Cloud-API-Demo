@@ -6,6 +6,7 @@ import com.dji.sdk.exception.CloudSDKException;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -45,9 +46,9 @@ public enum RcStateDataKeyEnum {
         return keys;
     }
 
-    public static RcStateDataKeyEnum find(Set<String> keys) {
-        return Arrays.stream(values()).filter(keyEnum -> !Collections.disjoint(keys, keyEnum.keys)).findAny()
-                .orElseThrow(() -> new CloudSDKException(RcStateDataKeyEnum.class, keys));
+    public static Optional<RcStateDataKeyEnum> find(Set<String> keys) {
+        return Arrays.stream(values()).filter(keyEnum -> !Collections.disjoint(keys, keyEnum.keys)).findAny();
+                //.orElseThrow(() -> new CloudSDKException(RcStateDataKeyEnum.class, keys));
     }
 
 }

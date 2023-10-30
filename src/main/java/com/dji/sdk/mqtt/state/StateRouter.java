@@ -80,13 +80,13 @@ public class StateRouter {
         //fix: 捕捉数据流发现在注册前设备可能会推送state主题导致产生大量日志 witcom@2023.10.08
         //GatewayTypeEnum type = sdkManager.getDeviceSDK(gatewaySn).getType();
         return sdkManager.findDeviceSDK(gatewaySn)
-                .map(gw -> {
+                .flatMap(gw -> {
                     GatewayTypeEnum type = gw.getType();
                     switch (type) {
                         case RC:
-                            return RcStateDataKeyEnum.find(keys).getClassType();
+                            return RcStateDataKeyEnum.find(keys).map(v->v.getClassType());
                         case DOCK:
-                            return DockStateDataKeyEnum.find(keys).getClassType();
+                            return DockStateDataKeyEnum.find(keys).map(v->v.getClassType());
                         default:
                             throw new CloudSDKException(CloudSDKErrorEnum.WRONG_DATA, "Unexpected value: " + type);
                     }
