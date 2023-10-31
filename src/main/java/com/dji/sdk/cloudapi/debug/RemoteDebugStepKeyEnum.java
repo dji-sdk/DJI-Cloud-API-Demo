@@ -59,7 +59,9 @@ public enum RemoteDebugStepKeyEnum {
 
     FREE_PUTTER("free_putter", "Free Putter"),
 
-    STOP_CHARGE("stop_charge", "Stop charging");
+    STOP_CHARGE("stop_charge", "Stop charging"),
+
+    UNKNOWN("unknown","Unknown");
 
     private final String stepKey;
 
@@ -79,10 +81,11 @@ public enum RemoteDebugStepKeyEnum {
         return message;
     }
 
+    //fix: 提供unknown取代异常 witcom@2023.10.30
     @JsonCreator
     public static RemoteDebugStepKeyEnum find(String stepKey) {
         return Arrays.stream(values()).filter(stepKeyEnum -> stepKeyEnum.stepKey.equals(stepKey)).findAny()
-            .orElseThrow(() -> new CloudSDKException(RemoteDebugStepKeyEnum.class,stepKey));
+            .orElse(UNKNOWN);
     }
 
 }
