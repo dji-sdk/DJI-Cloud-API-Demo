@@ -26,10 +26,11 @@ public class FlighttaskBreakPoint {
 
     /**
      * Current wayline segment process
+     * bug: Cannot deserialize value of type `com.dji.sdk.cloudapi.wayline.FlighttaskBreakReasonEnum` from number 1281: index value outside legal index range [0..-1] mark by witcom 2023.11.09
      */
-    @NotNull
-    @Min(0)
-    @Max(1)
+//    @NotNull
+//    @Min(0)
+//    @Max(1)
     private Float progress;
 
     /**
