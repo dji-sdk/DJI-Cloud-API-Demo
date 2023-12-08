@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class FlyToPointRequest extends BaseModel {
 
-    @Pattern(regexp = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+    //@Pattern(regexp = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
     @NotNull
     private String flyToId;
 

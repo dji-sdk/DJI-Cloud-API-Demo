@@ -124,6 +124,9 @@ public class DeviceServiceImpl implements IDeviceService {
     @Autowired
     private AbstractFirmwareService abstractFirmwareService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     @Override
     public void subDeviceOffline(String deviceSn) {
         // If no information about this device exists in the cache, the drone is considered to be offline.

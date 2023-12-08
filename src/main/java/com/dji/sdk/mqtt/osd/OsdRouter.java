@@ -14,11 +14,9 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 
+import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.dji.sdk.mqtt.TopicConst.*;
 
@@ -32,7 +30,7 @@ import static com.dji.sdk.mqtt.TopicConst.*;
 public class OsdRouter {
 
     @Bean
-    public IntegrationFlow osdRouterFlow() {
+    public IntegrationFlow osdRouterFlow(SDKManager sdkManager) {
         return IntegrationFlows
                 .from(ChannelName.INBOUND_OSD)
                 .transform(Message.class, source -> {
@@ -45,19 +43,28 @@ public class OsdRouter {
                     }
                 }, null)
                 .<TopicOsdRequest>handle((response, headers) -> {
-                    GatewayManager gateway = SDKManager.getDeviceSDK(response.getGateway());
-                    OsdDeviceTypeEnum typeEnum = OsdDeviceTypeEnum.find(gateway.getType(), response.getFrom().equals(response.getGateway()));
-                    Map<String, Object> data = (Map<String, Object>) response.getData();
-                    if (!typeEnum.isGateway()) {
-                        List payloadData = (List) data.getOrDefault(PayloadModelEnum.PAYLOAD_KEY, new ArrayList<>());
-                        PayloadModelEnum.getAllIndexWithPosition().stream().filter(data::containsKey)
-                                .map(data::get).forEach(payloadData::add);
-                        data.put(PayloadModelEnum.PAYLOAD_KEY, payloadData);
-                    }
-                    return response.setData(Common.getObjectMapper().convertValue(data, typeEnum.getClassType()));
+
+                    // fix: getDeviceSDK抛出异常导致在设备未注册的情况下报osd时产生大量日志 witcom@2023.09.22
+                    //GatewayManager gateway = SDKManager.getDeviceSDK(response.getGateway());
+                    return sdkManager.findDeviceSDK(response.getGateway())
+                            .map(gateway-> {
+
+                                OsdDeviceTypeEnum typeEnum = OsdDeviceTypeEnum.find(gateway.getType(), response.getFrom().equals(response.getGateway()));
+                                Map<String, Object> data = (Map<String, Object>) response.getData();
+                                if (!typeEnum.isGateway()) {
+                                    List payloadData = (List) data.getOrDefault(PayloadModelEnum.PAYLOAD_KEY, new ArrayList<>());
+                                    PayloadModelEnum.getAllIndexWithPosition().stream().filter(data::containsKey)
+                                            .map(data::get).forEach(payloadData::add);
+                                    data.put(PayloadModelEnum.PAYLOAD_KEY, payloadData);
+                                }
+                                return response.setData(Common.getObjectMapper().convertValue(data, typeEnum.getClassType()));
+                            })
+                            .orElse(null);
                 })
+                .<TopicOsdRequest>filter(Objects::nonNull)
                 .<TopicOsdRequest, OsdDeviceTypeEnum>route(response -> OsdDeviceTypeEnum.find(response.getData().getClass()),
-                        mapping -> Arrays.stream(OsdDeviceTypeEnum.values()).forEach(key -> mapping.channelMapping(key, key.getChannelName())))
+                        mapping -> Arrays.stream(OsdDeviceTypeEnum.values())
+                                .forEach(key -> mapping.channelMapping(key, key.getChannelName())))
                 .get();
     }
 

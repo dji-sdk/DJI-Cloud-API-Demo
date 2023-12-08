@@ -24,12 +24,10 @@ public class FlighttaskBreakPoint {
     @NotNull
     private BreakpointStateEnum state;
 
-    /**
-     * Current wayline segment process
-     */
-    @NotNull
-    @Min(0)
-    @Max(1)
+
+//    @NotNull
+//    @Min(0)
+//    @Max(1)
     private Float progress;
 
     /**
@@ -38,9 +36,13 @@ public class FlighttaskBreakPoint {
     private Integer waylineID;
 
     /**
+     * Current wayline segment process
+     * bug: Cannot deserialize value of type `com.dji.sdk.cloudapi.wayline.FlighttaskBreakReasonEnum` from number 1281: index value outside legal index range [0..-1] mark by witcom 2023.11.09
+     */
+    /**
      * Break reason
      */
-    private FlighttaskBreakReasonEnum breakReason;
+    private Integer breakReason;
 
     /**
      * Breakpoint latitude
@@ -116,11 +118,11 @@ public class FlighttaskBreakPoint {
         return this;
     }
 
-    public FlighttaskBreakReasonEnum getBreakReason() {
+    public Integer getBreakReason() {
         return breakReason;
     }
 
-    public FlighttaskBreakPoint setBreakReason(FlighttaskBreakReasonEnum breakReason) {
+    public FlighttaskBreakPoint setBreakReason(Integer breakReason) {
         this.breakReason = breakReason;
         return this;
     }
