@@ -55,6 +55,7 @@ public class StateRouter {
             case RC:
                 return RcStateDataKeyEnum.find(keys).getClassType();
             case DOCK:
+            case DOCK2:
                 return DockStateDataKeyEnum.find(keys).getClassType();
             default:
                 throw new CloudSDKException(CloudSDKErrorEnum.WRONG_DATA, "Unexpected value: " + SDKManager.getDeviceSDK(gatewaySn).getType());

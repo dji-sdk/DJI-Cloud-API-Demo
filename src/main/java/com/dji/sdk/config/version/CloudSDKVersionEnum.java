@@ -1,4 +1,4 @@
-package com.dji.sdk.common;
+package com.dji.sdk.config.version;
 
 /**
  * @author sean
@@ -11,7 +11,9 @@ public enum CloudSDKVersionEnum {
 
     V1_0_0("1.0.0"),
 
-    DEFAULT("1.0.0"),
+    V1_0_1("1.0.1"),
+
+    DEFAULT("1.0.1"),
 
     V99("99");
 

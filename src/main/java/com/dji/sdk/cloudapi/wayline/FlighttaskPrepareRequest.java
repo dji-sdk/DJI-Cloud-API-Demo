@@ -3,7 +3,7 @@ package com.dji.sdk.cloudapi.wayline;
 import com.dji.sdk.annotations.CloudSDKVersion;
 import com.dji.sdk.cloudapi.device.ExitWaylineWhenRcLostEnum;
 import com.dji.sdk.common.BaseModel;
-import com.dji.sdk.common.CloudSDKVersionEnum;
+import com.dji.sdk.config.version.CloudSDKVersionEnum;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -59,16 +59,19 @@ public class FlighttaskPrepareRequest extends BaseModel {
     /**
      * Task readiness condition
      */
+    @Valid
     private ReadyConditions readyConditions;
 
     /**
      * Task executable condition
      */
+    @Valid
     private ExecutableConditions executableConditions;
 
     /**
      * Wayline breakpoint information
      */
+    @Valid
     private FlighttaskBreakPoint breakPoint;
 
     /**

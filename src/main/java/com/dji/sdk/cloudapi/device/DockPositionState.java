@@ -39,7 +39,7 @@ public class DockPositionState {
     }
 
     public DockPositionState setCalibration(Boolean calibration) {
-        calibration = calibration;
+        this.calibration = calibration;
         return this;
     }
 

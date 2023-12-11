@@ -1,4 +1,4 @@
-package com.dji.sdk.common;
+package com.dji.sdk.config.version;
 
 import com.dji.sdk.annotations.CloudSDKVersion;
 
@@ -30,10 +30,10 @@ public class GatewayManager {
         this(gatewaySn, droneSn, gatewayType);
         this.gatewayThingVersion = new GatewayThingVersion(gatewayType, gatewayThingVersion);
         if (GatewayTypeEnum.RC == gatewayType) {
-            this.sdkVersion = CloudSDKVersionEnum.DEFAULT;
+            this.sdkVersion = CloudSDKVersionEnum.V0_0_1;
             return;
         }
-        if (Objects.isNull(this.droneThingVersion)) {
+        if (Objects.isNull(droneThingVersion)) {
             this.sdkVersion = this.gatewayThingVersion.getCloudSDKVersion();
             return;
         }

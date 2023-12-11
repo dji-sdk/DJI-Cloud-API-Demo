@@ -4,9 +4,9 @@ import com.dji.sdk.annotations.CloudSDKVersion;
 import com.dji.sdk.cloudapi.debug.*;
 import com.dji.sdk.common.BaseModel;
 import com.dji.sdk.common.Common;
-import com.dji.sdk.common.GatewayManager;
-import com.dji.sdk.common.GatewayTypeEnum;
-import com.dji.sdk.exception.CloudSDKErrorEnum;
+import com.dji.sdk.common.SpringBeanUtils;
+import com.dji.sdk.config.version.GatewayManager;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttReply;
@@ -22,6 +22,10 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 import javax.annotation.Resource;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -242,7 +246,7 @@ public abstract class AbstractDebugService {
      * @param gateway
      * @return  services_reply
      */
-    @CloudSDKVersion(exclude = GatewayTypeEnum.RC)
+    @CloudSDKVersion(exclude = {GatewayTypeEnum.RC, GatewayTypeEnum.DOCK2})
     public TopicServicesResponse<ServicesReplyData<RemoteDebugResponse>> putterOpen(GatewayManager gateway) {
         return servicesPublish.publish(
                 new TypeReference<RemoteDebugResponse>() {},
@@ -255,7 +259,7 @@ public abstract class AbstractDebugService {
      * @param gateway
      * @return  services_reply
      */
-    @CloudSDKVersion(exclude = GatewayTypeEnum.RC)
+    @CloudSDKVersion(exclude = {GatewayTypeEnum.RC, GatewayTypeEnum.DOCK2})
     public TopicServicesResponse<ServicesReplyData<RemoteDebugResponse>> putterClose(GatewayManager gateway) {
         return servicesPublish.publish(
                 new TypeReference<RemoteDebugResponse>() {},
@@ -311,19 +315,24 @@ public abstract class AbstractDebugService {
      * @param request   data
      * @return  services_reply
      */
-    @CloudSDKVersion(exclude = GatewayTypeEnum.RC)
     public TopicServicesResponse<ServicesReplyData<RemoteDebugResponse>> remoteDebug(GatewayManager gateway, DebugMethodEnum methodEnum, BaseModel request) {
-        if (Objects.nonNull(methodEnum.getClazz())) {
-            if (methodEnum.getClazz() != request.getClass()) {
-                throw new CloudSDKException(CloudSDKErrorEnum.INVALID_PARAMETER);
+        try {
+            List<Class> clazz = new ArrayList<>();
+            List<Object> args = new ArrayList<>();
+            clazz.add(GatewayManager.class);
+            args.add(gateway);
+            if (Objects.nonNull(request)) {
+                clazz.add(request.getClass());
+                args.add(request);
             }
-            Common.validateModel(request);
+            AbstractDebugService abstractDebugService = SpringBeanUtils.getBean(this.getClass());
+            Method method = abstractDebugService.getClass().getDeclaredMethod(Common.convertSnake(methodEnum.getMethod()), clazz.toArray(Class[]::new));
+            return (TopicServicesResponse<ServicesReplyData<RemoteDebugResponse>>) method.invoke(abstractDebugService, args.toArray());
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new CloudSDKException(e);
+        } catch (InvocationTargetException e) {
+            throw new CloudSDKException(e.getTargetException());
         }
-        return servicesPublish.publish(
-                new TypeReference<RemoteDebugResponse>() {},
-                gateway.getGatewaySn(),
-                methodEnum.getMethod(),
-                request);
     }
 
     /**

@@ -2,10 +2,10 @@ package com.dji.sdk.cloudapi.wayline.api;
 
 import com.dji.sdk.annotations.CloudSDKVersion;
 import com.dji.sdk.cloudapi.wayline.*;
-import com.dji.sdk.common.CloudSDKVersionEnum;
+import com.dji.sdk.config.version.CloudSDKVersionEnum;
 import com.dji.sdk.common.Common;
-import com.dji.sdk.common.GatewayManager;
-import com.dji.sdk.common.GatewayTypeEnum;
+import com.dji.sdk.config.version.GatewayManager;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;

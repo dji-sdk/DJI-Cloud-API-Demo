@@ -1,6 +1,7 @@
 package com.dji.sdk.common;
 
 import com.dji.sdk.annotations.CloudSDKVersion;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import org.springframework.util.CollectionUtils;

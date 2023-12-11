@@ -1,5 +1,6 @@
 package com.dji.sdk.common;
 
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -56,5 +57,23 @@ public class Common {
 
     public static ObjectMapper getObjectMapper() {
         return MAPPER_BUILDER.build();
+    }
+
+    public static String convertSnake(String key) {
+        StringBuilder sb = new StringBuilder();
+        boolean isChange = false;
+        for (char c : key.toCharArray()) {
+            if (c == '_') {
+                isChange = true;
+                continue;
+            }
+            if (isChange) {
+                sb.append((char)(c - 32));
+                isChange = false;
+                continue;
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 }

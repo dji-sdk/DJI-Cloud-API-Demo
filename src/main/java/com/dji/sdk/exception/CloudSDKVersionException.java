@@ -1,6 +1,6 @@
 package com.dji.sdk.exception;
 
-import com.dji.sdk.common.CloudSDKVersionEnum;
+import com.dji.sdk.config.version.CloudSDKVersionEnum;
 
 /**
  * @author sean

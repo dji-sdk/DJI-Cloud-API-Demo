@@ -1,8 +1,8 @@
 package com.dji.sdk.mqtt.osd;
 
-import com.dji.sdk.cloudapi.device.PayloadModelEnum;
+import com.dji.sdk.cloudapi.device.PayloadModelConst;
 import com.dji.sdk.common.Common;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.common.SDKManager;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
@@ -49,10 +49,10 @@ public class OsdRouter {
                     OsdDeviceTypeEnum typeEnum = OsdDeviceTypeEnum.find(gateway.getType(), response.getFrom().equals(response.getGateway()));
                     Map<String, Object> data = (Map<String, Object>) response.getData();
                     if (!typeEnum.isGateway()) {
-                        List payloadData = (List) data.getOrDefault(PayloadModelEnum.PAYLOAD_KEY, new ArrayList<>());
-                        PayloadModelEnum.getAllIndexWithPosition().stream().filter(data::containsKey)
+                        List payloadData = (List) data.getOrDefault(PayloadModelConst.PAYLOAD_KEY, new ArrayList<>());
+                        PayloadModelConst.getAllIndexWithPosition().stream().filter(data::containsKey)
                                 .map(data::get).forEach(payloadData::add);
-                        data.put(PayloadModelEnum.PAYLOAD_KEY, payloadData);
+                        data.put(PayloadModelConst.PAYLOAD_KEY, payloadData);
                     }
                     return response.setData(Common.getObjectMapper().convertValue(data, typeEnum.getClassType()));
                 })

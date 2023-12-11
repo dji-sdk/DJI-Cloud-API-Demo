@@ -4,6 +4,8 @@ import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
 import com.dji.sdk.cloudapi.device.DeviceEnum;
 import com.dji.sdk.cloudapi.device.DeviceSubTypeEnum;
 import com.dji.sdk.cloudapi.device.DeviceTypeEnum;
+import com.dji.sdk.config.version.GatewayManager;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 

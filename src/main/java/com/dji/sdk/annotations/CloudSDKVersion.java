@@ -1,7 +1,7 @@
 package com.dji.sdk.annotations;
 
-import com.dji.sdk.common.CloudSDKVersionEnum;
-import com.dji.sdk.common.GatewayTypeEnum;
+import com.dji.sdk.config.version.CloudSDKVersionEnum;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 
 import java.lang.annotation.*;
 

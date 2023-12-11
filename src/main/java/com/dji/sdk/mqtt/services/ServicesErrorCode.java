@@ -43,6 +43,7 @@ public class ServicesErrorCode implements IErrorInfo {
         this.sourceCode = code;
         if (MqttReply.CODE_SUCCESS == code) {
             this.success = true;
+            this.errorCode = CommonErrorEnum.SUCCESS;
             return;
         }
         this.source = ErrorCodeSourceEnum.find(code / MOD);

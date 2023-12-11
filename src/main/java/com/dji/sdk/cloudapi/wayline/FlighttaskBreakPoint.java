@@ -35,33 +35,8 @@ public class FlighttaskBreakPoint {
     /**
      * Wayline ID
      */
-    private Integer waylineID;
-
-    /**
-     * Break reason
-     */
-    private FlighttaskBreakReasonEnum breakReason;
-
-    /**
-     * Breakpoint latitude
-     */
-    private Float latitude;
-
-    /**
-     * Breakpoint longitude
-     */
-    private Float longitude;
-
-    /**
-     * Breakpoint altitude relative to the Earth's ellipsoid surface
-     *
-     */
-    private Float height;
-
-    /**
-     * Yaw angle relative to true north (meridian), with positive values from 0 to 6 o'clock direction and negative values from 6 to 12 o'clock direction
-     */
-    private Integer attitudeHead;
+    @NotNull
+    private Integer waylineId;
 
     public FlighttaskBreakPoint() {}
 
@@ -71,12 +46,7 @@ public class FlighttaskBreakPoint {
                 "index=" + index +
                 ", state=" + state +
                 ", progress=" + progress +
-                ", waylineID=" + waylineID +
-                ", breakReason=" + breakReason +
-                ", latitude=" + latitude +
-                ", longitude=" + longitude +
-                ", height=" + height +
-                ", attitudeHead=" + attitudeHead +
+                ", waylineId=" + waylineId +
                 '}';
     }
 
@@ -107,57 +77,12 @@ public class FlighttaskBreakPoint {
         return this;
     }
 
-    public Integer getWaylineID() {
-        return waylineID;
+    public Integer getWaylineId() {
+        return waylineId;
     }
 
-    public FlighttaskBreakPoint setWaylineID(Integer waylineID) {
-        this.waylineID = waylineID;
-        return this;
-    }
-
-    public FlighttaskBreakReasonEnum getBreakReason() {
-        return breakReason;
-    }
-
-    public FlighttaskBreakPoint setBreakReason(FlighttaskBreakReasonEnum breakReason) {
-        this.breakReason = breakReason;
-        return this;
-    }
-
-    public Float getLatitude() {
-        return latitude;
-    }
-
-    public FlighttaskBreakPoint setLatitude(Float latitude) {
-        this.latitude = latitude;
-        return this;
-    }
-
-    public Float getLongitude() {
-        return longitude;
-    }
-
-    public FlighttaskBreakPoint setLongitude(Float longitude) {
-        this.longitude = longitude;
-        return this;
-    }
-
-    public Float getHeight() {
-        return height;
-    }
-
-    public FlighttaskBreakPoint setHeight(Float height) {
-        this.height = height;
-        return this;
-    }
-
-    public Integer getAttitudeHead() {
-        return attitudeHead;
-    }
-
-    public FlighttaskBreakPoint setAttitudeHead(Integer attitudeHead) {
-        this.attitudeHead = attitudeHead;
+    public FlighttaskBreakPoint setWaylineId(Integer waylineId) {
+        this.waylineId = waylineId;
         return this;
     }
 }

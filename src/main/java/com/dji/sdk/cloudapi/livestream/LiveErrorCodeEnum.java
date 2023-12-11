@@ -12,6 +12,8 @@ import java.util.Arrays;
  */
 public enum LiveErrorCodeEnum implements IServicesErrorCode, IErrorInfo {
 
+    SUCCESS(0, "Success"),
+
     NO_AIRCRAFT(13001, "No aircraft."),
 
     NO_CAMERA(13002, "No camera."),

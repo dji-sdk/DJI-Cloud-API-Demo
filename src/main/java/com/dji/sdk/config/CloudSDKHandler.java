@@ -2,6 +2,7 @@ package com.dji.sdk.config;
 
 import com.dji.sdk.annotations.CloudSDKVersion;
 import com.dji.sdk.common.*;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import org.aspectj.lang.JoinPoint;
@@ -25,7 +26,7 @@ import java.util.Objects;
 @Component
 public class CloudSDKHandler {
 
-    @Before("execution(public * com.dji.sdk.cloudapi.*.api.*.*(com.dji.sdk.common.GatewayManager, ..))")
+    @Before("execution(public * com.dji.sdk.cloudapi.*.api.*.*(com.dji.sdk.config.version.GatewayManager, ..))")
     public void checkCloudSDK(JoinPoint point) {
         GatewayManager deviceSDK = (GatewayManager) point.getArgs()[0];
         CloudSDKVersion since = ((MethodSignature) point.getSignature()).getMethod().getDeclaredAnnotation(CloudSDKVersion.class);
@@ -40,7 +41,7 @@ public class CloudSDKHandler {
         }
     }
 
-    @Before("execution(public * com.dji.sdk.cloudapi.*.api.*.*(com.dji.sdk.common.GatewayManager, com.dji.sdk.common.BaseModel+))")
+    @Before("execution(public * com.dji.sdk.cloudapi.*.api.*.*(com.dji.sdk.config.version.GatewayManager, com.dji.sdk.common.BaseModel+))")
     public void checkRequest(JoinPoint point) {
         Common.validateModel((BaseModel) point.getArgs()[1], (GatewayManager) point.getArgs()[0]);
     }

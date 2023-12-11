@@ -13,6 +13,8 @@ import java.util.Arrays;
  */
 public enum CommonErrorEnum implements IServicesErrorCode, IEventsErrorCode, IErrorInfo {
 
+    SUCCESS(0, "Success"),
+
     STATUS_NOT_SUPPORTED(314000, "The device is either uploading logs or executing a flight mission. Please try again later."),
 
     WRONG_PARAMETER(325001, "Cloud command parameter error. Dock unable to execute command."),
