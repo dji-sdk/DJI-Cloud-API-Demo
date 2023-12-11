@@ -11,7 +11,7 @@
 
     <groupId>com.dji</groupId>
     <artifactId>cloud-api-sample</artifactId>
-    <version>1.7.0</version>
+    <version>1.8.0</version>
     <name>cloud-api-sample</name>
 
     <properties>
@@ -180,6 +180,11 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!--		<dependency>-->
+        <!--			<groupId>io.springfox</groupId>-->
+        <!--			<artifactId>springfox-boot-starter</artifactId>-->
+        <!--			<version>3.0.0</version>-->
+        <!--		</dependency>-->
         <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui -->
         <dependency>
             <groupId>org.springdoc</groupId>

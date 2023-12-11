@@ -12,6 +12,8 @@ import com.dji.sample.wayline.model.entity.WaylineFileEntity;
 import com.dji.sample.wayline.service.IWaylineFileService;
 import com.dji.sdk.cloudapi.device.DeviceDomainEnum;
 import com.dji.sdk.cloudapi.device.DeviceEnum;
+import com.dji.sdk.cloudapi.device.DeviceSubTypeEnum;
+import com.dji.sdk.cloudapi.device.DeviceTypeEnum;
 import com.dji.sdk.cloudapi.wayline.GetWaylineListRequest;
 import com.dji.sdk.cloudapi.wayline.GetWaylineListResponse;
 import com.dji.sdk.cloudapi.wayline.WaylineTypeEnum;
@@ -206,21 +208,15 @@ public class WaylineFileServiceImpl implements IWaylineFileService {
                     throw new RuntimeException("The file format is incorrect.");
                 }
 
-                String type = droneNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_ENUM_VALUE);
-                String subType = droneNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_SUB_ENUM_VALUE);
-                String payloadType = payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_ENUM_VALUE);
-                String payloadSubType = payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_SUB_ENUM_VALUE);
+                DeviceTypeEnum type = DeviceTypeEnum.find(Integer.parseInt(droneNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_ENUM_VALUE)));
+                DeviceSubTypeEnum subType = DeviceSubTypeEnum.find(Integer.parseInt(droneNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_DRONE_SUB_ENUM_VALUE)));
+                DeviceTypeEnum payloadType = DeviceTypeEnum.find(Integer.parseInt(payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_ENUM_VALUE)));
+                DeviceSubTypeEnum payloadSubType = DeviceSubTypeEnum.find(Integer.parseInt(payloadNode.valueOf(KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_PAYLOAD_SUB_ENUM_VALUE)));
                 String templateType = document.valueOf("//" + KmzFileProperties.TAG_WPML_PREFIX + KmzFileProperties.TAG_TEMPLATE_TYPE);
 
-                if (!StringUtils.hasText(type) || !StringUtils.hasText(subType) ||
-                        !StringUtils.hasText(payloadSubType) || !StringUtils.hasText(payloadType) ||
-                        !StringUtils.hasText(templateType)) {
-                    throw new RuntimeException("The file format is incorrect.");
-                }
-
                 return Optional.of(WaylineFileDTO.builder()
-                        .droneModelKey(String.format("%s-%s-%s", DeviceDomainEnum.DRONE.getDomain(), type, subType))
-                        .payloadModelKeys(List.of(String.format("%s-%s-%s",DeviceDomainEnum.PAYLOAD.getDomain(), payloadType, payloadSubType)))
+                        .droneModelKey(DeviceEnum.find(DeviceDomainEnum.DRONE, type, subType).getDevice())
+                        .payloadModelKeys(List.of(DeviceEnum.find(DeviceDomainEnum.PAYLOAD, payloadType, payloadSubType).getDevice()))
                         .objectKey(OssConfiguration.objectDirPrefix + File.separator + filename)
                         .name(filename.substring(0, filename.lastIndexOf(WAYLINE_FILE_SUFFIX)))
                         .sign(DigestUtils.md5DigestAsHex(file.getInputStream()))

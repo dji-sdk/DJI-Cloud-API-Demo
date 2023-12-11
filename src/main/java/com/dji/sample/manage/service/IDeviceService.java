@@ -9,7 +9,7 @@ import com.dji.sdk.cloudapi.device.ControlSourceEnum;
 import com.dji.sdk.cloudapi.device.DeviceOsdHost;
 import com.dji.sdk.cloudapi.device.DockModeCodeEnum;
 import com.dji.sdk.cloudapi.device.DroneModeCodeEnum;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.common.HttpResultResponse;
 import com.dji.sdk.common.PaginationData;
 import com.fasterxml.jackson.databind.JsonNode;

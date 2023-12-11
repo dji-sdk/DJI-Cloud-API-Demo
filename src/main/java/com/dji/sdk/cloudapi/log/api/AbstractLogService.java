@@ -1,7 +1,7 @@
 package com.dji.sdk.cloudapi.log.api;
 
 import com.dji.sdk.cloudapi.log.*;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttReply;
 import com.dji.sdk.mqtt.events.EventsDataRequest;

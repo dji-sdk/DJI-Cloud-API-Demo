@@ -14,7 +14,7 @@ import com.dji.sdk.cloudapi.device.*;
 import com.dji.sdk.cloudapi.device.api.AbstractDeviceService;
 import com.dji.sdk.cloudapi.tsa.DeviceIconUrl;
 import com.dji.sdk.cloudapi.tsa.IconUrlEnum;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.common.SDKManager;
 import com.dji.sdk.mqtt.MqttReply;
 import com.dji.sdk.mqtt.osd.TopicOsdRequest;
@@ -99,7 +99,6 @@ public class SDKDeviceService extends AbstractDeviceService {
         // Subscribe to topic related to drone devices.
         deviceService.subDeviceOnlineSubscribeTopic(gatewayManager);
         deviceService.pushDeviceOnlineTopo(gateway.getWorkspaceId(), gateway.getDeviceSn(), subDevice.getDeviceSn());
-        deviceRedisService.setDeviceOnline(subDevice);
 
         log.debug("{} online.", subDevice.getDeviceSn());
         return new TopicStatusResponse<MqttReply>().setData(MqttReply.success());
@@ -143,14 +142,16 @@ public class SDKDeviceService extends AbstractDeviceService {
                 log.error("Please restart the drone.");
                 return;
             }
-
-            if (!StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
-                log.error("Please bind the dock first.");
-                return;
-            }
         }
 
         DeviceDTO device = deviceOpt.get();
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
+            log.error("Please bind the dock first.");
+        }
+        if (StringUtils.hasText(device.getChildDeviceSn())) {
+            deviceRedisService.getDeviceOnline(device.getChildDeviceSn()).ifPresent(device::setChildren);
+        }
+
         deviceRedisService.setDeviceOnline(device);
         fillDockOsd(from, request.getData());
 
@@ -193,6 +194,9 @@ public class SDKDeviceService extends AbstractDeviceService {
             }
         }
         DeviceDTO device = deviceOpt.get();
+        if (StringUtils.hasText(device.getChildDeviceSn())) {
+            deviceRedisService.getDeviceOnline(device.getChildDeviceSn()).ifPresent(device::setChildren);
+        }
         deviceRedisService.setDeviceOnline(device);
 
         OsdRemoteControl data = request.getData();
@@ -216,13 +220,12 @@ public class SDKDeviceService extends AbstractDeviceService {
                 return;
             }
         }
-        if (!StringUtils.hasText(deviceOpt.get().getWorkspaceId())) {
+        DeviceDTO device = deviceOpt.get();
+        deviceRedisService.setDeviceOnline(device);
+        if (!StringUtils.hasText(device.getWorkspaceId())) {
             log.error("Please bind the drone first.");
             return;
         }
-
-        DeviceDTO device = deviceOpt.get();
-        deviceRedisService.setDeviceOnline(device);
 
         OsdRcDrone data = request.getData();
         deviceService.pushOsdDataToPilot(device.getWorkspaceId(), from,
@@ -349,9 +352,10 @@ public class SDKDeviceService extends AbstractDeviceService {
         }
         if (!Objects.requireNonNullElse(subDevice.getBoundStatus(), false)) {
             // Directly bind the drone of the dock to the same workspace as the dock.
-            deviceService.bindDevice(DeviceDTO.builder().deviceSn(subDevice.getChildDeviceSn()).workspaceId(gateway.getWorkspaceId()).build());
+            deviceService.bindDevice(DeviceDTO.builder().deviceSn(subDevice.getDeviceSn()).workspaceId(gateway.getWorkspaceId()).build());
             subDevice.setWorkspaceId(gateway.getWorkspaceId());
         }
+        deviceRedisService.setDeviceOnline(subDevice);
     }
 
     private void changeSubDeviceParent(String deviceSn, String gatewaySn) {

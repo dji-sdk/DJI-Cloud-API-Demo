@@ -4,7 +4,7 @@ import com.dji.sdk.cloudapi.firmware.FirmwareMethodEnum;
 import com.dji.sdk.cloudapi.firmware.OtaCreateRequest;
 import com.dji.sdk.cloudapi.firmware.OtaCreateResponse;
 import com.dji.sdk.cloudapi.firmware.OtaProgress;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttReply;
 import com.dji.sdk.mqtt.events.EventsDataRequest;

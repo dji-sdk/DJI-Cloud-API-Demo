@@ -169,7 +169,7 @@ public class AbstractDeviceService {
      * @param request  data
      * @param headers   The headers for a {@link Message}.
      */
-    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_DOCK_WPMZ_VERSION)
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_STATE_DOCK_PAYLOAD)
     public void dockPayload(TopicStateRequest<DockPayload> request, MessageHeaders headers) {
         throw new UnsupportedOperationException("dockPayload not implemented");
     }

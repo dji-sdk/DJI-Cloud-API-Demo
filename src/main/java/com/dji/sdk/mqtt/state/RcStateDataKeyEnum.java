@@ -24,7 +24,7 @@ public enum RcStateDataKeyEnum {
 
     LIVE_STATUS(Set.of("live_status"), RcLiveStatus.class),
 
-    PAYLOAD_FIRMWARE(PayloadModelEnum.getAllModelWithPosition(), PayloadFirmwareVersion.class),
+    PAYLOAD_FIRMWARE(PayloadModelConst.getAllModelWithPosition(), PayloadFirmwareVersion.class),
     ;
 
     private final Set<String> keys;

@@ -13,11 +13,17 @@ import java.util.Arrays;
  */
 public enum NetworkStateQualityEnum {
 
-    BAD(0),
+    NO_SIGNAL(0),
 
-    MODERATE(1),
+    BAD(1),
 
-    GOOD(2),
+    POOR(2),
+
+    FAIR(3),
+
+    GOOD(4),
+
+    EXCELLENT(5),
     ;
 
     private final int quality;

@@ -19,7 +19,7 @@ public enum DeviceTypeEnum {
 
     M300(60),
 
-    M30(67),
+    M30_OR_M3T_CAMERA(67),
 
     M3E(77),
 
@@ -49,8 +49,6 @@ public enum DeviceTypeEnum {
 
     M3E_CAMERA(66),
 
-    M3T_CAMERA(67),
-
     M3M_CAMERA(68),
 
     RC(56),
@@ -59,7 +57,15 @@ public enum DeviceTypeEnum {
 
     RC_PRO(144),
 
-    DOCK(1)
+    DOCK(1),
+
+    DOCK2(2),
+
+    M3D(91),
+
+    M3D_CAMERA(80),
+
+    M3TD_CAMERA(81),
     ;
 
     private final int type;

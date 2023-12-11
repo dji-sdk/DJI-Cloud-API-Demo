@@ -26,7 +26,7 @@ public enum DockStateDataKeyEnum {
 
     WPMZ_VERSION(Set.of("wpmz_version"), DockWpmzVersion.class),
 
-    PAYLOAD(PayloadModelEnum.getAllIndexWithPosition(), DockPayload.class)
+    PAYLOAD(PayloadModelConst.getAllIndexWithPosition(), DockPayload.class)
     ;
 
     private final Set<String> keys;

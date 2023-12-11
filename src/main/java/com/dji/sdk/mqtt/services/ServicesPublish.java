@@ -34,6 +34,10 @@ public class ServicesPublish {
         return this.publish(clazz, sn, method, data, retryCount, MqttGatewayPublish.DEFAULT_RETRY_TIMEOUT);
     }
 
+    public <T> TopicServicesResponse<ServicesReplyData<T>>  publish(TypeReference<T> clazz, String sn, String method, Object data, long timeout) {
+        return this.publish(clazz, sn, method, data, MqttGatewayPublish.DEFAULT_RETRY_COUNT, timeout);
+    }
+
     public <T> TopicServicesResponse<ServicesReplyData<T>>  publish(TypeReference<T> clazz, String sn, String method, Object data, int retryCount, long timeout) {
         return this.publish(clazz, sn, method, data, null, retryCount, timeout);
     }
@@ -46,12 +50,28 @@ public class ServicesPublish {
         return this.publish(sn, method, data, null);
     }
 
+    public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, int retryCount) {
+        return this.publish(sn, method, data, null, retryCount);
+    }
+
+    public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, long timeout) {
+        return this.publish(sn, method, data, null, timeout);
+    }
+
+    public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, int retryCount, long timeout) {
+        return this.publish(sn, method, data, null, retryCount, timeout);
+    }
+
     public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, String bid) {
         return this.publish(sn, method, data, bid, MqttGatewayPublish.DEFAULT_RETRY_COUNT);
     }
 
     public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, String bid, int retryCount) {
         return this.publish(sn, method, data, bid, retryCount, MqttGatewayPublish.DEFAULT_RETRY_TIMEOUT);
+    }
+
+    public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, String bid, long timeout) {
+        return this.publish(sn, method, data, bid, MqttGatewayPublish.DEFAULT_RETRY_COUNT, timeout);
     }
 
     public TopicServicesResponse<ServicesReplyData> publish(String sn, String method, Object data, String bid, int retryCount, long timeout) {

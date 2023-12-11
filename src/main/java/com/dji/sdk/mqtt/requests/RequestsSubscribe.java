@@ -1,6 +1,6 @@
 package com.dji.sdk.mqtt.requests;
 
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.mqtt.IMqttTopicService;
 import com.dji.sdk.mqtt.TopicConst;
 import org.springframework.stereotype.Component;

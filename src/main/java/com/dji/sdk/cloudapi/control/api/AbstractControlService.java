@@ -4,9 +4,9 @@ import com.dji.sdk.annotations.CloudSDKVersion;
 import com.dji.sdk.cloudapi.control.*;
 import com.dji.sdk.common.BaseModel;
 import com.dji.sdk.common.Common;
-import com.dji.sdk.common.GatewayManager;
-import com.dji.sdk.common.GatewayTypeEnum;
-import com.dji.sdk.exception.CloudSDKErrorEnum;
+import com.dji.sdk.common.SpringBeanUtils;
+import com.dji.sdk.config.version.GatewayManager;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttReply;
@@ -23,7 +23,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 import javax.annotation.Resource;
-import java.util.Objects;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * @author sean
@@ -278,16 +279,17 @@ public abstract class AbstractControlService {
      * @param request   data
      * @return  services_reply
      */
-    @CloudSDKVersion(exclude = GatewayTypeEnum.RC)
     public TopicServicesResponse<ServicesReplyData> payloadControl(GatewayManager gateway, PayloadControlMethodEnum methodEnum, BaseModel request) {
-        if (Objects.isNull(request) || request.getClass() != methodEnum.getClazz()) {
-            throw new CloudSDKException(CloudSDKErrorEnum.INVALID_PARAMETER);
+        try {
+            AbstractControlService abstractControlService = SpringBeanUtils.getBean(this.getClass());
+            Method method = abstractControlService.getClass().getDeclaredMethod(
+                    Common.convertSnake(methodEnum.getPayloadMethod().getMethod()),GatewayManager.class, methodEnum.getClazz());
+            return (TopicServicesResponse<ServicesReplyData>) method.invoke(abstractControlService, gateway, request);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new CloudSDKException(e);
+        } catch (InvocationTargetException e) {
+            throw new CloudSDKException(e.getTargetException());
         }
-        Common.validateModel(request);
-        return servicesPublish.publish(
-                gateway.getGatewaySn(),
-                methodEnum.getPayloadMethod().getMethod(),
-                request);
     }
 
 

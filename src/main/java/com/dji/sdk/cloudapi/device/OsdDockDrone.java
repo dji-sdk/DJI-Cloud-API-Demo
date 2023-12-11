@@ -49,7 +49,7 @@ public class OsdDockDrone {
 
     private DronePositionState positionState;
 
-    @JsonProperty(PayloadModelEnum.PAYLOAD_KEY)
+    @JsonProperty(PayloadModelConst.PAYLOAD_KEY)
     private List<DockDronePayload> payloads;
 
     private Storage storage;

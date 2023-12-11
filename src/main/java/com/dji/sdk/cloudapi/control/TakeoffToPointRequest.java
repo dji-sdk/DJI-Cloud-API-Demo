@@ -5,7 +5,7 @@ import com.dji.sdk.cloudapi.device.ExitWaylineWhenRcLostEnum;
 import com.dji.sdk.cloudapi.device.RcLostActionEnum;
 import com.dji.sdk.cloudapi.wayline.RthModeEnum;
 import com.dji.sdk.common.BaseModel;
-import com.dji.sdk.common.CloudSDKVersionEnum;
+import com.dji.sdk.config.version.CloudSDKVersionEnum;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;

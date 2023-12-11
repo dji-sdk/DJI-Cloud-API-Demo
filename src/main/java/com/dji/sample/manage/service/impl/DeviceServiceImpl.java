@@ -24,6 +24,7 @@ import com.dji.sdk.cloudapi.property.api.AbstractPropertyService;
 import com.dji.sdk.cloudapi.tsa.DeviceIconUrl;
 import com.dji.sdk.cloudapi.tsa.TopologyDeviceModel;
 import com.dji.sdk.common.*;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.IMqttTopicService;
 import com.dji.sdk.mqtt.MqttGatewayPublish;

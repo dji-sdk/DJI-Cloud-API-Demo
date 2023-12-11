@@ -1,7 +1,7 @@
 package com.dji.sdk.cloudapi.livestream.api;
 
 import com.dji.sdk.cloudapi.livestream.*;
-import com.dji.sdk.common.GatewayManager;
+import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.services.ServicesPublish;
 import com.dji.sdk.mqtt.services.ServicesReplyData;
@@ -23,6 +23,8 @@ public abstract class AbstractLivestreamService {
 
     @Resource
     private ServicesPublish servicesPublish;
+
+    private static final long DEFAULT_TIMEOUT = 20_000;
 
     /**
      * Livestream ability update for remote control
@@ -55,7 +57,8 @@ public abstract class AbstractLivestreamService {
                 new TypeReference<String>() {},
                 gateway.getGatewaySn(),
                 LiveStreamMethodEnum.LIVE_START_PUSH.getMethod(),
-                request);
+                request,
+                DEFAULT_TIMEOUT);
     }
 
     /**
@@ -68,7 +71,8 @@ public abstract class AbstractLivestreamService {
         return servicesPublish.publish(
                 gateway.getGatewaySn(),
                 LiveStreamMethodEnum.LIVE_STOP_PUSH.getMethod(),
-                request);
+                request,
+                DEFAULT_TIMEOUT);
     }
 
     /**
@@ -81,7 +85,8 @@ public abstract class AbstractLivestreamService {
         return servicesPublish.publish(
                 gateway.getGatewaySn(),
                 LiveStreamMethodEnum.LIVE_SET_QUALITY.getMethod(),
-                request);
+                request,
+                DEFAULT_TIMEOUT);
     }
 
     /**
@@ -94,7 +99,8 @@ public abstract class AbstractLivestreamService {
         return servicesPublish.publish(
                 gateway.getGatewaySn(),
                 LiveStreamMethodEnum.LIVE_LENS_CHANGE.getMethod(),
-                request);
+                request,
+                DEFAULT_TIMEOUT);
     }
 
 

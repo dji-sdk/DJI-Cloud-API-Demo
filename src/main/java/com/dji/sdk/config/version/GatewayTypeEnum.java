@@ -1,4 +1,4 @@
-package com.dji.sdk.common;
+package com.dji.sdk.config.version;
 
 import com.dji.sdk.cloudapi.device.DeviceEnum;
 import com.dji.sdk.exception.CloudSDKException;
@@ -14,7 +14,10 @@ public enum GatewayTypeEnum {
 
     RC(DeviceEnum.RC, DeviceEnum.RC_PLUS, DeviceEnum.RC_PRO),
 
-    DOCK(DeviceEnum.DOCK);
+    DOCK(DeviceEnum.DOCK),
+
+    DOCK2(DeviceEnum.DOCK2),
+    ;
 
     private final DeviceEnum[] gateway;
 

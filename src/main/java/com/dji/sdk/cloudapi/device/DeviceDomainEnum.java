@@ -22,7 +22,9 @@ public enum DeviceDomainEnum {
 
     REMOTER_CONTROL(2),
 
-    DOCK (3);
+    DOCK (3),
+
+    ;
 
     private final int domain;
 

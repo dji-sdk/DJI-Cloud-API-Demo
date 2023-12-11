@@ -15,7 +15,7 @@ public class FlighttaskProgressExt {
 
     private String trackId;
 
-    private FlighttaskBreakPoint breakPoint;
+    private ProgressExtBreakPoint breakPoint;
 
     public FlighttaskProgressExt() {
     }
@@ -67,11 +67,11 @@ public class FlighttaskProgressExt {
         return this;
     }
 
-    public FlighttaskBreakPoint getBreakPoint() {
+    public ProgressExtBreakPoint getBreakPoint() {
         return breakPoint;
     }
 
-    public FlighttaskProgressExt setBreakPoint(FlighttaskBreakPoint breakPoint) {
+    public FlighttaskProgressExt setBreakPoint(ProgressExtBreakPoint breakPoint) {
         this.breakPoint = breakPoint;
         return this;
     }

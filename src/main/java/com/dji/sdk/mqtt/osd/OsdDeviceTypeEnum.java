@@ -4,11 +4,14 @@ import com.dji.sdk.cloudapi.device.OsdDock;
 import com.dji.sdk.cloudapi.device.OsdDockDrone;
 import com.dji.sdk.cloudapi.device.OsdRcDrone;
 import com.dji.sdk.cloudapi.device.OsdRemoteControl;
-import com.dji.sdk.common.GatewayTypeEnum;
+import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.exception.CloudSDKException;
 import com.dji.sdk.mqtt.ChannelName;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author sean
@@ -17,30 +20,30 @@ import java.util.Arrays;
  */
 public enum OsdDeviceTypeEnum {
 
-    RC(true, GatewayTypeEnum.RC, OsdRemoteControl.class, ChannelName.INBOUND_OSD_RC),
+    RC(true, OsdRemoteControl.class, ChannelName.INBOUND_OSD_RC, GatewayTypeEnum.RC),
 
-    DOCK(true, GatewayTypeEnum.DOCK, OsdDock.class, ChannelName.INBOUND_OSD_DOCK),
+    DOCK(true, OsdDock.class, ChannelName.INBOUND_OSD_DOCK, GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2),
 
-    RC_DRONE(false, GatewayTypeEnum.RC, OsdRcDrone.class, ChannelName.INBOUND_OSD_RC_DRONE),
+    RC_DRONE(false, OsdRcDrone.class, ChannelName.INBOUND_OSD_RC_DRONE, GatewayTypeEnum.RC),
 
-    DOCK_DRONE(false, GatewayTypeEnum.DOCK, OsdDockDrone.class, ChannelName.INBOUND_OSD_DOCK_DRONE);
+    DOCK_DRONE(false, OsdDockDrone.class, ChannelName.INBOUND_OSD_DOCK_DRONE, GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2);
 
     private final boolean gateway;
 
-    private final GatewayTypeEnum gatewayType;
+    private final Set<GatewayTypeEnum> gatewayType = new HashSet<>();
 
     private final Class classType;
 
     private final String channelName;
 
-    OsdDeviceTypeEnum(boolean gateway, GatewayTypeEnum gatewayType, Class classType, String channelName) {
+    OsdDeviceTypeEnum(boolean gateway, Class classType, String channelName, GatewayTypeEnum... gatewayType) {
         this.gateway = gateway;
-        this.gatewayType = gatewayType;
         this.classType = classType;
         this.channelName = channelName;
+        Collections.addAll(this.gatewayType, gatewayType);
     }
 
-    public GatewayTypeEnum getGatewayType() {
+    public Set<GatewayTypeEnum> getGatewayType() {
         return gatewayType;
     }
 
@@ -57,7 +60,7 @@ public enum OsdDeviceTypeEnum {
     }
 
     public static OsdDeviceTypeEnum find(GatewayTypeEnum gatewayType, boolean isGateway) {
-        return Arrays.stream(values()).filter(osdEnum -> osdEnum.gatewayType == gatewayType && osdEnum.gateway == isGateway).findAny()
+        return Arrays.stream(values()).filter(osdEnum -> osdEnum.gatewayType.contains(gatewayType) && osdEnum.gateway == isGateway).findAny()
             .orElseThrow(() -> new CloudSDKException(OsdDeviceTypeEnum.class, gatewayType, isGateway));
     }
 
