@@ -10,15 +10,39 @@ import com.dji.sdk.exception.CloudSDKErrorEnum;
 import com.dji.sdk.exception.CloudSDKException;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author sean
  * @version 1.7
  * @date 2023/5/19
+ *
+ * fix: 改接口,由客户决定Gateway管理策略 witcom@2023.09.25
  */
-public class SDKManager {
+public interface SDKManager {
 
+    default GatewayManager getDeviceSDK(String gatewaySn){
+        return findDeviceSDK(gatewaySn)
+                .orElseThrow(()-> new CloudSDKException(CloudSDKErrorEnum.NOT_REGISTERED,
+                        "The device has not been registered, please call the 'SDKManager.registerDevice()' method to register the device first."));
+    }
+
+    Optional<GatewayManager> findDeviceSDK(String gatewaySn);
+    default GatewayManager registerDevice(String gatewaySn, String droneSn,
+                                          DeviceDomainEnum domain, DeviceTypeEnum type, DeviceSubTypeEnum subType, String gatewayThingVersion, String droneThingVersion){
+        return registerDevice(gatewaySn, droneSn, GatewayTypeEnum.find(DeviceEnum.find(domain, type, subType)), gatewayThingVersion, droneThingVersion);
+    }
+
+    default GatewayManager registerDevice(String gatewaySn, String droneSn, GatewayTypeEnum type, String gatewayThingVersion, String droneThingVersion){
+        return registerDevice(new GatewayManager(Objects.requireNonNull(gatewaySn), droneSn, type, gatewayThingVersion, droneThingVersion));
+    }
+
+    GatewayManager registerDevice(GatewayManager gateway);
+
+    void logoutDevice(String gatewaySn);
+
+/*
     private SDKManager() {
     }
 
@@ -30,6 +54,14 @@ public class SDKManager {
         }
         throw new CloudSDKException(CloudSDKErrorEnum.NOT_REGISTERED,
                 "The device has not been registered, please call the 'SDKManager.registerDevice()' method to register the device first.");
+    }
+
+    public static Optional<GatewayManager> findDeviceSDK(String gatewaySn) {
+        if(SDK_MAP.containsKey(gatewaySn)){
+            return Optional.of(SDK_MAP.get(gatewaySn));
+        }else {
+            return Optional.empty();
+        }
     }
 
     public static GatewayManager registerDevice(String gatewaySn, String droneSn,
@@ -49,4 +81,6 @@ public class SDKManager {
     public static void logoutDevice(String gatewaySn) {
         SDK_MAP.remove(gatewaySn);
     }
+
+ */
 }

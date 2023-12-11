@@ -46,6 +46,9 @@ public class LiveStreamServiceImpl implements ILiveStreamService {
     @Autowired
     private AbstractLivestreamService abstractLivestreamService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     @Override
     public List<CapacityDeviceDTO> getLiveCapacity(String workspaceId) {
 

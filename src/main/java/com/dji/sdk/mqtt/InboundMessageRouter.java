@@ -37,7 +37,10 @@ public class InboundMessageRouter extends AbstractMessageRouter {
         String topic = headers.get(MqttHeaders.RECEIVED_TOPIC).toString();
         byte[] payload = (byte[])message.getPayload();
 
-        log.debug("received topic: {} \t payload =>{}", topic, new String(payload));
+        //fix: 修复未启动debug时仍然需要构造debug参数的问题 by witcom@2023.09.22
+        if(log.isDebugEnabled()) {
+            log.debug("received topic: {} \t payload =>{}", topic, new String(payload));
+        }
 
         CloudApiTopicEnum topicEnum = CloudApiTopicEnum.find(topic);
         MessageChannel bean = (MessageChannel) SpringBeanUtils.getBean(topicEnum.getBeanName());

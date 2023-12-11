@@ -63,6 +63,9 @@ public class FlightTaskServiceImpl extends AbstractWaylineService implements IFl
     private ObjectMapper mapper;
 
     @Autowired
+    SDKManager SDKManager;
+
+    @Autowired
     private IWebSocketMessageService websocketMessageService;
 
     @Autowired

@@ -24,12 +24,10 @@ public class FlighttaskBreakPoint {
     @NotNull
     private BreakpointStateEnum state;
 
-    /**
-     * Current wayline segment process
-     */
-    @NotNull
-    @Min(0)
-    @Max(1)
+
+//    @NotNull
+//    @Min(0)
+//    @Max(1)
     private Float progress;
 
     /**

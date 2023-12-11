@@ -52,15 +52,16 @@ public enum ExecutionStepEnum {
         return msg;
     }
 
+    //witcom: 这个函数跑不进来,跑了下面的函数,导致FlightTaskProgress报不上来
     @JsonCreator
     public static ExecutionStepEnum find(int step) {
         return Arrays.stream(values()).filter(stepEnum -> stepEnum.min <= step && stepEnum.max >= step).findAny()
                 .orElseThrow(() -> new CloudSDKException(ExecutionStepEnum.class, step));
     }
 
-    @JsonCreator
-    public static ExecutionStepEnum find(String msg) {
-        return Arrays.stream(values()).filter(stepEnum -> stepEnum.msg.equals(msg)).findAny()
-                .orElseThrow(() -> new CloudSDKException(ExecutionStepEnum.class, msg));
-    }
+//    @JsonCreator
+//    public static ExecutionStepEnum find(String msg) {
+//        return Arrays.stream(values()).filter(stepEnum -> stepEnum.msg.equals(msg)).findAny()
+//                .orElseThrow(() -> new CloudSDKException(ExecutionStepEnum.class, msg));
+//    }
 }

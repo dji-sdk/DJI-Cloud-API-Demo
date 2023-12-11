@@ -13,6 +13,8 @@ import java.util.Arrays;
  */
 public enum CameraModeEnum {
 
+    //fix: Cannot construct instance of `com.dji.sdk.cloudapi.device.CameraModeEnum`, problem: com.dji.sdk.cloudapi.device.CameraModeEnum has unknown data: [-1] vincent @ 2023.12.07
+    UNKNOWN(-1),
     PHOTO(0),
 
     VIDEO(1);
