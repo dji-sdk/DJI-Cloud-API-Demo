@@ -12,7 +12,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;

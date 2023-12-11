@@ -2,8 +2,8 @@ package com.dji.sdk.cloudapi.wayline;
 
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

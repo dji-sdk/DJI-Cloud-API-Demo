@@ -15,7 +15,7 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.mqtt.support.MqttHeaders;
 import org.springframework.messaging.Message;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.io.IOException;
 import java.util.*;
 

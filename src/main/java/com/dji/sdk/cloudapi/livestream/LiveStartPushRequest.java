@@ -3,8 +3,8 @@ package com.dji.sdk.cloudapi.livestream;
 import com.dji.sdk.cloudapi.device.VideoId;
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

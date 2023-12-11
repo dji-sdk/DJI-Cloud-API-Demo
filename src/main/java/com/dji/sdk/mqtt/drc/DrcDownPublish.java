@@ -4,7 +4,7 @@ import com.dji.sdk.mqtt.MqttGatewayPublish;
 import com.dji.sdk.mqtt.TopicConst;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Objects;
 
 /**

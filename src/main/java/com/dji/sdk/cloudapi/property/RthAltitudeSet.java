@@ -3,9 +3,9 @@ package com.dji.sdk.cloudapi.property;
 import com.dji.sdk.common.BaseModel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

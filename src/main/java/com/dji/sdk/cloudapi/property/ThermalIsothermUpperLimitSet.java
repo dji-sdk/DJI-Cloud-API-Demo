@@ -4,8 +4,8 @@ import com.dji.sdk.cloudapi.device.PayloadIndex;
 import com.dji.sdk.common.BaseModel;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.Map;
 
 /**

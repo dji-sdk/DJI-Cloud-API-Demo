@@ -17,7 +17,7 @@ import com.dji.sdk.mqtt.services.TopicServicesResponse;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * @author sean

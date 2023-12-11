@@ -3,8 +3,8 @@ package com.dji.sdk.cloudapi.tsa;
 import com.dji.sdk.common.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 /**

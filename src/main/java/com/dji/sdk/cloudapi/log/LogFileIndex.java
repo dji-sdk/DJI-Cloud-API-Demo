@@ -1,6 +1,6 @@
 package com.dji.sdk.cloudapi.log;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean
