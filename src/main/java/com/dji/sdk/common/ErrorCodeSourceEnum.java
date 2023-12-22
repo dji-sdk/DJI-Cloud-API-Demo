@@ -14,6 +14,9 @@ import java.util.Arrays;
  */
 public enum ErrorCodeSourceEnum {
 
+    //fix: Cannot construct instance of `com.dji.sdk.cloudapi.device.DockLiveErrorStatus`, problem: com.dji.sdk.common.ErrorCodeSourceEnum has unknown data: [0]
+    UNKNOWN(0),
+
     DEVICE(3),
 
     DOCK(5),
