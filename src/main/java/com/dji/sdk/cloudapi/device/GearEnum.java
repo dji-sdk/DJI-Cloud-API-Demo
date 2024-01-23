@@ -32,7 +32,8 @@ public enum GearEnum {
     G(8),
 
     T(9),
-    ;
+    //problem: com.dji.sdk.cloudapi.device.GearEnum has unknown data: [65535]
+    UNKNOWN(65535);
 
     private final int gear;
 
