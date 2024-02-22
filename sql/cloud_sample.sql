@@ -11,6 +11,65 @@ SET NAMES utf8mb4;
 
 
 
+# device_flight_area
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `device_flight_area`;
+
+CREATE TABLE `device_flight_area` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `device_sn` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `file_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `sync_status` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `sync_code` int NOT NULL DEFAULT '0',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+
+
+# flight_area_file
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `flight_area_file`;
+
+CREATE TABLE `flight_area_file` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `file_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `workspace_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `object_key` varchar(1000) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `sign` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'sha256',
+  `size` int NOT NULL,
+  `latest` tinyint(1) NOT NULL COMMENT 'The latest version？',
+  `create_time` bigint NOT NULL,
+  `update_time` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNI_FILE_ID` (`file_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+
+
+# flight_area_property
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `flight_area_property`;
+
+CREATE TABLE `flight_area_property` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `element_id` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
+  `type` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'dfence/nfz',
+  `enable` tinyint(1) NOT NULL,
+  `sub_type` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'options: Circle ',
+  `radius` int NOT NULL DEFAULT '0' COMMENT 'unit: cm',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNI_AREA_ID` (`element_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+
+
 
 # logs_file
 # ------------------------------------------------------------
@@ -361,7 +420,8 @@ LOCK TABLES `map_group` WRITE;
 INSERT INTO `map_group` (`id`, `group_id`, `group_name`, `group_type`, `workspace_id`, `is_distributed`, `is_lock`, `create_time`, `update_time`)
 VALUES
 	(1,'e3dea0f5-37f2-4d79-ae58-490af3228060','Pilot Share Layer',2,'e3dea0f5-37f2-4d79-ae58-490af3228069',1,0,1638330077356,1638330077356),
-	(2,'e3dea0f5-37f2-4d79-ae58-490af3228011','Default Layer',1,'e3dea0f5-37f2-4d79-ae58-490af3228069',1,0,1638330077356,1638330077356);
+	(2,'e3dea0f5-37f2-4d79-ae58-490af3228011','Default Layer',1,'e3dea0f5-37f2-4d79-ae58-490af3228069',1,0,1638330077356,1638330077356),
+	(3,'d58479c8-4a80-4036-aa55-8beffb7158e9','Custom Flight Area',0,'e3dea0f5-37f2-4d79-ae58-490af3228069',1,0,1638330077356,1638330077356);
 
 /*!40000 ALTER TABLE `map_group` ENABLE KEYS */;
 UNLOCK TABLES;

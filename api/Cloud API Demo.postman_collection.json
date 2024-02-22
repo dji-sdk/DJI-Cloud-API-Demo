@@ -1050,6 +1050,150 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Get Flight Areas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/flight-areas",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"flight-areas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Flight Area",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"123\",\r\n    \"type\": \"dfence\",\r\n    \"content\": {\r\n        \"properties\": {\r\n            \"clampToGround\": true,\r\n            \"color\": \"#FF0000\"\r\n        },\r\n        \"geometry\": {\r\n            \"type\": \"Circle\",\r\n            \"coordinates\": [\r\n                25.41512807678825,\r\n                4.642350757553345\r\n            ],\r\n            \"radius\": 12.2\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/flight-area",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"flight-area"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Flight Area",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"123\",\r\n    \"status\": false,\r\n    \"content\": {\r\n        \"properties\": {\r\n            \"clampToGround\": true,\r\n            \"color\": \"#FF0000\"\r\n        },\r\n        \"geometry\": {\r\n            \"type\": \"Circle\",\r\n            \"coordinates\": [\r\n                25.41512807678825,\r\n                4.642350757553345\r\n            ],\r\n            \"radius\": 12.2\r\n        }\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/flight-area/{{area_id}}",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"flight-area",
+								"{{area_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Flight Area",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/flight-area/{{area_id}}",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"flight-area",
+								"{{area_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Device Flight Area",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"device_sn\": [\"123\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/flight-area/sync",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"flight-area",
+								"sync"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Device Flight Area Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}{{map_version}}/workspaces/{{workspace_id}}/device-status",
+							"host": [
+								"{{base_url}}{{map_version}}"
+							],
+							"path": [
+								"workspaces",
+								"{{workspace_id}}",
+								"device-status"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"auth": {
@@ -1411,7 +1555,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?ids=uuid,uuid1",
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?id=uuid,uuid1",
 							"host": [
 								"{{base_url}}{{wayline_version}}"
 							],
@@ -1422,7 +1566,7 @@
 							],
 							"query": [
 								{
-									"key": "ids",
+									"key": "id",
 									"value": "uuid,uuid1"
 								}
 							]
@@ -1436,7 +1580,7 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?ids=uuid,uuid1",
+							"raw": "{{base_url}}{{wayline_version}}/workspaces/{{workspace_id}}/favorites?id=uuid,uuid1",
 							"host": [
 								"{{base_url}}{{wayline_version}}"
 							],
@@ -1447,7 +1591,7 @@
 							],
 							"query": [
 								{
-									"key": "ids",
+									"key": "id",
 									"value": "uuid,uuid1"
 								}
 							]
