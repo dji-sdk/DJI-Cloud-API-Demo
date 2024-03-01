@@ -11,6 +11,8 @@ import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.config.version.GatewayTypeEnum;
 import com.dji.sdk.mqtt.ChannelName;
 import com.dji.sdk.mqtt.MqttReply;
+import com.dji.sdk.mqtt.events.TopicEventsRequest;
+import com.dji.sdk.mqtt.events.TopicEventsResponse;
 import com.dji.sdk.mqtt.requests.TopicRequestsRequest;
 import com.dji.sdk.mqtt.requests.TopicRequestsResponse;
 import com.dji.sdk.mqtt.services.ServicesPublish;
@@ -66,7 +68,8 @@ public abstract class AbstractOfflineMapService {
      */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_OFFLINE_MAP_SYNC_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
     @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_1, include = GatewayTypeEnum.DOCK2)
-    public TopicRequestsResponse<MqttReply> offlineMapSyncProgress(TopicRequestsRequest<OfflineMapSyncProgress> request, MessageHeaders headers) {
+    //fix: SpelEvaluationException: EL1004E: Method call: Method offlineMapSyncProgress(com.dji.sdk.mqtt.events.TopicEventsRequest,org.springframework.messaging.MessageHeaders) cannot be found on type
+    public TopicEventsResponse<MqttReply> offlineMapSyncProgress(TopicEventsRequest<OfflineMapSyncProgress> request, MessageHeaders headers) {
         throw new UnsupportedOperationException("offlineMapSyncProgress not implemented");
     }
 
