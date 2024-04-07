@@ -19,6 +19,8 @@ public enum LensStorageSettingsEnum {
 
     WIDE("wide"),
 
+    VISION("vision"),
+
     INFRARED("ir");
 
     private final String lens;
