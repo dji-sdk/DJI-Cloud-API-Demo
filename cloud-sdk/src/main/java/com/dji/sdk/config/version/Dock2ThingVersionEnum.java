@@ -14,6 +14,8 @@ public enum Dock2ThingVersionEnum implements IThingVersion {
 
     V1_1_2("1.1.2", CloudSDKVersionEnum.V1_0_1),
 
+    V1_2_0("1.2.0", CloudSDKVersionEnum.V1_0_3),
+
     ;
 
     private final String thingVersion;

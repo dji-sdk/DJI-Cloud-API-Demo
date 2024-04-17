@@ -35,7 +35,7 @@ public abstract class AbstractFlightAreaService {
      * @param gateway   gateway device
      * @return  services_reply
      */
-    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_0, exclude = GatewayTypeEnum.RC, include = GatewayTypeEnum.DOCK)
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_0, exclude = GatewayTypeEnum.RC, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
     public TopicServicesResponse<ServicesReplyData> flightAreasUpdate(GatewayManager gateway) {
         return servicesPublish.publish(
                 gateway.getGatewaySn(),

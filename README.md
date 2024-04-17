@@ -14,7 +14,7 @@ For more documentation, please visit the [DJI Developer Documentation](https://d
 
 ## Latest Release
 
-Cloud API 1.9.0 was released on 22 Feb 2024. For more information, please visit the [Release Note](https://developer.dji.com/doc/cloud-api-tutorial/cn/).
+Cloud API 1.10.0 was released on 7 Apr 2024. For more information, please visit the [Release Note](https://developer.dji.com/doc/cloud-api-tutorial/cn/).
 
 ## License
 

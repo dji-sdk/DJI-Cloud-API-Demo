@@ -23,6 +23,8 @@ public enum DroneThingVersionEnum implements IThingVersion {
 
     V1_1_3("1.1.3", CloudSDKVersionEnum.V1_0_2),
 
+    V1_2_0("1.2.0", CloudSDKVersionEnum.V1_0_3),
+
     ;
 
     private static final Logger log = LoggerFactory.getLogger(DroneThingVersionEnum.class);
