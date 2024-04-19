@@ -52,6 +52,7 @@ public enum PayloadControlMethodEnum {
 
     CAMERA_POINT_FOCUS_ACTION(ControlMethodEnum.CAMERA_POINT_FOCUS_ACTION, CameraPointFocusActionRequest.class),
 
+    CAMERA_FRAME_ZOOM(ControlMethodEnum.CAMERA_FRAME_ZOOM, CameraFrameZoomRequest.class)
     ;
 
     private final ControlMethodEnum payloadMethod;

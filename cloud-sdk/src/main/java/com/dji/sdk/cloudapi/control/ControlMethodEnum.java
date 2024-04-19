@@ -62,6 +62,7 @@ public enum ControlMethodEnum {
     IR_METERING_AREA_SET("ir_metering_area_set"),
 
     CAMERA_POINT_FOCUS_ACTION("camera_point_focus_action"),
+    CAMERA_FRAME_ZOOM("camera_frame_zoom"),
 
     DRONE_CONTROL("drone_control"),
 
