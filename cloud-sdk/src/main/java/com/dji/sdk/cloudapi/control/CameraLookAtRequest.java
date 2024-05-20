@@ -95,4 +95,24 @@ public class CameraLookAtRequest extends BaseModel {
         this.height = height;
         return this;
     }
+
+    public PayloadIndex getPayloadIndex() {
+        return payloadIndex;
+    }
+
+    public Boolean getLocked() {
+        return locked;
+    }
+
+    public Float getLatitude() {
+        return latitude;
+    }
+
+    public Float getLongitude() {
+        return longitude;
+    }
+
+    public Float getHeight() {
+        return height;
+    }
 }
