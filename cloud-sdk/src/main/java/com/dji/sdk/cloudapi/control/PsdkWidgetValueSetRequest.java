@@ -1,26 +1,31 @@
 /*************************************************
  * @copyright 2017 Flision Corporation Inc.
  * @author: Vincent Chan @ Canton
- * @date: 2024年06月03日
+ * @date: 2024年06月04日
  * @version: 1.0.0
  * @description:
  **************************************************/
 package com.dji.sdk.cloudapi.control;
 
 import com.dji.sdk.common.BaseModel;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-public class SpeakerPlayVolumeSetRequest extends BaseModel {
+public class PsdkWidgetValueSetRequest extends BaseModel {
+
+    @NotNull
+    Integer index;
 
     @NotNull
     Integer psdkIndex;
+    Integer value;
 
-    @NotNull
-    @Min(0)
-    @Max(100)
-    Integer playVolume;
+    public Integer getIndex() {
+        return index;
+    }
+
+    public void setIndex(Integer index) {
+        this.index = index;
+    }
 
     public Integer getPsdkIndex() {
         return psdkIndex;
@@ -30,11 +35,11 @@ public class SpeakerPlayVolumeSetRequest extends BaseModel {
         this.psdkIndex = psdkIndex;
     }
 
-    public Integer getPlayVolume() {
-        return playVolume;
+    public Integer getValue() {
+        return value;
     }
 
-    public void setPlayVolume(Integer playVolume) {
-        this.playVolume = playVolume;
+    public void setValue(Integer value) {
+        this.value = value;
     }
 }

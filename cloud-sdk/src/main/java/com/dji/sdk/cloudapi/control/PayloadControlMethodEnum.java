@@ -52,7 +52,17 @@ public enum PayloadControlMethodEnum {
 
     CAMERA_POINT_FOCUS_ACTION(ControlMethodEnum.CAMERA_POINT_FOCUS_ACTION, CameraPointFocusActionRequest.class),
 
-    CAMERA_FRAME_ZOOM(ControlMethodEnum.CAMERA_FRAME_ZOOM, CameraFrameZoomRequest.class)
+    CAMERA_FRAME_ZOOM(ControlMethodEnum.CAMERA_FRAME_ZOOM, CameraFrameZoomRequest.class),
+
+    SPEAKER_AUDIO_PLAY_START(ControlMethodEnum.SPEAKER_AUDIO_PLAY_START,SpeakerAudioPlayStartRequest.class),
+    SPEAKER_TTS_PLAY_START(ControlMethodEnum.SPEAKER_TTS_PLAY_START,SpeakerTTSPlayStartRequest.class),
+    SPEAKER_REPLAY(ControlMethodEnum.SPEAKER_REPLAY,PsdkRequest.class),
+    SPEAKER_PLAY_STOP(ControlMethodEnum.SPEAKER_PLAY_STOP,PsdkRequest.class),
+    SPEAKER_PLAY_MODE_SET(ControlMethodEnum.SPEAKER_PLAY_MODE_SET, SpeakerPlayModeSetRequest.class),
+    SPEAKER_PLAY_VOLUME_SET(ControlMethodEnum.SPEAKER_PLAY_VOLUME_SET, SpeakerPlayVolumeSetRequest.class),
+
+    PSDK_WIDGET_VALUE_SET(ControlMethodEnum.PSDK_WIDGET_VALUE_SET,PsdkWidgetValueSetRequest.class),
+    PSDK_INPUT_BOX_TEXT_SET(ControlMethodEnum.PSDK_INPUT_BOX_TEXT_SET, PsdkInputBoxTextSetRequest.class),
     ;
 
     private final ControlMethodEnum payloadMethod;
