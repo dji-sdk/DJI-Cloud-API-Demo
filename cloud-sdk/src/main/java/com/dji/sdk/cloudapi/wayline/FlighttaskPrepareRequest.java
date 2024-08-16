@@ -6,11 +6,11 @@ import com.dji.sdk.common.BaseModel;
 import com.dji.sdk.config.version.CloudSDKVersionEnum;
 import com.dji.sdk.config.version.GatewayTypeEnum;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * @author sean
@@ -21,9 +21,10 @@ public class FlighttaskPrepareRequest extends BaseModel {
 
     /**
      * Task ID
+     * fix: flightId是应用层提供的,应用层有自己的id构建规则,如果不是设备原因必须指定格式,最好就不要控制flightId的格式了 by witcom@2023.09.22
      */
     @NotNull
-    @Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
+    //@Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
     private String flightId;
 
     /**

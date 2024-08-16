@@ -85,6 +85,9 @@ public class DeviceLogsServiceImpl extends AbstractLogService implements IDevice
     @Autowired
     private AbstractLogService abstractLogService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     @Override
     public PaginationData<DeviceLogsDTO> getUploadedLogs(String deviceSn, DeviceLogsQueryParam param) {
         LambdaQueryWrapper<DeviceLogsEntity> queryWrapper = new LambdaQueryWrapper<DeviceLogsEntity>()

@@ -1,10 +1,7 @@
 package com.dji.sdk.cloudapi.interconnection.api;
 
 import com.dji.sdk.annotations.CloudSDKVersion;
-import com.dji.sdk.cloudapi.interconnection.CustomDataTransmissionFromEsdk;
-import com.dji.sdk.cloudapi.interconnection.CustomDataTransmissionToEsdkRequest;
-import com.dji.sdk.cloudapi.interconnection.CustomDataTransmissionToPsdkRequest;
-import com.dji.sdk.cloudapi.interconnection.InterconnectionMethodEnum;
+import com.dji.sdk.cloudapi.interconnection.*;
 import com.dji.sdk.config.version.CloudSDKVersionEnum;
 import com.dji.sdk.config.version.GatewayManager;
 import com.dji.sdk.config.version.GatewayTypeEnum;
@@ -19,7 +16,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * @author sean
@@ -64,7 +61,7 @@ public abstract class AbstractInterconnectionService {
      */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_CUSTOM_DATA_TRANSMISSION_FROM_PSDK, outputChannel = ChannelName.OUTBOUND_EVENTS)
     @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_0)
-    public TopicEventsResponse<MqttReply> customDataTransmissionFromPsdk(TopicEventsRequest<CustomDataTransmissionFromEsdk> request, MessageHeaders headers) {
+    public TopicEventsResponse<MqttReply> customDataTransmissionFromPsdk(TopicEventsRequest<CustomDataTransmissionFromPsdk> request, MessageHeaders headers) {
         throw new UnsupportedOperationException("customDataTransmissionFromPsdk not implemented");
     }
 

@@ -86,6 +86,7 @@ public class AliyunOssServiceImpl implements IOssService {
 
     @Override
     public InputStream getObject(String bucket, String objectKey) {
+        //bug: ossClient.getObject -> OSSObject need to close manually. otherwise will hang up main thread to wait available connection. by witcom @2023.12.08
         return ossClient.getObject(bucket, objectKey).getObjectContent();
     }
 
@@ -94,6 +95,7 @@ public class AliyunOssServiceImpl implements IOssService {
         if (ossClient.doesObjectExist(bucket, objectKey)) {
             throw new RuntimeException("The filename already exists.");
         }
+        //bug: PutObjectResult need to close manually. otherwise will hang up main thread to wait available connection. by witcom @2023.12.08
         PutObjectResult objectResult = ossClient.putObject(new PutObjectRequest(bucket, objectKey, input, new ObjectMetadata()));
         log.info("Upload FlighttaskCreateFile: {}", objectResult.getETag());
     }

@@ -3,8 +3,8 @@ package com.dji.sdk.cloudapi.control;
 import com.dji.sdk.cloudapi.device.PayloadIndex;
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**

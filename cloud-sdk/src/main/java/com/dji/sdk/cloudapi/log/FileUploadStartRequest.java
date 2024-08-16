@@ -5,8 +5,8 @@ import com.dji.sdk.cloudapi.storage.OssTypeEnum;
 import com.dji.sdk.cloudapi.storage.StsCredentialsResponse;
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

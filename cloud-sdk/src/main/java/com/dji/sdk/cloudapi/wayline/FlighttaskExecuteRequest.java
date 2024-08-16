@@ -2,8 +2,8 @@ package com.dji.sdk.cloudapi.wayline;
 
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * @author sean
@@ -12,8 +12,11 @@ import javax.validation.constraints.Pattern;
  */
 public class FlighttaskExecuteRequest extends BaseModel {
 
+    /**
+     * fix: flightId是应用层提供的,应用层有自己的id构建规则,如果不是设备原因必须指定格式,最好就不要控制flightId的格式了 by witcom@2023.09.22
+     */
     @NotNull
-    @Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
+    //@Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
     private String flightId;
 
     public FlighttaskExecuteRequest() {

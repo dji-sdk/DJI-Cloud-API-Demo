@@ -4,7 +4,7 @@ import com.dji.sdk.cloudapi.device.CameraModeEnum;
 import com.dji.sdk.cloudapi.device.PayloadIndex;
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

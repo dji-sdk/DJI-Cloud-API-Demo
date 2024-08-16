@@ -22,7 +22,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * @author sean
@@ -189,7 +189,10 @@ public abstract class AbstractWaylineService {
      */
     @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_RETURN_HOME_INFO, outputChannel = ChannelName.OUTBOUND_EVENTS)
     @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_0)
-    public TopicRequestsResponse<MqttReply> returnHomeInfo(TopicRequestsRequest<ReturnHomeInfo> request, MessageHeaders headers) {
+    //fix: SpelEvaluationException: EL1004E: Method call: Method returnHomeInfo(com.dji.sdk.mqtt.events.TopicEventsRequest,org.springframework.messaging.MessageHeaders) cannot be found on type xxx
+    //public TopicRequestsResponse<MqttReply> returnHomeInfo(TopicRequestsRequest<ReturnHomeInfo> request, MessageHeaders headers) {
+    public TopicEventsResponse<MqttReply> returnHomeInfo(TopicEventsRequest<ReturnHomeInfo> request, MessageHeaders headers){
+
         throw new UnsupportedOperationException("returnHomeInfo not implemented");
     }
 

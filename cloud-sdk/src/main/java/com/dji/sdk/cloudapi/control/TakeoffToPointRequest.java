@@ -8,11 +8,11 @@ import com.dji.sdk.cloudapi.wayline.SimulateMission;
 import com.dji.sdk.common.BaseModel;
 import com.dji.sdk.config.version.CloudSDKVersionEnum;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * @author sean
@@ -21,7 +21,7 @@ import javax.validation.constraints.Pattern;
  */
 public class TakeoffToPointRequest extends BaseModel {
 
-    @Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
+    //@Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
     @NotNull
     private String flightId;
 

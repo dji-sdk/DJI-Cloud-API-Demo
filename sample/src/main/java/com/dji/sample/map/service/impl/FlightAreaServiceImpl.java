@@ -77,6 +77,9 @@ public class FlightAreaServiceImpl extends AbstractFlightAreaService implements 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    SDKManager sdkManager;
+
     @Override
     public Optional<FlightAreaDTO> getFlightAreaByAreaId(String areaId) {
         List<FlightAreaPropertyDTO> properties = flightAreaPropertyServices.getPropertyByElementIds(List.of(areaId));
@@ -162,7 +165,7 @@ public class FlightAreaServiceImpl extends AbstractFlightAreaService implements 
             if (deviceOpt.isEmpty() || !workspaceId.equals(deviceOpt.get().getWorkspaceId())) {
                 throw new RuntimeException(CommonErrorEnum.ILLEGAL_ARGUMENT.getMessage());
             }
-            TopicServicesResponse<ServicesReplyData> response = abstractFlightAreaService.flightAreasUpdate(SDKManager.getDeviceSDK(deviceSn));
+            TopicServicesResponse<ServicesReplyData> response = abstractFlightAreaService.flightAreasUpdate(sdkManager.getDeviceSDK(deviceSn));
             if (!response.getData().getResult().isSuccess()) {
                 throw new RuntimeException(response.getData().getResult().getMessage());
             }

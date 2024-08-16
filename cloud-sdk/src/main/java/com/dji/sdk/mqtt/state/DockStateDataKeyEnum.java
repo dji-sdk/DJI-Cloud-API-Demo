@@ -10,6 +10,7 @@ import com.dji.sdk.exception.CloudSDKException;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -70,9 +71,10 @@ public enum DockStateDataKeyEnum {
         return keys;
     }
 
-    public static DockStateDataKeyEnum find(Set<String> keys) {
-        return Arrays.stream(values()).filter(keyEnum -> !Collections.disjoint(keys, keyEnum.keys)).findAny()
-                .orElseThrow(() -> new CloudSDKException(DockStateDataKeyEnum.class, keys));
+    public static Optional<DockStateDataKeyEnum> find(Set<String> keys) {
+        // com.dji.sdk.mqtt.state.DockStateDataKeyEnum has unknown data: [[mode_code_reason]]
+        return Arrays.stream(values()).filter(keyEnum -> !Collections.disjoint(keys, keyEnum.keys)).findAny();
+               // .orElseThrow(() -> new CloudSDKException(DockStateDataKeyEnum.class, keys));
     }
 
 }

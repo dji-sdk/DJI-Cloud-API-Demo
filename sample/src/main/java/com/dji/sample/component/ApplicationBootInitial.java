@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.Resource;
 import java.util.Optional;
 
 /**
@@ -26,6 +27,9 @@ public class ApplicationBootInitial implements CommandLineRunner {
 
     @Autowired
     private IDeviceRedisService deviceRedisService;
+
+    @Resource
+    SDKManager sdkManager;
 
     /**
      * Subscribe to the devices that exist in the redis when the program starts,
@@ -44,7 +48,7 @@ public class ApplicationBootInitial implements CommandLineRunner {
                 .map(Optional::get)
                 .filter(device -> DeviceDomainEnum.DRONE != device.getDomain())
                 .forEach(device -> deviceService.subDeviceOnlineSubscribeTopic(
-                        SDKManager.registerDevice(device.getDeviceSn(), device.getChildDeviceSn(), device.getDomain(),
+                        sdkManager.registerDevice(device.getDeviceSn(), device.getChildDeviceSn(), device.getDomain(),
                                 device.getType(), device.getSubType(), device.getThingVersion(),
                                 deviceRedisService.getDeviceOnline(device.getChildDeviceSn()).map(DeviceDTO::getThingVersion).orElse(null))));
 

@@ -2,7 +2,7 @@ package com.dji.sdk.cloudapi.config;
 
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

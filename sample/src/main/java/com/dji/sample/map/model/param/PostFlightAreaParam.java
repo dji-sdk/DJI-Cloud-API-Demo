@@ -4,8 +4,8 @@ import com.dji.sample.map.model.dto.FlightAreaContent;
 import com.dji.sdk.cloudapi.flightarea.GeofenceTypeEnum;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

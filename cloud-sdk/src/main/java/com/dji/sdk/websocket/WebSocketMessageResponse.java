@@ -3,8 +3,8 @@ package com.dji.sdk.websocket;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
+
 
 /**
  * The format of WebSocket messages that the pilot can receive.

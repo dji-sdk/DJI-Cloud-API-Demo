@@ -2,7 +2,7 @@ package com.dji.sdk.cloudapi.livestream;
 
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 

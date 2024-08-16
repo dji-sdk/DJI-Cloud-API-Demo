@@ -98,6 +98,13 @@ public enum EventsMethodEnum {
 
     CAMERA_PHOTO_TAKE_PROGRESS("camera_photo_take_progress", ChannelName.INBOUND_EVENTS_CAMERA_PHOTO_TAKE_PROGRESS, new TypeReference<EventsDataRequest<CameraPhotoTakeProgress>>() {}),
 
+    //Add by witcom@2024.06.03
+    PSDK_UI_RESOURCE_UPLOAD_RESULT("psdk_ui_resource_upload_result", ChannelName.INBOUND_EVENTS_PSDK_UI_RESOURCE_UPLOAD_RESULT, new TypeReference<PSDKUiResourceUploadResult>(){}),
+    PSDK_FLOAT_WINDOW_TEXT("psdk_floating_window_text",ChannelName.INBOUND_EVENTS_PSDK_FLOATING_WINDOW_TEXT,new TypeReference<PsdkFloatingWindowText>(){}),
+    SPEAKER_AUDIO_PLAY_START_PROGRESS("speaker_audio_play_start_progress",ChannelName.INBOUND_EVENTS_SPEAKER_AUDIO_PLAY_START_PROGRESS,new TypeReference<EventsDataRequest<SpeakerPlayStartProgress>>() {}),
+    SPEAKER_TTS_PLAY_START_PROGRESS("speaker_tts_play_start_progress",ChannelName.INBOUND_EVENTS_SPEAKER_TTS_PLAY_START_PROGRESS,new TypeReference<EventsDataRequest<SpeakerPlayStartProgress>>() {}),
+
+
     UNKNOWN("", ChannelName.DEFAULT, new TypeReference<>() {});
 
     private final String method;

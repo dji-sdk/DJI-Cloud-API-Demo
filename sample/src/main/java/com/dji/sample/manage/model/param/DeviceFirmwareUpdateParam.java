@@ -2,7 +2,7 @@ package com.dji.sample.manage.model.param;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

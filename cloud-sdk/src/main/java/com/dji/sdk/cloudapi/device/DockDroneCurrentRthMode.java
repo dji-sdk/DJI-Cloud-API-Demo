@@ -3,7 +3,7 @@ package com.dji.sdk.cloudapi.device;
 import com.dji.sdk.cloudapi.wayline.RthModeEnum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

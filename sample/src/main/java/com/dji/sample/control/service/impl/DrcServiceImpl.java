@@ -84,6 +84,9 @@ public class DrcServiceImpl implements IDrcService {
     @Autowired
     private AbstractControlService abstractControlService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     @Override
     public void setDrcModeInRedis(String dockSn, String clientId) {
         RedisOpsUtils.setWithExpire(RedisConst.DRC_PREFIX + dockSn, clientId, RedisConst.DRC_MODE_ALIVE_SECOND);

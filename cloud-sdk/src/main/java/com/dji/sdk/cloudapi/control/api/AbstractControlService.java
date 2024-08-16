@@ -24,7 +24,7 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -485,6 +485,89 @@ public abstract class AbstractControlService {
                 ControlMethodEnum.CAMERA_POINT_FOCUS_ACTION.getMethod(),
                 request);
     }
+
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = GatewayTypeEnum.DOCK2)
+    public TopicServicesResponse<ServicesReplyData> cameraFrameZoom(GatewayManager gateway, CameraFrameZoomRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.CAMERA_FRAME_ZOOM.getMethod(),
+          request);
+    }
+
+    //============================== Psdk ==============================
+
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_PSDK_UI_RESOURCE_UPLOAD_RESULT, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public TopicEventsResponse<MqttReply> psdkUiResourceUploadResult(TopicEventsRequest<PSDKUiResourceUploadResult> request, MessageHeaders headers) {
+        throw new UnsupportedOperationException("psdkUiResourceUploadResult not implemented");
+    }
+
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_PSDK_FLOATING_WINDOW_TEXT, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public TopicEventsResponse<MqttReply> psdkFloatingWindowText(TopicEventsRequest<PsdkFloatingWindowText> request, MessageHeaders headers) {
+        throw new UnsupportedOperationException("psdkFloatingWindowText not implemented");
+    }
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerAudioPlayStart(GatewayManager gateway, SpeakerAudioPlayStartRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_AUDIO_PLAY_START.getMethod(),
+          request);
+    }
+
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_SPEAKER_AUDIO_PLAY_START_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public TopicEventsResponse<MqttReply> speakerAudioPlayStartProgress(TopicEventsRequest<EventsDataRequest<SpeakerPlayStartProgress>> request, MessageHeaders headers) {
+        throw new UnsupportedOperationException("speakerAudioPlayStartProgress not implemented");
+    }
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerTtsPlayStart(GatewayManager gateway, SpeakerTTSPlayStartRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_TTS_PLAY_START.getMethod(),
+          request);
+    }
+
+    @ServiceActivator(inputChannel = ChannelName.INBOUND_EVENTS_SPEAKER_TTS_PLAY_START_PROGRESS, outputChannel = ChannelName.OUTBOUND_EVENTS)
+    public TopicEventsResponse<MqttReply> speakerTTSPlayStartProgress(TopicEventsRequest<EventsDataRequest<SpeakerPlayStartProgress>> request, MessageHeaders headers) {
+        throw new UnsupportedOperationException("speakerTTSPlayStartProgress not implemented");
+    }
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerReplay(GatewayManager gateway, PsdkRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_REPLAY.getMethod(),
+          request);
+    }
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerPlayStop(GatewayManager gateway, PsdkRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_PLAY_STOP.getMethod(),
+          request);
+    }
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerPlayModeSet(GatewayManager gateway, SpeakerPlayModeSetRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_PLAY_MODE_SET.getMethod(),
+          request);
+    }
+
+
+    @CloudSDKVersion(since = CloudSDKVersionEnum.V1_0_2, include = {GatewayTypeEnum.DOCK, GatewayTypeEnum.DOCK2})
+    public TopicServicesResponse<ServicesReplyData> speakerPlayVolumeSet(GatewayManager gateway, SpeakerPlayVolumeSetRequest request) {
+        return servicesPublish.publish(
+          gateway.getGatewaySn(),
+          ControlMethodEnum.SPEAKER_PLAY_VOLUME_SET.getMethod(),
+          request);
+    }
+
+    /////////////////////////////////////////////////////////////////////
+
 
     /**
      * Payload control

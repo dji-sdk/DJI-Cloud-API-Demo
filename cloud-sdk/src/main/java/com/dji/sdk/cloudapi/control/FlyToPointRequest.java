@@ -2,8 +2,8 @@ package com.dji.sdk.cloudapi.control;
 
 import com.dji.sdk.common.BaseModel;
 
-import javax.validation.Valid;
-import javax.validation.constraints.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import java.util.List;
 
 /**
@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class FlyToPointRequest extends BaseModel {
 
-    @Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
+    //@Pattern(regexp = "^[^<>:\"/|?*._\\\\]+$")
     @NotNull
     private String flyToId;
 

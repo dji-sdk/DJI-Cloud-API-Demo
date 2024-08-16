@@ -3,8 +3,8 @@ package com.dji.sample.control.model.param;
 import com.dji.sample.control.model.enums.PayloadCommandsEnum;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

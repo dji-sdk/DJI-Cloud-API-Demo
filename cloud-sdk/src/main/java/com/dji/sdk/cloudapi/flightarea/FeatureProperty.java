@@ -2,7 +2,7 @@ package com.dji.sdk.cloudapi.flightarea;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Min;
 
 /**
  * @author sean

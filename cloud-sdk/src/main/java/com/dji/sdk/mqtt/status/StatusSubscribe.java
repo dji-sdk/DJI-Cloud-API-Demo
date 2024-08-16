@@ -6,7 +6,7 @@ import com.dji.sdk.mqtt.IMqttTopicService;
 import com.dji.sdk.mqtt.TopicConst;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  *
@@ -22,8 +22,11 @@ public class StatusSubscribe {
     @Resource
     private IMqttTopicService topicService;
 
+    @Resource
+    SDKManager sdkManager;
+
     public void subscribe(GatewayManager gateway) {
-        SDKManager.registerDevice(gateway);
+        sdkManager.registerDevice(gateway);
         topicService.subscribe(String.format(TOPIC, gateway.getGatewaySn()));
     }
 
@@ -32,7 +35,7 @@ public class StatusSubscribe {
     }
 
     public void unsubscribe(GatewayManager gateway) {
-        SDKManager.logoutDevice(gateway.getGatewaySn());
+        sdkManager.logoutDevice(gateway.getGatewaySn());
         topicService.unsubscribe(String.format(TOPIC, gateway.getGatewaySn()));
     }
 

@@ -5,7 +5,7 @@ import com.dji.sdk.mqtt.IMqttTopicService;
 import com.dji.sdk.mqtt.TopicConst;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  *

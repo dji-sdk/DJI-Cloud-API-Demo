@@ -3,8 +3,8 @@ package com.dji.sdk.cloudapi.property;
 import com.dji.sdk.cloudapi.device.SwitchActionEnum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 /**
  * The state of the drone's limited distance

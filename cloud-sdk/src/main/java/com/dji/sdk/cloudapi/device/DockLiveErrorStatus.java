@@ -37,11 +37,14 @@ public class DockLiveErrorStatus {
     }
 
     public String getMessage() {
+        if(success){ return "success";}
         return errorCode.getMessage();
     }
 
     @JsonValue
     public Integer getCode() {
+        //witcom: errorCode.getCode() will cause npe 2023.10.30
+        if(success){ return 0; }
         return source.getSource() * MOD + errorCode.getCode();
     }
 

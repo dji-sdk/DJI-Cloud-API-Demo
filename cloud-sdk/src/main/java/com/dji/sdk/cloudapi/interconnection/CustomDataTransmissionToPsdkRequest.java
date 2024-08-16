@@ -3,7 +3,7 @@ package com.dji.sdk.cloudapi.interconnection;
 import com.dji.sdk.common.BaseModel;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

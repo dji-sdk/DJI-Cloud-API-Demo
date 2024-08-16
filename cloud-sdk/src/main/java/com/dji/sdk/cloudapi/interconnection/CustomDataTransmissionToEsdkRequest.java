@@ -1,9 +1,9 @@
 package com.dji.sdk.cloudapi.interconnection;
 
 import com.dji.sdk.common.BaseModel;
+import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.NotNull;
 
 /**
  * @author sean

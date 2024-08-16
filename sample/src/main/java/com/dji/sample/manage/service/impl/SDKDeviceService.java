@@ -57,6 +57,9 @@ public class SDKDeviceService extends AbstractDeviceService {
     @Autowired
     private IDevicePayloadService devicePayloadService;
 
+    @Autowired
+    SDKManager SDKManager;
+
     @Override
     public TopicStatusResponse<MqttReply> updateTopoOnline(TopicStatusRequest<UpdateTopo> request, MessageHeaders headers) {
         UpdateTopoSubDevice updateTopoSubDevice = request.getData().getSubDevices().get(0);

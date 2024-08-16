@@ -2,7 +2,7 @@ package com.dji.sdk.cloudapi.organization;
 
 import com.dji.sdk.mqtt.MqttReply;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author sean

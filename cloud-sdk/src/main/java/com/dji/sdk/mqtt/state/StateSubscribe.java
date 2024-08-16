@@ -6,7 +6,7 @@ import com.dji.sdk.mqtt.IMqttTopicService;
 import com.dji.sdk.mqtt.TopicConst;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  *
@@ -20,10 +20,13 @@ public class StateSubscribe {
     @Resource
     private IMqttTopicService topicService;
 
+    @Resource
+    SDKManager sdkManager;
+
     public static final String TOPIC = TopicConst.THING_MODEL_PRE + TopicConst.PRODUCT + "%s" + TopicConst.STATE_SUF;
 
     public void subscribe(GatewayManager gateway, boolean unsubscribeSubDevice) {
-        SDKManager.registerDevice(gateway);
+        sdkManager.registerDevice(gateway);
         topicService.subscribe(String.format(TOPIC, gateway.getGatewaySn()));
         if (unsubscribeSubDevice) {
             topicService.unsubscribe(String.format(TOPIC, gateway.getDroneSn()));
@@ -35,7 +38,7 @@ public class StateSubscribe {
     }
 
     public void unsubscribe(GatewayManager gateway) {
-        SDKManager.logoutDevice(gateway.getGatewaySn());
+        sdkManager.logoutDevice(gateway.getGatewaySn());
         topicService.unsubscribe(String.format(TOPIC, gateway.getGatewaySn()));
         if (null != gateway.getDroneSn()) {
             topicService.unsubscribe(String.format(TOPIC, gateway.getDroneSn()));

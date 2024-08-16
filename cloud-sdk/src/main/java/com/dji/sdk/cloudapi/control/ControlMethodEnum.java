@@ -62,6 +62,7 @@ public enum ControlMethodEnum {
     IR_METERING_AREA_SET("ir_metering_area_set"),
 
     CAMERA_POINT_FOCUS_ACTION("camera_point_focus_action"),
+    CAMERA_FRAME_ZOOM("camera_frame_zoom"),
 
     DRONE_CONTROL("drone_control"),
 
@@ -75,6 +76,16 @@ public enum ControlMethodEnum {
 
     POI_CIRCLE_SPEED_SET("poi_circle_speed_set"),
 
+    //add by witcom@2024-06-03
+    SPEAKER_AUDIO_PLAY_START("speaker_audio_play_start"),
+    SPEAKER_TTS_PLAY_START("speaker_tts_play_start"),
+    SPEAKER_REPLAY("speaker_replay"),
+    SPEAKER_PLAY_STOP("speaker_play_stop"),
+    SPEAKER_PLAY_MODE_SET("speaker_play_mode_set"),
+    SPEAKER_PLAY_VOLUME_SET("speaker_play_volume_set"),
+
+    PSDK_WIDGET_VALUE_SET("psdk_widget_value_set"),
+    PSDK_INPUT_BOX_TEXT_SET("psdk_input_box_text_set"),
     ;
 
     private final String method;
